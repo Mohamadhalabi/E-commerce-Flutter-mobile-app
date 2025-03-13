@@ -1,0 +1,2 @@
+D:/FlutterShop - Free/FlutterShop Free Version/android/app/.cxx/Debug/4l5y4s4l/x86/CMakeFiles/edit_cache.dir
+D:/FlutterShop - Free/FlutterShop Free Version/android/app/.cxx/Debug/4l5y4s4l/x86/CMakeFiles/rebuild_cache.dir
