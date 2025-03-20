@@ -20,6 +20,8 @@ dependencies:
   flutter_widget_from_html_core: ^0.15.1
   animations: ^2.0.11
   url_launcher: ^6.3.0
+  http: any
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +39,7 @@ flutter:
     - assets/flags/
     - assets/logo/
     - assets/screens/
+    - .env
 
   fonts:
     - family: Plus Jakarta

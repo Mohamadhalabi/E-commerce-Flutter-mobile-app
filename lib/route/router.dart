@@ -302,7 +302,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     default:
       return MaterialPageRoute(
         // Make a screen for undefine
-        builder: (context) => const OnBordingScreen(),
+        builder: (context) => const HomeScreen(),
       );
   }
 }

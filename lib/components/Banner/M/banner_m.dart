@@ -16,13 +16,12 @@ class BannerM extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1.87,
+      aspectRatio: 1.00,
       child: GestureDetector(
         onTap: press,
         child: Stack(
           children: [
             NetworkImageWithLoader(image, radius: 0),
-            Container(color: Colors.black45),
             ...children,
           ],
         ),

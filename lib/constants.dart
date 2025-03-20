@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+class AppConstants {
+  static final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+  static final String apiKey = dotenv.env['API_KEY'] ?? '';
+  static final String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+}
 // Just for demo
-const productDemoImg1 = "https://i.imgur.com/CGCyp1d.png";
-const productDemoImg2 = "https://i.imgur.com/AkzWQuJ.png";
-const productDemoImg3 = "https://i.imgur.com/J7mGZ12.png";
-const productDemoImg4 = "https://i.imgur.com/q9oF9Yq.png";
-const productDemoImg5 = "https://i.imgur.com/MsppAcx.png";
-const productDemoImg6 = "https://i.imgur.com/JfyZlnO.png";
+const productDemoImg1 = "";
+const productDemoImg2 = "";
+const productDemoImg3 = "";
+const productDemoImg4 = "";
+const productDemoImg5 = "";
+const productDemoImg6 = "";
 
 // End For demo
 

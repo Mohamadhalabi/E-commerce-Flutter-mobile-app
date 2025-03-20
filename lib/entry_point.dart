@@ -38,19 +38,13 @@ class _EntryPointState extends State<EntryPoint> {
 
     return Scaffold(
       appBar: AppBar(
-        // pinned: true,
-        // floating: true,
-        // snap: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: const SizedBox(),
         leadingWidth: 0,
         centerTitle: false,
-        title: SvgPicture.asset(
-          "assets/logo/Shoplon.svg",
-          colorFilter: ColorFilter.mode(
-              Theme.of(context).iconTheme.color!, BlendMode.srcIn),
-          height: 20,
-          width: 100,
+        title: Image.asset(
+          "assets/logo/techno-lock-mobile-logo.webp", // Update with your image path
+          width: 160,
         ),
         actions: [
           IconButton(
@@ -65,21 +59,43 @@ class _EntryPointState extends State<EntryPoint> {
                   BlendMode.srcIn),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, notificationsScreenRoute);
-            },
-            icon: SvgPicture.asset(
-              "assets/icons/Notification.svg",
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                  Theme.of(context).textTheme.bodyLarge!.color!,
-                  BlendMode.srcIn),
+          // Wrap the Scaffold context in a Builder widget to access Scaffold.of
+          Builder(
+            builder: (context) => IconButton(
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer(); // This works now with Builder context
+              },
+              icon: Icon(Icons.menu, color: Theme.of(context).iconTheme.color),
             ),
           ),
         ],
       ),
-      // body: _pages[_currentIndex],
+      // Adding a right-end drawer
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Text('Drawer Header', style: TextStyle(color: Colors.white)),
+            ),
+            ListTile(
+              title: Text('Item 1'),
+              onTap: () {
+                // Handle item tap
+              },
+            ),
+            ListTile(
+              title: Text('Item 2'),
+              onTap: () {
+                // Handle item tap
+              },
+            ),
+          ],
+        ),
+      ),
       body: PageTransitionSwitcher(
         duration: defaultDuration,
         transitionBuilder: (child, animation, secondAnimation) {
@@ -109,7 +125,6 @@ class _EntryPointState extends State<EntryPoint> {
               ? Colors.white
               : const Color(0xFF101015),
           type: BottomNavigationBarType.fixed,
-          // selectedLabelStyle: TextStyle(color: primaryColor),
           selectedFontSize: 12,
           selectedItemColor: primaryColor,
           unselectedItemColor: Colors.transparent,
@@ -122,13 +137,13 @@ class _EntryPointState extends State<EntryPoint> {
             BottomNavigationBarItem(
               icon: svgIcon("assets/icons/Category.svg"),
               activeIcon:
-                  svgIcon("assets/icons/Category.svg", color: primaryColor),
+              svgIcon("assets/icons/Category.svg", color: primaryColor),
               label: "Discover",
             ),
             BottomNavigationBarItem(
               icon: svgIcon("assets/icons/Bookmark.svg"),
               activeIcon:
-                  svgIcon("assets/icons/Bookmark.svg", color: primaryColor),
+              svgIcon("assets/icons/Bookmark.svg", color: primaryColor),
               label: "Bookmark",
             ),
             BottomNavigationBarItem(
@@ -139,7 +154,7 @@ class _EntryPointState extends State<EntryPoint> {
             BottomNavigationBarItem(
               icon: svgIcon("assets/icons/Profile.svg"),
               activeIcon:
-                  svgIcon("assets/icons/Profile.svg", color: primaryColor),
+              svgIcon("assets/icons/Profile.svg", color: primaryColor),
               label: "Profile",
             ),
           ],

@@ -49,7 +49,7 @@ List<ProductModel> demoPopularProducts = [
     dicountpercent: 5,
   ),
   ProductModel(
-    image: "https://i.imgur.com/tXyOMMG.png",
+    image: "",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
     price: 650.62,
@@ -57,7 +57,7 @@ List<ProductModel> demoPopularProducts = [
     dicountpercent: 40,
   ),
   ProductModel(
-    image: "https://i.imgur.com/h2LqppX.png",
+    image: "",
     title: "white satin corset top",
     brandName: "Lipsy london",
     price: 1264,
@@ -93,7 +93,7 @@ List<ProductModel> demoFlashSaleProducts = [
 ];
 List<ProductModel> demoBestSellersProducts = [
   ProductModel(
-    image: "https://i.imgur.com/tXyOMMG.png",
+    image: "",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
     price: 650.62,
@@ -101,7 +101,7 @@ List<ProductModel> demoBestSellersProducts = [
     dicountpercent: 40,
   ),
   ProductModel(
-    image: "https://i.imgur.com/h2LqppX.png",
+    image: "",
     title: "white satin corset top",
     brandName: "Lipsy london",
     price: 1264,
@@ -119,7 +119,7 @@ List<ProductModel> demoBestSellersProducts = [
 ];
 List<ProductModel> kidsProducts = [
   ProductModel(
-    image: "https://i.imgur.com/dbbT6PA.png",
+    image: "",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
     price: 650.62,
@@ -127,19 +127,19 @@ List<ProductModel> kidsProducts = [
     dicountpercent: 24,
   ),
   ProductModel(
-    image: "https://i.imgur.com/7fSxC7k.png",
+    image: "",
     title: "Printed Sleeveless Tiered Swing Dress",
     brandName: "Lipsy london",
     price: 650.62,
   ),
   ProductModel(
-    image: "https://i.imgur.com/pXnYE9Q.png",
+    image: "",
     title: "Ruffle-Sleeve Ponte-Knit Sheath ",
     brandName: "Lipsy london",
     price: 400,
   ),
   ProductModel(
-    image: "https://i.imgur.com/V1MXgfa.png",
+    image: "",
     title: "Green Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 400,
@@ -147,13 +147,13 @@ List<ProductModel> kidsProducts = [
     dicountpercent: 20,
   ),
   ProductModel(
-    image: "https://i.imgur.com/8gvE5Ss.png",
+    image: "",
     title: "Printed Sleeveless Tiered Swing Dress",
     brandName: "Lipsy london",
     price: 654,
   ),
   ProductModel(
-    image: "https://i.imgur.com/cBvB5YB.png",
+    image: "",
     title: "Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 250,
