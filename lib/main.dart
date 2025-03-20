@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/router.dart' as router;
 import 'package:shop/theme/app_theme.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(); // Load .env file
   runApp(const MyApp());
 }
 
@@ -23,7 +25,7 @@ class MyApp extends StatelessWidget {
       // Dark theme is inclided in the Full template
       themeMode: ThemeMode.light,
       onGenerateRoute: router.generateRoute,
-      initialRoute: onbordingScreenRoute,
+      initialRoute: entryPointScreenRoute,
     );
   }
 }

@@ -12,10 +12,10 @@ class CategoryModel {
 }
 
 final List<CategoryModel> demoCategoriesWithImage = [
-  CategoryModel(title: "Woman’s", image: "https://i.imgur.com/5M89G2P.png"),
-  CategoryModel(title: "Man’s", image: "https://i.imgur.com/UM3GdWg.png"),
-  CategoryModel(title: "Kid’s", image: "https://i.imgur.com/Lp0D6k5.png"),
-  CategoryModel(title: "Accessories", image: "https://i.imgur.com/3mSE5sN.png"),
+  CategoryModel(title: "Woman’s", image: ""),
+  CategoryModel(title: "Man’s", image: ""),
+  CategoryModel(title: "Kid’s", image: ""),
+  CategoryModel(title: "Accessories", image: ""),
 ];
 
 final List<CategoryModel> demoCategories = [
