@@ -25,8 +25,8 @@ class ProductCard extends StatelessWidget {
     return OutlinedButton(
       onPressed: press,
       style: OutlinedButton.styleFrom(
-          minimumSize: const Size(140, 220),
-          maximumSize: const Size(140, 220),
+          minimumSize: const Size(180, 220),
+          maximumSize: const Size(180, 220),
           padding: const EdgeInsets.all(8)),
       child: Column(
         children: [
@@ -75,15 +75,15 @@ class ProductCard extends StatelessWidget {
                         .copyWith(fontSize: 10),
                   ),
                   const SizedBox(height: defaultPadding / 2),
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(fontSize: 12),
-                  ),
+                  // Text(
+                  //   title,
+                  //   maxLines: 2,
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: Theme.of(context)
+                  //       .textTheme
+                  //       .titleSmall!
+                  //       .copyWith(fontSize: 12),
+                  // ),
                   const Spacer(),
                   priceAfetDiscount != null
                       ? Row(

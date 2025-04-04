@@ -51,8 +51,8 @@ class WalletScreen extends StatelessWidget {
                           title: "Mountain Warehouse for Women",
                           brandName: "Lipsy london",
                           price: 540,
-                          priceAfetDiscount: 420,
-                          dicountpercent: 20,
+                          priceAfterDiscount: 420,
+                          discountPercent: 20,
                         ),
                         ProductModel(
                           image: productDemoImg4,
