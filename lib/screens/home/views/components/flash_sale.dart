@@ -52,8 +52,8 @@ class FlashSale extends StatelessWidget {
                 title: demoFlashSaleProducts[index].title,
                 price: demoFlashSaleProducts[index].price,
                 priceAfetDiscount:
-                    demoFlashSaleProducts[index].priceAfetDiscount,
-                dicountpercent: demoFlashSaleProducts[index].dicountpercent,
+                    demoFlashSaleProducts[index].priceAfterDiscount,
+                dicountpercent: demoFlashSaleProducts[index].discountPercent,
                 press: () {
                   Navigator.pushNamed(context, productDetailsScreenRoute,
                       arguments: index.isEven);

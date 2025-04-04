@@ -19,7 +19,7 @@ class PopularProducts extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(defaultPadding),
           child: Text(
-            "Popular products",
+            "Latest Products",
             style: Theme.of(context).textTheme.titleSmall,
           ),
         ),
@@ -29,7 +29,6 @@ class PopularProducts extends StatelessWidget {
           height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            // Find demoPopularProducts on models/ProductModel.dart
             itemCount: demoPopularProducts.length,
             itemBuilder: (context, index) => Padding(
               padding: EdgeInsets.only(
@@ -43,8 +42,8 @@ class PopularProducts extends StatelessWidget {
                 brandName: demoPopularProducts[index].brandName,
                 title: demoPopularProducts[index].title,
                 price: demoPopularProducts[index].price,
-                priceAfetDiscount: demoPopularProducts[index].priceAfetDiscount,
-                dicountpercent: demoPopularProducts[index].dicountpercent,
+                priceAfetDiscount: demoPopularProducts[index].priceAfterDiscount,
+                dicountpercent: demoPopularProducts[index].discountPercent,
                 press: () {
                   Navigator.pushNamed(context, productDetailsScreenRoute,
                       arguments: index.isEven);
