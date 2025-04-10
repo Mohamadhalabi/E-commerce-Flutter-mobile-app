@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// import 'package:shop/components/Banner/M/banner_m_style_1.dart';
 import 'package:shop/components/dot_indicators.dart';
 import '../../../../constants.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
