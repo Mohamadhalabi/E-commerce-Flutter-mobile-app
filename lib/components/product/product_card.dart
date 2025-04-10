@@ -25,8 +25,8 @@ class ProductCard extends StatelessWidget {
     return OutlinedButton(
       onPressed: press,
       style: OutlinedButton.styleFrom(
-          minimumSize: const Size(180, 220),
-          maximumSize: const Size(180, 220),
+          minimumSize: const Size(160, 220),
+          maximumSize: const Size(160, 220),
           padding: const EdgeInsets.all(8)),
       child: Column(
         children: [

@@ -17,13 +17,21 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // Safely parse price
+    double parsePrice(dynamic priceJson) {
+      if (priceJson is Map && priceJson['value'] != null) {
+        return double.tryParse(priceJson['value'].toString()) ?? 0.0;
+      }
+      return 0.0;
+    }
+
     return ProductModel(
       image: json['image'] ?? "",
       brandName: json['brand_name'] ?? "Unknown Brand",
       title: json['title'] ?? "No Title",
-      price: (json['price'] as num).toDouble(),
-      priceAfterDiscount: json['price_after_discount'] != null
-          ? (json['price_after_discount'] as num).toDouble()
+      price: parsePrice(json['price']),
+      priceAfterDiscount: json['sale_price'] != null
+          ? parsePrice(json['sale_price'])
           : null,
       discountPercent: json['discount_percent'],
     );
