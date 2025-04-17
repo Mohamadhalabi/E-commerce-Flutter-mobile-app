@@ -16,7 +16,6 @@ class _EntryPointState extends State<EntryPoint> {
     HomeScreen(),
     DiscoverScreen(),
     BookmarkScreen(),
-    // EmptyCartScreen(), // if Cart is empty
     CartScreen(),
     ProfileScreen(),
   ];
@@ -29,48 +28,89 @@ class _EntryPointState extends State<EntryPoint> {
         src,
         height: 24,
         colorFilter: ColorFilter.mode(
-            color ??
-                Theme.of(context).iconTheme.color!.withOpacity(
-                    Theme.of(context).brightness == Brightness.dark ? 0.3 : 1),
-            BlendMode.srcIn),
+          color ??
+              Theme.of(context).iconTheme.color!.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.3 : 1),
+          BlendMode.srcIn,
+        ),
       );
     }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: const SizedBox(),
         leadingWidth: 0,
         centerTitle: false,
-        title: Image.asset(
-          "assets/logo/techno-lock-mobile-logo.webp", // Update with your image path
-          width: 160,
-        ),
+        title: null,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, searchScreenRoute);
-            },
-            icon: SvgPicture.asset(
-              "assets/icons/Search.svg",
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                  Theme.of(context).textTheme.bodyLarge!.color!,
-                  BlendMode.srcIn),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          hintText: 'Search...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.camera_alt, color: Colors.grey),
+                            onPressed: () {
+                              // Camera logic
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          // Wrap the Scaffold context in a Builder widget to access Scaffold.of
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              // Notification logic
+            },
+          ),
           Builder(
             builder: (context) => IconButton(
               onPressed: () {
-                Scaffold.of(context).openEndDrawer(); // This works now with Builder context
+                Scaffold.of(context).openEndDrawer();
               },
               icon: Icon(Icons.menu, color: Theme.of(context).iconTheme.color),
             ),
           ),
         ],
       ),
-      // Adding a right-end drawer
       endDrawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -79,19 +119,16 @@ class _EntryPointState extends State<EntryPoint> {
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
-              child: Text('Drawer Header', style: TextStyle(color: Colors.white)),
+              child:
+              const Text('Drawer Header', style: TextStyle(color: Colors.white)),
             ),
             ListTile(
-              title: Text('Item 1'),
-              onTap: () {
-                // Handle item tap
-              },
+              title: const Text('Item 1'),
+              onTap: () {},
             ),
             ListTile(
-              title: Text('Item 2'),
-              onTap: () {
-                // Handle item tap
-              },
+              title: const Text('Item 2'),
+              onTap: () {},
             ),
           ],
         ),
