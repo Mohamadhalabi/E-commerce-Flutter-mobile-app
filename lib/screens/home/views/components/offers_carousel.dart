@@ -164,7 +164,7 @@ class BannerM extends StatelessWidget {
         onTap: press,
         child: Stack(
           children: [
-            Image.network(image, fit: BoxFit.cover),
+            Image.network(image, fit: BoxFit.contain),
             ...children,
           ],
         ),
