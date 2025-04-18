@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shop/components/dot_indicators.dart';
+import '../../../../components/skleton/others/offers_skelton.dart';
 import '../../../../constants.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:shop/components/dot_indicators.dart';
+import '../../../../services/api_initializer.dart';
 class OffersCarousel extends StatefulWidget {
   const OffersCarousel({super.key});
 
@@ -15,8 +13,9 @@ class OffersCarousel extends StatefulWidget {
 
 class _OffersCarouselState extends State<OffersCarousel> {
   int _selectedIndex = 0;
+  bool isLoading = true;
   late PageController _pageController;
-  late Timer _timer;
+  Timer? _timer;
   List<Map<String, String>> offers = [];
 
   @override
@@ -24,88 +23,92 @@ class _OffersCarouselState extends State<OffersCarousel> {
     super.initState();
     _pageController = PageController(initialPage: 0);
     _fetchSliders();
-
-    _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
-      if (_selectedIndex < offers.length - 1) {
-        _selectedIndex++;
-      } else {
-        _selectedIndex = 0;
-      }
-      _pageController.animateToPage(
-        _selectedIndex,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
-    });
   }
 
   Future<void> _fetchSliders() async {
-    // Load the environment variables
-    await dotenv.load();
+    try {
+      final data = await apiClient.get('/get-sliders'); // assume it's List<dynamic>
 
-    // Retrieve the API base URL, API key, and Secret key from the .env file
-    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    String apiKey = dotenv.env['API_KEY'] ?? '';
-    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      if (data is List) {
+        setState(() {
+          offers = data.map<Map<String, String>>((item) {
+            return {
+              'image': item['image'].toString(),
+              'link': item['link'].toString(),
+            };
+          }).toList();
+          isLoading = false;
+        });
 
-    // Construct the full API URL
-    String url = '$apiBaseUrl/get-sliders';
-
-    // Make the HTTP request with headers including API_KEY and SECRET_KEY
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'api-key': apiKey,
-        'secret-key': secretKey,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
-
-      // Explicitly cast the dynamic data to List<Map<String, String>>
+        _startAutoSlide();
+      } else {
+        // if not a list, treat it as empty
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        offers = data.map((item) {
-          return {
-            'image': item['image'].toString(),
-            'link': item['link'].toString(),
-          };
-        }).toList();
+        isLoading = false;
       });
     }
   }
 
 
+  void _startAutoSlide() {
+    if (offers.isEmpty) return;
+
+    _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+      if (!mounted) return;
+
+      setState(() {
+        _selectedIndex = (_selectedIndex + 1) % offers.length;
+        _pageController.animateToPage(
+          _selectedIndex,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      });
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: OffersSkelton());
+    }
+
+    if (offers.isEmpty) {
+      return const Center(child: Text("No sliders available"));
+    }
+
     return AspectRatio(
       aspectRatio: 1.87,
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
-          if (offers.isNotEmpty)
-            PageView.builder(
-              controller: _pageController,
-              itemCount: offers.length,
-              onPageChanged: (int index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
+          PageView.builder(
+            controller: _pageController,
+            itemCount: offers.length,
+            onPageChanged: (int index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            itemBuilder: (context, index) => BannerMStyle1(
+              image: offers[index]['image']!,
+              press: () {
+                print("Redirecting to: ${offers[index]['link']}");
               },
-              itemBuilder: (context, index) => BannerMStyle1(
-                image: offers[index]['image']!,
-                press: () {
-                  print("Redirecting to: ${offers[index]['link']}");
-                },
-              ),
             ),
+          ),
           FittedBox(
             child: Padding(
               padding: const EdgeInsets.all(defaultPadding),
@@ -144,7 +147,12 @@ class BannerMStyle1 extends StatelessWidget {
     return BannerM(
       image: image,
       press: press,
-      children: const [Padding(padding: EdgeInsets.all(defaultPadding), child: SizedBox.shrink())],
+      children: const [
+        Padding(
+          padding: EdgeInsets.all(defaultPadding),
+          child: SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
@@ -164,7 +172,15 @@ class BannerM extends StatelessWidget {
         onTap: press,
         child: Stack(
           children: [
-            Image.network(image, fit: BoxFit.contain),
+            Image.network(
+              image,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image)),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: OffersSkelton());
+              },
+            ),
             ...children,
           ],
         ),

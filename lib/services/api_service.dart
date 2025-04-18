@@ -28,7 +28,6 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
 
-        // Replace 'products' with the correct key based on your response
         if (jsonResponse['new_arrival'] != null && jsonResponse['new_arrival'] is List) {
           return (jsonResponse['new_arrival'] as List)
               .map((item) => ProductModel.fromJson(item))

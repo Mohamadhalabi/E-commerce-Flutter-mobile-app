@@ -22,13 +22,6 @@ class OffersCarouselAndCategories extends StatelessWidget {
         //   padding: EdgeInsets.only(bottom: 15.0),
         // ),
         OffersCarousel(),
-        Padding(
-          padding: EdgeInsets.all(defaultPadding),
-          child: Text(
-            "Categories",
-            // style: Theme.of(context).textTheme.titleSmall,
-          ),
-        ),
       ],
     );
   }
