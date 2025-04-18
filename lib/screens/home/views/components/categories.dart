@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shop/route/screen_export.dart';
+import 'package:shop/components/skleton/others/categories_skelton.dart';
+import 'package:shop/services/api_initializer.dart';
 import '../../../../constants.dart';
 
 class CategoryModel {
@@ -10,49 +11,80 @@ class CategoryModel {
     required this.name,
     this.route,
   });
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    return CategoryModel(
+      name: json['name'],
+      route: null,
+    );
+  }
 }
 
-List<CategoryModel> demoCategories = [
-  CategoryModel(
-      name: "On Sale",
-      route: onSaleScreenRoute),
-  CategoryModel(name: "Man's"),
-  CategoryModel(name: "Woman’s"),
-  CategoryModel(
-      name: "Kids", route: kidsScreenRoute),
-];
+class Categories extends StatefulWidget {
+  const Categories({super.key});
 
-class Categories extends StatelessWidget {
-  const Categories({
-    super.key,
-  });
+  @override
+  State<Categories> createState() => _CategoriesState();
+}
+
+class _CategoriesState extends State<Categories> {
+  List<CategoryModel> categories = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCategories();
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final response = await apiClient.get('/get-categories');
+      final List data = response['categories'] ?? [];
+
+      setState(() {
+        categories = data.map((item) => CategoryModel.fromJson(item)).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CategoriesSkelton());
+    }
+
+    if (categories.isEmpty) {
+      return const Center(child: Text("No categories found"));
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: [
-          ...List.generate(
-            demoCategories.length,
-                (index) => Padding(
-              padding: EdgeInsets.only(
-                  top: 7.0,
-                  bottom: 15.0,
-                  left: index == 0 ? defaultPadding : defaultPadding / 2,
-                  right:
-                  index == demoCategories.length - 1 ? defaultPadding : 0),
-              child: CategoryBtn(
-                category: demoCategories[index].name,
-                press: () {
-                  if (demoCategories[index].route != null) {
-                    Navigator.pushNamed(context, demoCategories[index].route!);
-                  }
-                },
-              ),
+        children: List.generate(
+          categories.length,
+              (index) => Padding(
+            padding: EdgeInsets.only(
+              top: 7.0,
+              bottom: 15.0,
+              left: index == 0 ? defaultPadding : defaultPadding / 2,
+              right: index == categories.length - 1 ? defaultPadding : 0,
+            ),
+            child: CategoryBtn(
+              category: categories[index].name,
+              press: () {
+                if (categories[index].route != null) {
+                  Navigator.pushNamed(context, categories[index].route!);
+                }
+              },
             ),
           ),
-        ],
+        ),
       ),
     );
   }
