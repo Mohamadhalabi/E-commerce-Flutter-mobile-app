@@ -48,12 +48,14 @@ class FlashSale extends StatelessWidget {
               ),
               child: ProductCard(
                 image: demoFlashSaleProducts[index].image,
-                brandName: demoFlashSaleProducts[index].brandName,
+                category: demoFlashSaleProducts[index].category,
                 title: demoFlashSaleProducts[index].title,
                 price: demoFlashSaleProducts[index].price,
                 priceAfetDiscount:
                     demoFlashSaleProducts[index].priceAfterDiscount,
                 dicountpercent: demoFlashSaleProducts[index].discountPercent,
+                sku: "Sku Here",
+                rating: 4.5,
                 press: () {
                   Navigator.pushNamed(context, productDetailsScreenRoute,
                       arguments: index.isEven);

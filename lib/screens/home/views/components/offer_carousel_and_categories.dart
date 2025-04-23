@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-// import '../../../../components/skleton/others/categories_skelton.dart';
-import '../../../../constants.dart';
 import 'offers_carousel.dart';
 import 'categories.dart';
 
@@ -12,16 +10,8 @@ class OffersCarouselAndCategories extends StatelessWidget {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Padding(
-          // padding: EdgeInsets.all(5),
-        // ),
-        Categories(),
-        // While loading use 👇
-        // const OffersSkelton(),
-        // Padding(
-        //   padding: EdgeInsets.only(bottom: 15.0),
-        // ),
         OffersCarousel(),
+        Categories(),
       ],
     );
   }

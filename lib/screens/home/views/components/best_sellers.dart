@@ -40,12 +40,14 @@ class BestSellers extends StatelessWidget {
               ),
               child: ProductCard(
                 image: demoBestSellersProducts[index].image,
-                brandName: demoBestSellersProducts[index].brandName,
+                category: demoBestSellersProducts[index].category,
                 title: demoBestSellersProducts[index].title,
                 price: demoBestSellersProducts[index].price,
                 priceAfetDiscount:
                     demoBestSellersProducts[index].priceAfterDiscount,
                 dicountpercent: demoBestSellersProducts[index].discountPercent,
+                sku: "Sku here",
+                rating: 4.5,
                 press: () {
                   Navigator.pushNamed(context, productDetailsScreenRoute,
                       arguments: index.isEven);

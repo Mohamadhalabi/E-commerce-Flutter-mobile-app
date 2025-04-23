@@ -17,7 +17,7 @@ const productDemoImg6 = "";
 
 // End For demo
 
-const grandisExtendedFont = "Grandis Extended";
+const grandisExtendedFont = "Poppins";
 
 // On color 80, 60.... those means opacity
 
@@ -56,6 +56,8 @@ const Color whileColor5 = Color(0xFF0D0D0D);
 const Color greyColor = Color(0xFFB8B5C3);
 const Color lightGreyColor = Color(0xFFF8F8F9);
 const Color darkGreyColor = Color(0xFF1C1C25);
+const Color greenColor = Color(0xFF556B2F);
+const Color redColor = Color(0xFF892118);
 // const Color greyColor80 = Color(0xFFC6C4CF);
 // const Color greyColor60 = Color(0xFFD4D3DB);
 // const Color greyColor40 = Color(0xFFE3E1E7);
