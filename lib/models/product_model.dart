@@ -2,8 +2,8 @@
 import 'package:shop/constants.dart';
 
 class ProductModel {
-  final String image, brandName, title;
-  final double price;
+  final String image, brandName, title, category, sku;
+  final double price, rating;
   final double? priceAfterDiscount;
   final int? discountPercent;
 
@@ -12,6 +12,9 @@ class ProductModel {
     required this.brandName,
     required this.title,
     required this.price,
+    required this.category,
+    required this.sku,
+    required this.rating,
     this.priceAfterDiscount,
     this.discountPercent,
   });
@@ -27,6 +30,7 @@ class ProductModel {
 
     return ProductModel(
       image: json['image'] ?? "",
+      sku: json['sku'] ?? "",
       brandName: json['brand_name'] ?? "Unknown Brand",
       title: json['title'] ?? "No Title",
       price: parsePrice(json['price']),
@@ -34,6 +38,8 @@ class ProductModel {
           ? parsePrice(json['sale_price'])
           : null,
       discountPercent: json['discount_percent'],
+      category: json['category'] ?? "",
+      rating: json['avg_rating'] ?? 0,
     );
   }
 }
@@ -46,12 +52,18 @@ List<ProductModel> demoPopularProducts = [
     price: 540,
     priceAfterDiscount: 420,
     discountPercent: 20,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg4,
     title: "Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 800,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg5,
@@ -60,6 +72,9 @@ List<ProductModel> demoPopularProducts = [
     price: 650.62,
     priceAfterDiscount: 390.36,
     discountPercent: 40,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg6,
@@ -68,6 +83,9 @@ List<ProductModel> demoPopularProducts = [
     price: 1264,
     priceAfterDiscount: 1200.8,
     discountPercent: 5,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
@@ -76,6 +94,9 @@ List<ProductModel> demoPopularProducts = [
     price: 650.62,
     priceAfterDiscount: 390.36,
     discountPercent: 40,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
@@ -84,6 +105,9 @@ List<ProductModel> demoPopularProducts = [
     price: 1264,
     priceAfterDiscount: 1200.8,
     discountPercent: 5,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
 ];
 List<ProductModel> demoFlashSaleProducts = [
@@ -94,6 +118,9 @@ List<ProductModel> demoFlashSaleProducts = [
     price: 650.62,
     priceAfterDiscount: 390.36,
     discountPercent: 40,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg6,
@@ -102,6 +129,9 @@ List<ProductModel> demoFlashSaleProducts = [
     price: 1264,
     priceAfterDiscount: 1200.8,
     discountPercent: 5,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg4,
@@ -110,6 +140,9 @@ List<ProductModel> demoFlashSaleProducts = [
     price: 800,
     priceAfterDiscount: 680,
     discountPercent: 15,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
 ];
 List<ProductModel> demoBestSellersProducts = [
@@ -120,6 +153,9 @@ List<ProductModel> demoBestSellersProducts = [
     price: 650.62,
     priceAfterDiscount: 390.36,
     discountPercent: 40,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
@@ -128,6 +164,9 @@ List<ProductModel> demoBestSellersProducts = [
     price: 1264,
     priceAfterDiscount: 1200.8,
     discountPercent: 5,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: productDemoImg4,
@@ -136,6 +175,9 @@ List<ProductModel> demoBestSellersProducts = [
     price: 800,
     priceAfterDiscount: 680,
     discountPercent: 15,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
 ];
 List<ProductModel> kidsProducts = [
@@ -146,18 +188,27 @@ List<ProductModel> kidsProducts = [
     price: 650.62,
     priceAfterDiscount: 590.36,
     discountPercent: 24,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
     title: "Printed Sleeveless Tiered Swing Dress",
     brandName: "Lipsy london",
     price: 650.62,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
     title: "Ruffle-Sleeve Ponte-Knit Sheath ",
     brandName: "Lipsy london",
     price: 400,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
@@ -166,17 +217,26 @@ List<ProductModel> kidsProducts = [
     price: 400,
     priceAfterDiscount: 360,
     discountPercent: 20,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
     title: "Printed Sleeveless Tiered Swing Dress",
     brandName: "Lipsy london",
     price: 654,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
   ProductModel(
     image: "",
     title: "Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 250,
+    category: "",
+    sku: "Sku HERE",
+    rating: 4.5,
   ),
 ];

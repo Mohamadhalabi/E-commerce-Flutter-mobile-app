@@ -20,31 +20,31 @@ class HomeScreen extends StatelessWidget {
         child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(child: OffersCarouselAndCategories()),
-            // const SliverToBoxAdapter(child: const PopularProducts()),
+            const SliverToBoxAdapter(child: PopularProducts()),
             // const SliverPadding(
             //   padding: EdgeInsets.symmetric(vertical: defaultPadding * 1.5),
             //   sliver: SliverToBoxAdapter(child: FlashSale()),
             // ),
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  // While loading use 👇
-                  // const BannerMSkelton(),
-                  BannerSStyle1(
-                    title: "New \narrival",
-                    subtitle: "SPECIAL OFFER",
-                    discountParcent: 50,
-                    press: () {
-                      Navigator.pushNamed(context, onSaleScreenRoute);
-                    },
-                  ),
-                  const SizedBox(height: defaultPadding / 4),
-                  // We have 4 banner styles, all in the pro version
-                ],
-              ),
-            ),
-            const SliverToBoxAdapter(child: BestSellers()),
-            const SliverToBoxAdapter(child: MostPopular()),
+            // SliverToBoxAdapter(
+            //   child: Column(
+            //     children: [
+            //       // While loading use 👇
+            //       // const BannerMSkelton(),
+            //       BannerSStyle1(
+            //         title: "New \narrival",
+            //         subtitle: "SPECIAL OFFER",
+            //         discountParcent: 50,
+            //         press: () {
+            //           Navigator.pushNamed(context, onSaleScreenRoute);
+            //         },
+            //       ),
+            //       const SizedBox(height: defaultPadding / 4),
+            //       // We have 4 banner styles, all in the pro version
+            //     ],
+            //   ),
+            // ),
+            // const SliverToBoxAdapter(child: BestSellers()),
+            // const SliverToBoxAdapter(child: MostPopular()),
             SliverToBoxAdapter(
               child: Column(
                 children: [
