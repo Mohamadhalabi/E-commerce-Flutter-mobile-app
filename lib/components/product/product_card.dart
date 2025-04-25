@@ -88,33 +88,34 @@ class ProductCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: defaultPadding / 2, vertical: defaultPadding / 2),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Text(
-                  //   sku.toUpperCase(),
-                  //   textAlign: TextAlign.center,
-                  //   style: const TextStyle(
-                  //     fontSize: 13,
-                  //     color: greenColor,
-                  //     fontWeight: FontWeight.w600,
-                  //   ),
-                  // ),
+                  const SizedBox(height: defaultPadding / 2),
+                  Center(
+                    child: Text(
+                      category,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: whileColor60,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   const SizedBox(height: defaultPadding / 2),
                   Text(
-                    category,
-                    maxLines: 1,
+                    sku,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: whileColor60,
+                      color: greenColor,
+                      fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: defaultPadding / 2),
                   Text(
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    // textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall!
@@ -122,7 +123,6 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
-                    // mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
                       if (index < rating.floor()) {
                         return const Icon(Icons.star, color: Colors.amber, size: 14);
@@ -133,12 +133,10 @@ class ProductCard extends StatelessWidget {
                       }
                     }),
                   ),
-                  // const Spacer(),
                   const SizedBox(height: defaultPadding / 2),
                   // ... price section continues here
                   priceAfetDiscount != null
                       ? Row(
-                    // mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         "\$$priceAfetDiscount",
@@ -167,7 +165,6 @@ class ProductCard extends StatelessWidget {
                       fontSize: 12,
                     ),
                   ),
-                  // const SizedBox(height: 4),
                   const Spacer(),
                   /// 🛒 Add to Cart button here
                   SizedBox(

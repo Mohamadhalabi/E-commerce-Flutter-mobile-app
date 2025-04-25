@@ -47,3 +47,20 @@ app.*.map.json
 
 # Ignore .env files
 .env
+
+# Android NDK / CMake / Gradle generated files
+**/android/.gradle/
+**/android/app/.cxx/
+**/android/app/intermediates/
+**/android/app/build/
+**/android/build/
+**/android/app/.externalNativeBuild/
+**/android/.idea/
+
+# Ninja & Gradle wrapper files
+**/android/**/build.ninja
+**/android/**/additional_project_files.txt
+**/android/**/gradle_build_output.json
+**/android/**/gradle_build_output.xml
+**/android/**/cmake-build-debug/
+**/android/**/cmake-build-release/

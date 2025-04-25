@@ -5,17 +5,20 @@ import '../../../../constants.dart';
 
 class CategoryModel {
   final String name;
+  final String image;
   final String? route;
 
   CategoryModel({
     required this.name,
+    required this.image,
     this.route,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
       name: json['name'],
-      route: null,
+      image: json['icon'] ?? 'https://dev-srv.tlkeys.com/storage/AAAA/180x180.jpg',
+      route: json['slug'],
     );
   }
 }
@@ -41,7 +44,6 @@ class _CategoriesState extends State<Categories> {
     try {
       final response = await apiClient.get('/get-categories');
       final List data = response['categories'] ?? [];
-
       setState(() {
         categories = data.map((item) => CategoryModel.fromJson(item)).toList();
         isLoading = false;
@@ -56,7 +58,7 @@ class _CategoriesState extends State<Categories> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CategoriesSkelton());
+    return const Center(child: CategoriesSkelton());
     }
 
     if (categories.isEmpty) {
@@ -70,19 +72,20 @@ class _CategoriesState extends State<Categories> {
           categories.length,
               (index) => Padding(
             padding: EdgeInsets.only(
-              top: 7.0,
-              bottom: 15.0,
-              left: index == 0 ? defaultPadding : defaultPadding / 2,
+              top: 15.0,
+              // bottom: 15.0,
+              // left: index == 0 ? defaultPadding : defaultPadding / 2,
               right: index == categories.length - 1 ? defaultPadding : 0,
             ),
-            child: CategoryBtn(
-              category: categories[index].name,
-              press: () {
-                if (categories[index].route != null) {
-                  Navigator.pushNamed(context, categories[index].route!);
-                }
-              },
-            ),
+                child: CategoryBtn(
+                  category: categories[index].name,
+                  image: categories[index].image,
+                  press: () {
+                    if (categories[index].route != null) {
+                      Navigator.pushNamed(context, categories[index].route!);
+                    }
+                  },
+                ),
           ),
         ),
       ),
@@ -94,39 +97,54 @@ class CategoryBtn extends StatelessWidget {
   const CategoryBtn({
     super.key,
     required this.category,
+    required this.image,
     required this.press,
   });
 
   final String category;
+  final String image;
   final VoidCallback press;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: press,
-      borderRadius: const BorderRadius.all(Radius.circular(30)),
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          border: Border.all(
-            color: Colors.grey,
+      borderRadius: BorderRadius.circular(15),
+      child: Column(
+        children: [
+          Container(
+            width: 90,
+            height: 90,
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                )
+              ],
+            ),
+            child: Image.network(image, fit: BoxFit.contain),
           ),
-          borderRadius: const BorderRadius.all(Radius.circular(15)),
-        ),
-        child: Row(
-          children: [
-            Text(
+          const SizedBox(height: 6),
+          SizedBox(
+            width: 130,
+            child: Text(
               category,
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyLarge!.color,
+                color: greenColor
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
