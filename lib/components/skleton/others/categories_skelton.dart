@@ -14,12 +14,13 @@ class CategoriesSkelton extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(
-          5,
+          3,
           (_) => const Padding(
-            padding: EdgeInsets.only(left: defaultPadding),
+            padding: EdgeInsets.only(left: defaultPadding, top: defaultPadding),
             child: Skeleton(
-              height: 32,
-              width: 96,
+              height: 90,
+              width: 90,
+              radious: 90,
             ),
           ),
         ),

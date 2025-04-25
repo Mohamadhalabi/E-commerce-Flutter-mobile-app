@@ -7,14 +7,14 @@ import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/api_service.dart';
 import '../../../../constants.dart';
 
-class PopularProducts extends StatefulWidget {
-  const PopularProducts({super.key});
+class NewArrivalProducts extends StatefulWidget {
+  const NewArrivalProducts({super.key});
 
   @override
-  State<PopularProducts> createState() => _PopularProductsState();
+  State<NewArrivalProducts> createState() => _NewArrivalProductsState();
 }
 
-class _PopularProductsState extends State<PopularProducts> {
+class _NewArrivalProductsState extends State<NewArrivalProducts> {
   List<ProductModel> products = [];
   bool isLoading = true;
   String errorMessage = "";
@@ -74,7 +74,7 @@ class _PopularProductsState extends State<PopularProducts> {
           )
         else
           SizedBox(
-            height: 350,
+            height: 370,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: products.length,

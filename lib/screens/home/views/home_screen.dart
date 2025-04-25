@@ -9,7 +9,7 @@ import 'components/best_sellers.dart';
 import 'components/flash_sale.dart';
 import 'components/most_popular.dart';
 import 'components/offer_carousel_and_categories.dart';
-import 'components/popular_products.dart';
+import 'components/new_arrival_products.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
         child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(child: OffersCarouselAndCategories()),
-            const SliverToBoxAdapter(child: PopularProducts()),
+            const SliverToBoxAdapter(child: NewArrivalProducts()),
             // const SliverPadding(
             //   padding: EdgeInsets.symmetric(vertical: defaultPadding * 1.5),
             //   sliver: SliverToBoxAdapter(child: FlashSale()),
