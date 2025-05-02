@@ -42,4 +42,148 @@ class ApiService {
       throw Exception("Error: $e");
     }
   }
+
+  static Future<List<ProductModel>> fetchFlashSaleProducts() async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/products/offer-products';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': 'en',
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        print(jsonResponse); // Add this for debugging
+
+        if (jsonResponse['offer_products'] != null && jsonResponse['offer_products'] is List) {
+          return (jsonResponse['offer_products'] as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+        } else {
+          throw Exception("Invalid API response format for offer_products");
+        }
+      } else {
+        throw Exception("Failed to load offer products");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  static Future<List<ProductModel>> fetchFreeShippingProducts() async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/products/free-shipping';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': 'en',
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['free_shipping'] != null && jsonResponse['free_shipping'] is List) {
+          return (jsonResponse['free_shipping'] as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+        } else {
+          throw Exception("Invalid API response format for free_shipping");
+        }
+      } else {
+        throw Exception("Failed to load offer products");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  static Future<List<ProductModel>> fetchBundleProducts() async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/products/bundle-products';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': 'en',
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['bundle_products'] != null && jsonResponse['bundle_products'] is List) {
+          return (jsonResponse['bundle_products'] as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+        } else {
+          throw Exception("Invalid API response format for bundle_products");
+        }
+      } else {
+        throw Exception("Failed to load Bundle products");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchProductDetails(int id) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/product/$id';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': 'en',
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData['product_data'];
+      } else {
+        throw Exception('Failed to load product');
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
 }

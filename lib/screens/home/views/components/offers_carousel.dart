@@ -27,7 +27,7 @@ class _OffersCarouselState extends State<OffersCarousel> {
 
   Future<void> _fetchSliders() async {
     try {
-      final data = await apiClient.get('/get-sliders'); // assume it's List<dynamic>
+      final data = await apiClient.get('/get-sliders?type=main'); // assume it's List<dynamic>
 
       if (data is List) {
         setState(() {

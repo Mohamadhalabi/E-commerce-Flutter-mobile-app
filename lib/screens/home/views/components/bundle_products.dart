@@ -1,34 +1,33 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/components/skleton/product/products_skelton.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/api_service.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import '../../../../constants.dart';
 
-class NewArrivalProducts extends StatefulWidget {
-  const NewArrivalProducts({super.key});
+class BundleProducts extends StatefulWidget {
+  const BundleProducts({super.key});
 
   @override
-  State<NewArrivalProducts> createState() => _NewArrivalProductsState();
+  State<BundleProducts> createState() => _BundleProductsState();
 }
-
-class _NewArrivalProductsState extends State<NewArrivalProducts> {
+class _BundleProductsState extends State<BundleProducts> {
   List<ProductModel> products = [];
   bool isLoading = true;
   String errorMessage = "";
+  bool isSectionVisible = false;
 
   @override
   void initState() {
     super.initState();
-    fetchProducts();
   }
 
   Future<void> fetchProducts() async {
     try {
-      final response = await ApiService.fetchLatestProducts();
+      final response = await ApiService.fetchBundleProducts();
       setState(() {
         products = response;
         isLoading = false;
@@ -43,42 +42,47 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: defaultPadding / 2),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "New Arrival",
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/new-arrival');
-                },
-                child: const Text("View all"),
-              ),
-            ],
-          ),
-        ),
-        if (isLoading)
-          const Center(child: ProductsSkelton())
-        else if (errorMessage.isNotEmpty)
+    return VisibilityDetector(
+      key: Key('bundle-products-section'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (visibilityInfo.visibleFraction > 0.5 && !isSectionVisible) {
+          setState(() {
+            isSectionVisible = true;
+          });
+          fetchProducts();
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: defaultPadding / 2),
           Padding(
-            padding: const EdgeInsets.all(defaultPadding),
-            child: Text(errorMessage, style: const TextStyle(color: Colors.red)),
-          )
-        else
-          VisibilityDetector(
-            key: Key('new-arrival-products'),
-            onVisibilityChanged: (VisibilityInfo visibilityInfo) {
-              // double visiblePercentage = visibilityInfo.visibleFraction * 100;
-            },
-            child: SizedBox(
+            padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Bundle Products",
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/bundle-products'); // Change to your route
+                  },
+                  child: const Text("View all"),
+                ),
+              ],
+            ),
+          ),
+          if (isLoading)
+            const Center(child: ProductsSkelton())
+          else if (errorMessage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(defaultPadding),
+              child: Text(errorMessage, style: const TextStyle(color: Colors.red)),
+            )
+          else
+            SizedBox(
               height: 370,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -106,7 +110,7 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
                         Navigator.pushNamed(
                           context,
                           productDetailsScreenRoute,
-                          arguments: product.id,
+                          arguments: index.isEven,
                         );
                       },
                     ),
@@ -114,8 +118,8 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
                 },
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

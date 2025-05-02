@@ -1,31 +1,62 @@
 import 'package:flutter/material.dart';
 
 import '../../constants.dart';
-import '../network_image_with_loader.dart';
-
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   const ProductCard({
     super.key,
+    required this.id,
     required this.image,
     required this.category,
     required this.title,
     required this.price,
     required this.rating,
     required this.sku,
-    this.priceAfetDiscount,
+    this.salePrice,
     this.dicountpercent,
+    this.discount,
+    this.freeShipping,
     required this.press,
   });
+
   final String image, category, title, sku;
   final double price, rating;
-  final double? priceAfetDiscount;
-  final int? dicountpercent;
+  final double? salePrice;
+  final Map<String, dynamic>? discount;
+  final int? dicountpercent, id;
+  final bool? freeShipping;
   final VoidCallback press;
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final discount = widget.discount;
     return OutlinedButton(
-      onPressed: press,
+      onPressed: widget.press,
       style: OutlinedButton.styleFrom(
           minimumSize: const Size(160, 160),
           maximumSize: const Size(160, 160),
@@ -50,36 +81,56 @@ class ProductCard extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(defaultBorderRadious),
-                      child: NetworkImageWithLoader(
-                        image,
-                        radius: defaultBorderRadious,
+                      child: Image.network(
+                        widget.image,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
                 ),
 
-                if (dicountpercent != null)
+                if (discount != null &&
+                    discount['type'] != null &&
+                    discount['value'] != null)
                   Positioned(
                     right: defaultPadding / 2,
                     top: defaultPadding / 2,
-                    child: Container(
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: errorColor,
-                        borderRadius: BorderRadius.all(
-                            Radius.circular(defaultBorderRadious)),
-                      ),
-                      child: Text(
-                        "$dicountpercent% off",
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500),
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: defaultPadding / 2),
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: errorColor,
+                          borderRadius: BorderRadius.all(Radius.circular(defaultBorderRadious)),
+                        ),
+                        child: Builder(
+                          builder: (context) {
+                            String label = '';
+                            final String? discountType = discount['type'];
+                            final dynamic discountValue = discount['value'];
+
+                            if (discountType == 'percent') {
+                              double percent = double.tryParse(discountValue.toString()) ?? 0;
+                              label = '${percent.toStringAsFixed(0)}% OFF';
+                            } else if (discountType == 'fixed') {
+                              double fixed = double.tryParse(discountValue.toString()) ?? 0;
+                              label = '\$${fixed.toStringAsFixed(0)} OFF';
+                            }
+
+                            return Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  )
+                  ),
               ],
             ),
           ),
@@ -93,7 +144,7 @@ class ProductCard extends StatelessWidget {
                   const SizedBox(height: defaultPadding / 2),
                   Center(
                     child: Text(
-                      category,
+                      widget.category,
                       maxLines: 1,
                       style: const TextStyle(
                         fontSize: 12,
@@ -104,7 +155,7 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: defaultPadding / 2),
                   Text(
-                    sku,
+                    widget.sku,
                     style: const TextStyle(
                       fontSize: 12,
                       color: greenColor,
@@ -113,7 +164,7 @@ class ProductCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   Text(
-                    title,
+                    widget.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context)
@@ -124,9 +175,9 @@ class ProductCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: List.generate(5, (index) {
-                      if (index < rating.floor()) {
+                      if (index < widget.rating.floor()) {
                         return const Icon(Icons.star, color: Colors.amber, size: 14);
-                      } else if (index < rating && rating - index >= 0.5) {
+                      } else if (index < widget.rating && widget.rating - index >= 0.5) {
                         return const Icon(Icons.star_half, color: Colors.amber, size: 14);
                       } else {
                         return const Icon(Icons.star_border, color: Colors.amber, size: 14);
@@ -135,36 +186,84 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: defaultPadding / 2),
                   // ... price section continues here
-                  priceAfetDiscount != null
-                      ? Row(
-                    children: [
-                      Text(
-                        "\$$priceAfetDiscount",
-                        style: const TextStyle(
-                          color: Color(0xFFF52020),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(width: defaultPadding / 4),
-                      Text(
-                        "\$$price",
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium!.color,
-                          fontSize: 14,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                    ],
-                  )
-                      : Text(
-                    "\$$price",
-                    style: const TextStyle(
-                      color: Color(0xFFF52020),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      double finalPrice = widget.price;
+                      String? discountType = discount?['type'];
+                      dynamic discountValue = discount?['value'];
+
+                      if (discount != null && discountType != null && discountValue != null) {
+                        if (discountType == 'fixed') {
+                          finalPrice = widget.price - double.tryParse(discountValue.toString())!;
+                        } else if (discountType == 'percent') {
+                          finalPrice = widget.price - (widget.price * (double.tryParse(discountValue.toString())! / 100));
+                        }
+                      }
+
+                      bool isStandardDiscount = discountType == 'fixed' || discountType == 'percent';
+                      bool showSalePriceInstead = !isStandardDiscount && widget.salePrice != null;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isStandardDiscount)
+                            Row(
+                              children: [
+                                Text(
+                                  "\$${finalPrice.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    color: Color(0xFFF52020),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: defaultPadding / 4),
+                                Text(
+                                  "\$${widget.price.toStringAsFixed(2)}",
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium!.color,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else if (showSalePriceInstead)
+                            Row(
+                              children: [
+                                Text(
+                                  "\$${widget.salePrice!.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    color: Color(0xFFF52020),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: defaultPadding / 4),
+                                Text(
+                                  "\$${widget.price.toStringAsFixed(2)}",
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium!.color,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Text(
+                              "\$${widget.price.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Color(0xFFF52020),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
+
                   const Spacer(),
                   /// 🛒 Add to Cart button here
                   SizedBox(
