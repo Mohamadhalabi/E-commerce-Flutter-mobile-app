@@ -91,7 +91,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ],
             ),
-            // ProductImages(images: product['images']), // Replace with actual data
+            ProductImages(
+              images: (product?['gallery'] as List<dynamic>?)
+                  ?.map((item) => item['s']['url'] as String)
+                  .toList() ?? [],
+            ),
             ProductInfo(
               category: product!['category'] ?? "Unknown Category",
               title: product!['title'] ?? "Unknown Title",
