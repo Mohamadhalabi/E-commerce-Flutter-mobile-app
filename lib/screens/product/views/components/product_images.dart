@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/components/network_image_with_loader.dart';
 
 import '../../../../constants.dart';
+import 'image_gallery_modal.dart';
 
 class ProductImages extends StatefulWidget {
   const ProductImages({
@@ -32,7 +33,21 @@ class _ProductImagesState extends State<ProductImages> {
     _controller.dispose();
     super.dispose();
   }
-
+  void _openImageModal(int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(10),
+          backgroundColor: Colors.transparent,
+          child: ImageGalleryModal(
+            images: widget.images,
+            initialIndex: initialIndex,
+          ),
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
@@ -49,43 +64,65 @@ class _ProductImagesState extends State<ProductImages> {
               },
               itemCount: widget.images.length,
               itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(right: defaultPadding),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(defaultBorderRadious * 2),
+                padding: const EdgeInsets.all(20.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: NetworkImageWithLoader(widget.images[index]),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(defaultBorderRadious * 2),
+                    ),
+                    child: GestureDetector(
+                      onTap: () => _openImageModal(index),
+                      child: NetworkImageWithLoader(widget.images[index]),
+                    ),
+                  ),
                 ),
               ),
+
             ),
             if (widget.images.length > 1)
               Positioned(
                 height: 20,
-                bottom: 24,
-                right: MediaQuery.of(context).size.width * 0.15,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: defaultPadding * 0.75,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.all(Radius.circular(50)),
-                  ),
-                  child: Row(
-                    children: List.generate(
-                      widget.images.length,
-                      (index) => Padding(
-                        padding: EdgeInsets.only(
-                            right: index == (widget.images.length - 1)
-                                ? 0
-                                : defaultPadding / 4),
-                        child: CircleAvatar(
-                          radius: 3,
-                          backgroundColor: Theme.of(context)
-                              .textTheme
-                              .bodyLarge!
-                              .color!
-                              .withOpacity(index == _currentPage ? 1 : 0.2),
+                bottom: 1,
+                left: 0,
+                right: 0,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: defaultPadding * 0.75,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: const BorderRadius.all(Radius.circular(50)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Important to keep row compact
+                      children: List.generate(
+                        widget.images.length,
+                            (index) => Padding(
+                          padding: EdgeInsets.only(
+                              right: index == (widget.images.length - 1)
+                                  ? 0
+                                  : defaultPadding / 4),
+                          child: CircleAvatar(
+                            radius: 3,
+                            backgroundColor: Theme.of(context)
+                                .textTheme
+                                .bodyLarge!
+                                .color!
+                                .withOpacity(index == _currentPage ? 1 : 0.2),
+                          ),
                         ),
                       ),
                     ),
