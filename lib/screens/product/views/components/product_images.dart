@@ -51,11 +51,11 @@ class _ProductImagesState extends State<ProductImages> {
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Stack(
-          children: [
-            PageView.builder(
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: PageView.builder(
               controller: _controller,
               onPageChanged: (pageNum) {
                 setState(() {
@@ -68,14 +68,6 @@ class _ProductImagesState extends State<ProductImages> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.all(
@@ -88,49 +80,34 @@ class _ProductImagesState extends State<ProductImages> {
                   ),
                 ),
               ),
-
             ),
-            if (widget.images.length > 1)
-              Positioned(
-                height: 20,
-                bottom: 1,
-                left: 0,
-                right: 0,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: defaultPadding * 0.75,
-                    ),
+          ),
+          if (widget.images.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.images.length,
+                      (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: index == _currentPage ? 10 : 6,
+                    height: 6,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.all(Radius.circular(50)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min, // Important to keep row compact
-                      children: List.generate(
-                        widget.images.length,
-                            (index) => Padding(
-                          padding: EdgeInsets.only(
-                              right: index == (widget.images.length - 1)
-                                  ? 0
-                                  : defaultPadding / 4),
-                          child: CircleAvatar(
-                            radius: 3,
-                            backgroundColor: Theme.of(context)
-                                .textTheme
-                                .bodyLarge!
-                                .color!
-                                .withOpacity(index == _currentPage ? 1 : 0.2),
-                          ),
-                        ),
-                      ),
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyLarge!
+                          .color!
+                          .withOpacity(index == _currentPage ? 1 : 0.3),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
-              )
-          ],
-        ),
+              ),
+            ),
+          const Divider(thickness: 0.1, color: Colors.grey),
+        ],
       ),
     );
   }
