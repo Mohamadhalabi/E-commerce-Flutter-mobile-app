@@ -4,6 +4,7 @@ import 'package:shop/components/buy_full_ui_kit.dart';
 import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/product/product_card.dart';
+import 'package:shop/components/skleton/skelton.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/screens/product/views/product_returns_screen.dart';
 import 'package:shop/route/screen_export.dart';
@@ -52,7 +53,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: Skeleton()),
       );
     }
 
@@ -63,6 +64,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     return Scaffold(
+
       bottomNavigationBar: CartButton(
         price: (product!['price'] is int)
             ? (product!['price'] as int).toDouble()
@@ -93,7 +95,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
             ProductImages(
               images: (product?['gallery'] as List<dynamic>?)
-                  ?.map((item) => item['s']['url'] as String)
+                  ?.map((item) => item as String)
                   .toList() ?? [],
             ),
             ProductInfo(
