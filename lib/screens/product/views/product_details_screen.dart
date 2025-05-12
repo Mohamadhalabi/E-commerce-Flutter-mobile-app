@@ -8,6 +8,8 @@ import 'package:shop/components/skleton/skelton.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/screens/product/views/product_returns_screen.dart';
 import 'package:shop/route/screen_export.dart';
+import '../../../components/common/app_bar.dart';
+import '../../../components/common/drawer.dart';
 import '../../../models/product_model.dart';
 import '../../../services/api_service.dart';
 import 'components/notify_me_card.dart';
@@ -64,7 +66,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     return Scaffold(
-
+      appBar: const CustomAppBar(),
+      endDrawer: const CustomEndDrawer(),
       bottomNavigationBar: CartButton(
         price: (product!['price'] is int)
             ? (product!['price'] as int).toDouble()
