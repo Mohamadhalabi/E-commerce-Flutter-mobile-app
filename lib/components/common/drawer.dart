@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class CustomEndDrawer extends StatelessWidget {
-  const CustomEndDrawer({super.key});
+  final Function(String) onLocaleChange;
+
+  const CustomEndDrawer({super.key, required this.onLocaleChange});
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +15,20 @@ class CustomEndDrawer extends StatelessWidget {
             decoration: BoxDecoration(color: Theme.of(context).primaryColor),
             child: const Text('Drawer Header', style: TextStyle(color: Colors.white)),
           ),
-          ListTile(title: const Text('Item 1'), onTap: () {}),
-          ListTile(title: const Text('Item 2'), onTap: () {}),
+          ListTile(
+            title: const Text('🇬🇧 English'),
+            onTap: () {
+              onLocaleChange('en');
+              Navigator.of(context).pop();
+            },
+          ),
+          ListTile(
+            title: const Text('🇸🇦 العربية'),
+            onTap: () {
+              onLocaleChange('ar');
+              Navigator.of(context).pop();
+            },
+          ),
         ],
       ),
     );

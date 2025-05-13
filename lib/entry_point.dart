@@ -7,7 +7,9 @@ import 'components/common/app_bar.dart';
 import 'components/common/drawer.dart';
 
 class EntryPoint extends StatefulWidget {
-  const EntryPoint({super.key});
+  final Function(String) onLocaleChange;
+
+  const EntryPoint({super.key, required this.onLocaleChange});
 
   @override
   State<EntryPoint> createState() => _EntryPointState();
@@ -30,16 +32,16 @@ class _EntryPointState extends State<EntryPoint> {
         src,
         height: 24,
         colorFilter: ColorFilter.mode(
-          color ??
-              Theme.of(context).iconTheme.color!.withOpacity(
-                  Theme.of(context).brightness == Brightness.dark ? 0.3 : 1),
+          color ?? Theme.of(context).iconTheme.color!.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.3 : 1),
           BlendMode.srcIn,
         ),
       );
     }
+
     return Scaffold(
       appBar: const CustomAppBar(),
-      endDrawer: const CustomEndDrawer(),
+      endDrawer: CustomEndDrawer(onLocaleChange: widget.onLocaleChange),
       body: PageTransitionSwitcher(
         duration: defaultDuration,
         transitionBuilder: (child, animation, secondAnimation) {

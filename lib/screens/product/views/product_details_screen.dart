@@ -20,8 +20,8 @@ import '../../../components/review_card.dart';
 import 'product_buy_now_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
-  const ProductDetailsScreen({super.key, required this.productId});
-
+  const ProductDetailsScreen({super.key, required this.productId, required this.onLocaleChange});
+  final Function(String) onLocaleChange;
   final int productId;
 
   @override
@@ -67,7 +67,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     return Scaffold(
       appBar: const CustomAppBar(),
-      endDrawer: const CustomEndDrawer(),
+      endDrawer: CustomEndDrawer(onLocaleChange: widget.onLocaleChange),
       bottomNavigationBar: CartButton(
         price: (product!['price'] is int)
             ? (product!['price'] as int).toDouble()
@@ -100,6 +100,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               images: (product?['gallery'] as List<dynamic>?)
                   ?.map((item) => item as String)
                   .toList() ?? [],
+              isBestSeller: product?['is_best_seller'] == 1,
             ),
             ProductInfo(
               category: product!['category'] ?? "Unknown Category",

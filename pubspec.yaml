@@ -22,6 +22,10 @@ dependencies:
   url_launcher: ^6.3.0
   http: any
   flutter_dotenv: ^5.2.1
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
+  shared_preferences: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -31,7 +35,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  generate: true
   assets:
     - assets/images/
     - assets/icons/
