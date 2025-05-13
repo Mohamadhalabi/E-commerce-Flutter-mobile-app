@@ -133,7 +133,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (context) {
           // bool isProductAvailable = settings.arguments as bool? ?? true;
           final int productId = settings.arguments as int;
-          return ProductDetailsScreen(productId: productId,);
+          return ProductDetailsScreen(
+            productId: productId,
+            onLocaleChange: (locale) {
+            // TODO: Implement actual locale change logic
+            print("Locale changed to: $locale");
+            },
+          );
         },
       );
     case productReviewsScreenRoute:
@@ -186,7 +192,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case entryPointScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const EntryPoint(),
+        builder: (context) => EntryPoint(
+          onLocaleChange: (locale) {
+            // TODO: Implement actual locale change logic
+            print("Locale changed to: $locale");
+            // You may call setState or use a localization provider here
+          },
+        ),
       );
     case profileScreenRoute:
       return MaterialPageRoute(

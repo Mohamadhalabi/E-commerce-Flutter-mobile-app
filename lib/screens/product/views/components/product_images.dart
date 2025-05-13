@@ -3,14 +3,17 @@ import '/components/network_image_with_loader.dart';
 
 import '../../../../constants.dart';
 import 'image_gallery_modal.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ProductImages extends StatefulWidget {
   const ProductImages({
     super.key,
     required this.images,
+    this.isBestSeller = false,
   });
 
   final List<String> images;
+  final bool isBestSeller;
 
   @override
   State<ProductImages> createState() => _ProductImagesState();
@@ -75,8 +78,33 @@ class _ProductImagesState extends State<ProductImages> {
                     ),
                     child: GestureDetector(
                       onTap: () => _openImageModal(index),
-                      child: NetworkImageWithLoader(widget.images[index]),
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          NetworkImageWithLoader(widget.images[index]),
+                          if (widget.isBestSeller)
+                            Positioned(
+                              top: 10,
+                              left: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  AppLocalizations.of(context)!.bestSeller,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
+
                   ),
                 ),
               ),
