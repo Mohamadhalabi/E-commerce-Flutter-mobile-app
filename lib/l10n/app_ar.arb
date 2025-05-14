@@ -3,5 +3,15 @@
   "@helloWorld": {
     "description": "The conventional newborn programmer greeting"
   },
-  "bestSeller": "الأكثر مبيعًا"
+  "bestSeller": "الأكثر مبيعًا",
+  "drawerHeader": "رأس القائمة",
+  "language": "اللغة",
+  "english": "الإنجليزية",
+  "arabic": "العربية",
+  "spanish": "الإسبانية",
+  "newArrival": "وصل حديثًا",
+  "viewAll": "عرض الكل",
+  "specialOffer": "عرض خاص",
+  "freeShipping": "شحن مجاني",
+  "bundleProducts": "منتجات مجمعة"
 }

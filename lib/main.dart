@@ -8,6 +8,8 @@ import 'package:shop/theme/app_theme.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/router.dart' as router;
 
+import "controllers/locale_controller.dart";
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -25,12 +27,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  static void Function(String)? updateLocale;
+
   Locale? _locale;
 
   @override
   void initState() {
     super.initState();
     _loadLocale();
+    LocaleController.updateLocale = _setLocale;
   }
 
   Future<void> _loadLocale() async {

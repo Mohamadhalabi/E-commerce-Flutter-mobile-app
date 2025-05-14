@@ -7,6 +7,7 @@ import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/api_service.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import '../../../../constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FreeShippingProducts extends StatefulWidget {
   const FreeShippingProducts({super.key});
@@ -26,10 +27,11 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
     super.initState();
   }
 
-  // Fetch products when the section becomes visible
   Future<void> fetchProducts() async {
+    final locale = Localizations.localeOf(context).languageCode;
+
     try {
-      final response = await ApiService.fetchFreeShippingProducts();
+      final response = await ApiService.fetchFreeShippingProducts(locale);
       setState(() {
         products = response;
         isLoading = false;
@@ -41,6 +43,7 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +67,7 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Free Shipping",
+                  AppLocalizations.of(context)!.freeShipping,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 TextButton(
@@ -72,7 +75,7 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
                     // Navigate or perform desired action
                     Navigator.pushNamed(context, '/free-shipping'); // Change to your route
                   },
-                  child: const Text("View all"),
+                  child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
               ],
             ),

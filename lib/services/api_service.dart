@@ -2,11 +2,59 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/product_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../models/category_model.dart';
 
 class ApiService {
+  static Map<String, String> _buildHeaders(String locale, String apiKey, String secretKey) {
+    return {
+      'Accept-Language': locale,
+      'Content-Type': 'application/json',
+      'currency': 'USD',
+      'Accept': 'application/json',
+      'secret-key': secretKey,
+      'api-key': apiKey,
+    };
+  }
 
-  static Future<List<ProductModel>> fetchLatestProducts() async {
+  static Future<List<CategoryModel>> fetchCategories(String locale) async {
     try {
+      print("categories language");
+      print(locale);
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/get-categories';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': locale,
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final List data = jsonResponse['categories'] ?? [];
+
+        return data.map((item) => CategoryModel.fromJson(item)).toList();
+      } else {
+        throw Exception("Failed to load categories");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  static Future<List<ProductModel>> fetchLatestProducts(String locale) async {
+    try {
+      print("hello it is moe");
+      print(locale);
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
@@ -15,14 +63,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': 'en',
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -43,18 +84,18 @@ class ApiService {
     }
   }
 
-  static Future<List<ProductModel>> fetchFlashSaleProducts() async {
+  static Future<List<Map<String, String>>> fetchSliders(String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
       String secretKey = dotenv.env['SECRET_KEY'] ?? '';
-      String url = '$apiBaseUrl/products/offer-products';
+      String url = '$apiBaseUrl/get-sliders?type=banner';
 
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'Accept-Language': 'en',
+          'Accept-Language': locale,
           'Content-Type': 'application/json',
           'currency': 'USD',
           'Accept': 'application/json',
@@ -65,9 +106,49 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
-        print(jsonResponse); // Add this for debugging
+        if (jsonResponse is List) {
+          return jsonResponse.map<Map<String, String>>((item) {
+            return {
+              'image': item['image'].toString(),
+              'link': item['link'].toString(),
+            };
+          }).toList();
+        } else {
+          throw Exception("Unexpected response format");
+        }
+      } else {
+        throw Exception("Failed to load sliders");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
 
-        if (jsonResponse['offer_products'] != null && jsonResponse['offer_products'] is List) {
+
+  static Future<List<ProductModel>> fetchFlashSaleProducts(String locale) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/products/offer-products';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': locale,
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['offer_products'] != null &&
+            jsonResponse['offer_products'] is List) {
           return (jsonResponse['offer_products'] as List)
               .map((item) => ProductModel.fromJson(item))
               .toList();
@@ -82,7 +163,9 @@ class ApiService {
     }
   }
 
-  static Future<List<ProductModel>> fetchFreeShippingProducts() async {
+
+
+  static Future<List<ProductModel>> fetchFreeShippingProducts(String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -93,7 +176,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'Accept-Language': 'en',
+          'Accept-Language': locale,
           'Content-Type': 'application/json',
           'currency': 'USD',
           'Accept': 'application/json',
@@ -112,14 +195,15 @@ class ApiService {
           throw Exception("Invalid API response format for free_shipping");
         }
       } else {
-        throw Exception("Failed to load offer products");
+        throw Exception("Failed to load free shipping products");
       }
     } catch (e) {
       throw Exception("Error: $e");
     }
   }
 
-  static Future<List<ProductModel>> fetchBundleProducts() async {
+
+  static Future<List<ProductModel>> fetchBundleProducts(String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -130,7 +214,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'Accept-Language': 'en',
+          'Accept-Language': locale,
           'Content-Type': 'application/json',
           'currency': 'USD',
           'Accept': 'application/json',
@@ -141,7 +225,8 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
-        if (jsonResponse['bundle_products'] != null && jsonResponse['bundle_products'] is List) {
+        if (jsonResponse['bundle_products'] != null &&
+            jsonResponse['bundle_products'] is List) {
           return (jsonResponse['bundle_products'] as List)
               .map((item) => ProductModel.fromJson(item))
               .toList();

@@ -31,16 +31,16 @@ class DiscoverScreen extends StatelessWidget {
             // const Expanded(
             //   child: DiscoverCategoriesSkelton(),
             // ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: demoCategories.length,
-                itemBuilder: (context, index) => ExpansionCategory(
-                  svgSrc: demoCategories[index].svgSrc!,
-                  title: demoCategories[index].title,
-                  subCategory: demoCategories[index].subCategories!,
-                ),
-              ),
-            )
+            // Expanded(
+            //   child: ListView.builder(
+            //     itemCount: demoCategories.length,
+            //     itemBuilder: (context, index) => ExpansionCategory(
+            //       svgSrc: demoCategories[index].svgSrc!,
+            //       title: demoCategories[index].title,
+            //       subCategory: demoCategories[index].subCategories!,
+            //     ),
+            //   ),
+            // )
           ],
         ),
       ),
