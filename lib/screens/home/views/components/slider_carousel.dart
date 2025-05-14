@@ -4,7 +4,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import '../../../../components/skleton/others/offers_skelton.dart';
 import '../../../../constants.dart';
 import 'package:shop/components/dot_indicators.dart';
-import '../../../../services/api_initializer.dart';
+import '../../../../services/api_service.dart';
 
 class SliderCarousel extends StatefulWidget {
   const SliderCarousel({super.key});
@@ -28,33 +28,20 @@ class _SliderCarouselState extends State<SliderCarousel> {
   }
 
   Future<void> _fetchSliders() async {
+    final locale = Localizations.localeOf(context).languageCode;
+
     try {
-      final data = await apiClient.get('/get-sliders?type=banner');
-
-      if (data is List) {
-        setState(() {
-          offers = data.map<Map<String, String>>((item) {
-            return {
-              'image': item['image'].toString(),
-              'link': item['link'].toString(),
-            };
-          }).toList();
-          isLoading = false;
-        });
-
-        _startAutoSlide();
-      } else {
-        // if not a list, treat it as empty
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+      final data = await ApiService.fetchSliders(locale);
       setState(() {
+        offers = data;
         isLoading = false;
       });
+      _startAutoSlide();
+    } catch (e) {
+      setState(() => isLoading = false);
     }
   }
+
 
   void _startAutoSlide() {
     if (offers.isEmpty) return;

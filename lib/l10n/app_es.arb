@@ -1,0 +1,17 @@
+{
+  "helloWorld": "¡Hola Mundo!",
+  "@helloWorld": {
+    "description": "El saludo convencional de los programadores principiantes"
+  },
+  "bestSeller": "Más Vendido",
+  "drawerHeader": "Encabezado del Menú",
+  "language": "Idioma",
+  "english": "Inglés",
+  "arabic": "Árabe",
+  "spanish": "Español",
+  "newArrival": "Nuevo Llegado",
+  "viewAll": "Ver Todo",
+  "specialOffer": "Oferta Especial",
+  "freeShipping": "Envío Gratis",
+  "bundleProducts": "Productos en Paquete"
+}

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:visibility_detector/visibility_detector.dart'; // Import visibility_detector package
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/components/skleton/product/products_skelton.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/api_service.dart';
 import '../../../../constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FlashSaleProducts extends StatefulWidget {
   const FlashSaleProducts({super.key});
@@ -21,14 +22,17 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
   String errorMessage = "";
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     fetchProducts();
   }
 
+
   Future<void> fetchProducts() async {
+    final locale = Localizations.localeOf(context).languageCode;
+
     try {
-      final response = await ApiService.fetchFlashSaleProducts();
+      final response = await ApiService.fetchFlashSaleProducts(locale);
       setState(() {
         products = response;
         isLoading = false;
@@ -53,7 +57,7 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Special Offers",
+                AppLocalizations.of(context)!.specialOffer, // Example localization key
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               TextButton(
@@ -61,7 +65,7 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
                   // Navigate or perform desired action
                   Navigator.pushNamed(context, '/discount'); // Change to your route
                 },
-                child: const Text("View all"),
+                child: Text(AppLocalizations.of(context)!.viewAll),
               ),
             ],
           ),

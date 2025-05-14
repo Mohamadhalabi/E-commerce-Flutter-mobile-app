@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
 
 import 'screen_export.dart';
-
+import "package:shop/controllers/locale_controller.dart";
 // Yuo will get 50+ screens and more once you have the full template
 // 🔗 Full template: https://theflutterway.gumroad.com/l/fluttershop
 
@@ -131,13 +131,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case productDetailsScreenRoute:
       return MaterialPageRoute(
         builder: (context) {
-          // bool isProductAvailable = settings.arguments as bool? ?? true;
           final int productId = settings.arguments as int;
           return ProductDetailsScreen(
             productId: productId,
             onLocaleChange: (locale) {
-            // TODO: Implement actual locale change logic
-            print("Locale changed to: $locale");
+              LocaleController.updateLocale?.call(locale);
             },
           );
         },
@@ -194,9 +192,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => EntryPoint(
           onLocaleChange: (locale) {
-            // TODO: Implement actual locale change logic
-            print("Locale changed to: $locale");
-            // You may call setState or use a localization provider here
+            LocaleController.updateLocale?.call(locale);
           },
         ),
       );

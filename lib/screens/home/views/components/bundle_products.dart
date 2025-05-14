@@ -6,6 +6,7 @@ import 'package:shop/models/product_model.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/api_service.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../constants.dart';
 
 class BundleProducts extends StatefulWidget {
@@ -26,8 +27,10 @@ class _BundleProductsState extends State<BundleProducts> {
   }
 
   Future<void> fetchProducts() async {
+    final locale = Localizations.localeOf(context).languageCode;
+
     try {
-      final response = await ApiService.fetchBundleProducts();
+      final response = await ApiService.fetchBundleProducts(locale);
       setState(() {
         products = response;
         isLoading = false;
@@ -62,14 +65,14 @@ class _BundleProductsState extends State<BundleProducts> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Bundle Products",
+                  AppLocalizations.of(context)!.bundleProducts,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/bundle-products'); // Change to your route
                   },
-                  child: const Text("View all"),
+                  child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
               ],
             ),
