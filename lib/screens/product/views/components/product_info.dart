@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
-import 'product_availability_tag.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ProductInfo extends StatelessWidget {
   const ProductInfo({
     super.key,
     required this.title,
     required this.category,
-    // required this.description,
     required this.rating,
     required this.numOfReviews,
-    // required this.isAvailable,
+    required this.summaryName,
   });
 
-  final String title, category;
+  final String title, category, summaryName;
   final double rating;
   final int numOfReviews;
-  // final bool isAvailable;
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +33,19 @@ class ProductInfo extends StatelessWidget {
             const SizedBox(height: defaultPadding / 2),
             Text(
               title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: defaultPadding / 2),
+            Text(
+              summaryName,
               maxLines: 2,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: greenColor, // hex code converted
+              ),
             ),
             const SizedBox(height: defaultPadding),
             Row(
               children: [
-                // ProductAvailabilityTag(isAvailable: isAvailable),
                 const Spacer(),
                 SvgPicture.asset("assets/icons/Star_filled.svg"),
                 const SizedBox(width: defaultPadding / 4),
@@ -49,23 +53,19 @@ class ProductInfo extends StatelessWidget {
                   "$rating ",
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
-                Text("($numOfReviews Reviews)")
+                Text("($numOfReviews ${AppLocalizations.of(context)!.reviews})")
+
               ],
             ),
             const SizedBox(height: defaultPadding),
             Text(
-              "Product info",
+              AppLocalizations.of(context)!.productInfo,
               style: Theme.of(context)
                   .textTheme
                   .titleMedium!
                   .copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: defaultPadding / 2),
-            // Text(
-            //   description,
-            //   style: const TextStyle(height: 1.4),
-            // ),
-            // const SizedBox(height: defaultPadding / 2),
           ],
         ),
       ),
