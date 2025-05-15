@@ -15,7 +15,7 @@ class ApiService {
       'api-key': apiKey,
     };
   }
-
+  // Home Page API
   static Future<List<CategoryModel>> fetchCategories(String locale) async {
     try {
       print("categories language");
@@ -240,8 +240,8 @@ class ApiService {
       throw Exception("Error: $e");
     }
   }
-
-  static Future<Map<String, dynamic>> fetchProductDetails(int id) async {
+  // product details
+  static Future<Map<String, dynamic>> fetchProductDetails(int id, String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -252,7 +252,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'Accept-Language': 'en',
+          'Accept-Language': locale,
           'Content-Type': 'application/json',
           'currency': 'USD',
           'Accept': 'application/json',

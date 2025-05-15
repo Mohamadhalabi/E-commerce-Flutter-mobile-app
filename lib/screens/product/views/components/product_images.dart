@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/components/network_image_with_loader.dart';
-
 import '../../../../constants.dart';
 import 'image_gallery_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -21,13 +20,11 @@ class ProductImages extends StatefulWidget {
 
 class _ProductImagesState extends State<ProductImages> {
   late PageController _controller;
-
   int _currentPage = 0;
 
   @override
   void initState() {
-    _controller =
-        PageController(viewportFraction: 0.9, initialPage: _currentPage);
+    _controller = PageController(viewportFraction: 0.9, initialPage: _currentPage);
     super.initState();
   }
 
@@ -36,6 +33,7 @@ class _ProductImagesState extends State<ProductImages> {
     _controller.dispose();
     super.dispose();
   }
+
   void _openImageModal(int initialIndex) {
     showDialog(
       context: context,
@@ -51,6 +49,7 @@ class _ProductImagesState extends State<ProductImages> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
@@ -73,9 +72,7 @@ class _ProductImagesState extends State<ProductImages> {
                     borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
                   ),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(defaultBorderRadious * 2),
-                    ),
+                    borderRadius: const BorderRadius.all(Radius.circular(defaultBorderRadious * 2)),
                     child: GestureDetector(
                       onTap: () => _openImageModal(index),
                       child: Stack(
@@ -104,7 +101,6 @@ class _ProductImagesState extends State<ProductImages> {
                         ],
                       ),
                     ),
-
                   ),
                 ),
               ),
@@ -112,25 +108,44 @@ class _ProductImagesState extends State<ProductImages> {
           ),
           if (widget.images.length > 1)
             Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.images.length,
-                      (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: index == _currentPage ? 10 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodyLarge!
-                          .color!
-                          .withOpacity(index == _currentPage ? 1 : 0.3),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+              padding: const EdgeInsets.only(top: 10, bottom: 16),
+              child: SizedBox(
+                height: 64,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.images.length,
+                  itemBuilder: (context, index) {
+                    final isActive = index == _currentPage;
+                    return GestureDetector(
+                      onTap: () {
+                        _controller.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isActive ? Colors.orange : Colors.grey.shade300,
+                            width: isActive ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            widget.images[index],
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
