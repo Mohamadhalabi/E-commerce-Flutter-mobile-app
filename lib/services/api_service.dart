@@ -271,4 +271,42 @@ class ApiService {
       throw Exception("Error: $e");
     }
   }
+  // fetch Related Products
+  static Future<List<ProductModel>> fetchRelatedProducts(String locale, int productId) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/products/related-products?product_id=$productId';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': locale,
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['related_products'] != null &&
+            jsonResponse['related_products'] is List) {
+          return (jsonResponse['related_products'] as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+        } else {
+          throw Exception("Invalid API response format for related_products");
+        }
+      } else {
+        throw Exception("Failed to load related products");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
 }

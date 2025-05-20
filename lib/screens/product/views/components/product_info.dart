@@ -12,9 +12,10 @@ class ProductInfo extends StatelessWidget {
     required this.rating,
     required this.numOfReviews,
     required this.summaryName,
+    required this.sku,
   });
 
-  final String title, category, summaryName;
+  final String title, category, summaryName, sku;
   final double rating;
   final int numOfReviews;
 
@@ -32,21 +33,31 @@ class ProductInfo extends StatelessWidget {
             ),
             const SizedBox(height: defaultPadding / 2),
             Text(
+              '${AppLocalizations.of(context)!.sku} $sku',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: greenColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: defaultPadding / 2),
+            Text(
               title,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: defaultPadding / 2),
-            Text(
-              summaryName,
-              maxLines: 2,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: greenColor, // hex code converted
+            if (summaryName.trim().isNotEmpty) ...[
+              Text(
+                summaryName,
+                maxLines: 2,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: greenColor,
+                ),
               ),
-            ),
-            const SizedBox(height: defaultPadding),
+              const SizedBox(height: defaultPadding),
+            ],
             Row(
               children: [
-                const Spacer(),
+                // const Spacer(),
                 SvgPicture.asset("assets/icons/Star_filled.svg"),
                 const SizedBox(width: defaultPadding / 4),
                 Text(

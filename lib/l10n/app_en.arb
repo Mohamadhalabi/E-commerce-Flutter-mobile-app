@@ -15,5 +15,7 @@
    "freeShipping": "Free Shipping",
    "bundleProducts": "Bundle Products",
    "reviews": "Reviews",
-   "productInfo": "Product info"
+   "productInfo": "Product info",
+   "sku": "SKU:",
+   "relatedProducts": "Related Products"
 }

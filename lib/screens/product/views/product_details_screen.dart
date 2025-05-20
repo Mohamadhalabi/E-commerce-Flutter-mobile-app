@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop/components/cart_button.dart';
-import 'package:shop/components/custom_modal_bottom_sheet.dart';
-import 'package:shop/components/product/product_card.dart';
 import 'package:shop/components/skleton/skelton.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/screens/product/views/components/product_attributes.dart';
-import 'package:shop/route/screen_export.dart';
+import 'package:shop/screens/product/views/components/product_faq.dart';
 import '../../../components/common/app_bar.dart';
 import '../../../components/common/drawer.dart';
+import '../../../components/product/related_products.dart';
 import '../../../services/api_service.dart';
 import 'components/expandable_section.dart';
 import 'components/product_images.dart';
 import 'components/product_info.dart';
-import 'components/product_list_tile.dart';
-import '../../../components/review_card.dart';
-// import 'product_buy_now_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -76,14 +72,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Scaffold(
       appBar: const CustomAppBar(),
       endDrawer: CustomEndDrawer(onLocaleChange: widget.onLocaleChange),
-      bottomNavigationBar: CartButton(
-        price: (product!['price'] is int)
-            ? (product!['price'] as int).toDouble()
-            : product!['price'],
-        press: () {
-          // Add action here
-        },
-      ),
+        bottomNavigationBar: CartButton(
+          price: (product!['price'] as num).toDouble(),
+          salePrice: product!['sale_price'] != null
+              ? (product!['sale_price'] as num).toDouble()
+              : null,
+          onAddToCart: () {
+            // TODO: Add to cart logic
+          },
+          onBuyNow: () {
+            // TODO: Buy now logic
+          },
+        ),
       body: SafeArea(
         child: RefreshIndicator(
         onRefresh: fetchProductDetails,
@@ -110,6 +110,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
             ProductInfo(
               category: product!['category'] ?? "Unknown Category",
+              sku: product!['sku'] ?? "Unknown SKU",
               title: product!['title'] ?? "Unknown Title",
               summaryName: product!['summary_name'] ?? "",
               rating: (product!['rating'] as num?)?.toDouble() ?? 0.0,
@@ -176,70 +177,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 },
               ),
             ),
-            // const SliverToBoxAdapter(
-            //   child: Padding(
-            //     padding: EdgeInsets.all(defaultPadding),
-            //     child: ReviewCard(
-            //       rating: 4.3,
-            //       numOfReviews: 128,
-            //       numOfFiveStar: 80,
-            //       numOfFourStar: 30,
-            //       numOfThreeStar: 5,
-            //       numOfTwoStar: 4,
-            //       numOfOneStar: 1,
-            //     ),
-            //   ),
-            // ),
-            // ProductListTile(
-            //   svgSrc: "assets/icons/Chat.svg",
-            //   title: "Reviews",
-            //   isShowBottomBorder: true,
-            //   press: () {
-            //     Navigator.pushNamed(context, productReviewsScreenRoute);
-            //   },
-            // ),
-            // SliverPadding(
-            //   padding: const EdgeInsets.all(defaultPadding),
-            //   sliver: SliverToBoxAdapter(
-            //     child: Text(
-            //       "You may also like",
-            //       style: Theme
-            //           .of(context)
-            //           .textTheme
-            //           .titleSmall!,
-            //     ),
-            //   ),
-            // ),
-            // SliverToBoxAdapter(
-            //   child: SizedBox(
-            //     height: 220,
-            //     child: ListView.builder(
-            //       scrollDirection: Axis.horizontal,
-            //       itemCount: 5,
-            //       itemBuilder: (context, index) =>
-            //           Padding(
-            //             padding: EdgeInsets.only(
-            //                 left: defaultPadding,
-            //                 right: index == 4 ? defaultPadding : 0),
-            //             child: ProductCard(
-            //               id: 11,
-            //               image: productDemoImg2,
-            //               title: "Sleeveless Tiered Dobby Swing Dress",
-            //               category: "LIPSY LONDON",
-            //               price: 24.65,
-            //               // salePrice: index.isEven ? 20.99 : null,
-            //               // dicountpercent: index.isEven ? 25 : null,
-            //               sku: "Sku here",
-            //               rating: 4.5,
-            //               press: () {},
-            //             ),
-            //           ),
-            //     ),
-            //   ),
-            // ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: defaultPadding),
-            )
+
+            //faq section
+            if (product!['faq'] != null && product!['faq'] is List && product!['faq'].isNotEmpty)
+              ExpandableSection(
+                title: "FAQ",
+                initiallyExpanded: false,
+                leadingIcon: Icons.question_answer,
+                child: ProductFaq(
+                  faq: List<List<String>>.from(
+                    (product!['faq'] as List).map((item) => List<String>.from(item)),
+                  ),
+                ),
+              ),
+
+
+            SliverToBoxAdapter(
+              child: RelatedProducts(productId: widget.productId),
+            ),
           ],
          ),
         ),

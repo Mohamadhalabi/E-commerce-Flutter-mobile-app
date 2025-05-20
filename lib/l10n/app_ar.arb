@@ -15,5 +15,7 @@
   "freeShipping": "شحن مجاني",
   "bundleProducts": "منتجات مجمعة",
   "reviews": "مراجعات",
-  "productInfo": "معلومات المنتج"
+  "productInfo": "معلومات المنتج",
+  "sku": "رمز المنتج:",
+  "relatedProducts": "منتجات ذات صلة"
 }

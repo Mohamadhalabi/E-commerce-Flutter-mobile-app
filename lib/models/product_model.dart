@@ -7,6 +7,7 @@ class ProductModel {
   final int? discountPercent, id;
   final bool? freeShipping;
   final Map<String, dynamic>? discount;
+  final List<List<String>> faq;
 
   ProductModel({
     required this.id,
@@ -21,7 +22,9 @@ class ProductModel {
     this.salePrice,
     this.discountPercent,
     this.discount,
+    required this.faq, // Add this line
   });
+
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     // Safely parse price
@@ -51,221 +54,12 @@ class ProductModel {
           ? Map<String, dynamic>.from(json['discount'][0])
           : null,
       freeShipping: json['free_shipping'] == 1 ? true : false,
+      faq: json['faq'] != null
+          ? List<List<String>>.from(
+        (json['faq'] as List).map(
+              (item) => List<String>.from(item),
+        ),
+      ) : [],
     );
   }
 }
-
-List<ProductModel> demoPopularProducts = [
-  ProductModel(
-    id: 11,
-    image: productDemoImg1,
-    title: "Mountain Warehouse for Women",
-    brandName: "Lipsy london",
-    price: 540,
-    salePrice: 420,
-    discountPercent: 20,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg5,
-    title: "FS - Nike Air Max 270 Really React",
-    brandName: "Lipsy london",
-    price: 650.62,
-    salePrice: 390.36,
-    discountPercent: 40,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg6,
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 1264,
-    salePrice: 1200.8,
-    discountPercent: 5,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    salePrice: 390.36,
-    discountPercent: 40,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "white satin corset top",
-    brandName: "Lipsy london",
-    price: 1264,
-    salePrice: 1200.8,
-    discountPercent: 5,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-];
-List<ProductModel> demoFlashSaleProducts = [
-  ProductModel(
-    id: 11,
-    image: productDemoImg5,
-    title: "FS - Nike Air Max 270 Really React",
-    brandName: "Lipsy london",
-    price: 650.62,
-    salePrice: 390.36,
-    discountPercent: 40,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg6,
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 1264,
-    salePrice: 1200.8,
-    discountPercent: 5,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-    salePrice: 680,
-    discountPercent: 15,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-];
-List<ProductModel> demoBestSellersProducts = [
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    salePrice: 390.36,
-    discountPercent: 40,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "white satin corset top",
-    brandName: "Lipsy london",
-    price: 1264,
-    salePrice: 1200.8,
-    discountPercent: 5,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-    salePrice: 680,
-    discountPercent: 15,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-];
-List<ProductModel> kidsProducts = [
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    salePrice: 590.36,
-    discountPercent: 24,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Printed Sleeveless Tiered Swing Dress",
-    brandName: "Lipsy london",
-    price: 650.62,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Ruffle-Sleeve Ponte-Knit Sheath ",
-    brandName: "Lipsy london",
-    price: 400,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Green Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 400,
-    salePrice: 360,
-    discountPercent: 20,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Printed Sleeveless Tiered Swing Dress",
-    brandName: "Lipsy london",
-    price: 654,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-  ProductModel(
-    id: 11,
-    image: "",
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 250,
-    category: "",
-    sku: "Sku HERE",
-    rating: 4.5,
-  ),
-];

@@ -15,5 +15,7 @@
   "freeShipping": "Envío Gratis",
   "bundleProducts": "Productos en Paquete",
   "reviews": "Reseñas",
-  "productInfo": "Información del producto"
+  "productInfo": "Información del producto",
+  "sku": "SKU:",
+  "relatedProducts": "Productos relacionados"
 }

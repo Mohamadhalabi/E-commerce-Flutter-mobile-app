@@ -1,85 +1,115 @@
 import 'package:flutter/material.dart';
-
 import '../constants.dart';
 
 class CartButton extends StatelessWidget {
   const CartButton({
     super.key,
     required this.price,
-    this.title = "Buy Now",
-    this.subTitle = "Unit price",
-    required this.press,
+    this.salePrice,
+    required this.onAddToCart,
+    required this.onBuyNow,
   });
 
   final double price;
-  final String title, subTitle;
-  final VoidCallback press;
+  final double? salePrice;
+  final VoidCallback onAddToCart;
+  final VoidCallback onBuyNow;
 
   @override
   Widget build(BuildContext context) {
+    final isOnSale = salePrice != null && salePrice! < price;
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: defaultPadding, vertical: defaultBorderRadious / 2),
-        child: SizedBox(
-          height: 64,
-          child: Material(
-            color: primaryColor,
-            clipBehavior: Clip.hardEdge,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(
-                Radius.circular(defaultBorderRadious),
-              ),
-            ),
-            child: InkWell(
-              onTap: press,
-              child: Row(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        color: const Color(0xFFE5E5E5),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Price Info
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "\$${price.toStringAsFixed(2)}",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall!
-                                .copyWith(color: Colors.white),
+                  if (isOnSale)
+                    Row(
+                      children: [
+                        Text(
+                          "\$${salePrice!.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            subTitle,
-                            style: const TextStyle(
-                                color: Colors.white54,
-                                fontWeight: FontWeight.w500),
-                          )
-                        ],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "\$${price.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      "\$${price.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      alignment: Alignment.center,
-                      height: double.infinity,
-                      color: Colors.black.withOpacity(0.15),
-                      child: Text(
-                        title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall!
-                            .copyWith(color: Colors.white),
-                      ),
-                    ),
+                  const Text(
+                    "Unit price",
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
                   ),
                 ],
               ),
             ),
-          ),
+
+            // Add to Cart Button
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ElevatedButton(
+                  onPressed: onAddToCart,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text("Add to Cart"),
+                ),
+              ),
+            ),
+
+            // Buy Now Button
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: ElevatedButton(
+                  onPressed: onBuyNow,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text("Buy Now"),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

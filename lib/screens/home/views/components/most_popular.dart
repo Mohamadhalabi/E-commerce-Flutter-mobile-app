@@ -25,34 +25,34 @@ class MostPopular extends StatelessWidget {
         ),
         // While loading use 👇
         // SeconderyProductsSkelton(),
-        SizedBox(
-          height: 114,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            // Find demoPopularProducts on models/ProductModel.dart
-            itemCount: demoPopularProducts.length,
-            itemBuilder: (context, index) => Padding(
-              padding: EdgeInsets.only(
-                left: defaultPadding,
-                right: index == demoPopularProducts.length - 1
-                    ? defaultPadding
-                    : 0,
-              ),
-              child: SecondaryProductCard(
-                image: demoPopularProducts[index].image,
-                brandName: demoPopularProducts[index].brandName,
-                title: demoPopularProducts[index].title,
-                price: demoPopularProducts[index].price,
-                priceAfetDiscount: demoPopularProducts[index].salePrice,
-                dicountpercent: demoPopularProducts[index].discountPercent,
-                press: () {
-                  Navigator.pushNamed(context, productDetailsScreenRoute,
-                      arguments: index.isEven);
-                },
-              ),
-            ),
-          ),
-        )
+        // SizedBox(
+        //   height: 114,
+        //   child: ListView.builder(
+        //     scrollDirection: Axis.horizontal,
+        //     // Find demoPopularProducts on models/ProductModel.dart
+        //     itemCount: demoPopularProducts.length,
+        //     itemBuilder: (context, index) => Padding(
+        //       padding: EdgeInsets.only(
+        //         left: defaultPadding,
+        //         right: index == demoPopularProducts.length - 1
+        //             ? defaultPadding
+        //             : 0,
+        //       ),
+        //       child: SecondaryProductCard(
+        //         image: demoPopularProducts[index].image,
+        //         brandName: demoPopularProducts[index].brandName,
+        //         title: demoPopularProducts[index].title,
+        //         price: demoPopularProducts[index].price,
+        //         priceAfetDiscount: demoPopularProducts[index].salePrice,
+        //         dicountpercent: demoPopularProducts[index].discountPercent,
+        //         press: () {
+        //           Navigator.pushNamed(context, productDetailsScreenRoute,
+        //               arguments: index.isEven);
+        //         },
+        //       ),
+        //     ),
+        //   ),
+        // )
       ],
     );
   }
