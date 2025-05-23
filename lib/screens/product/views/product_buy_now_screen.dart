@@ -25,18 +25,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: CartButton(
-        price: 269.4,
-        title: "Add to cart",
-        subTitle: "Total price",
-        press: () {
-          customModalBottomSheet(
-            context,
-            isDismissible: false,
-            child: const AddedToCartMessageScreen(),
-          );
-        },
-      ),
       body: Column(
         children: [
           Padding(

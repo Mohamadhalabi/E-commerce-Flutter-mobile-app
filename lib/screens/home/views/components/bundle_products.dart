@@ -113,7 +113,7 @@ class _BundleProductsState extends State<BundleProducts> {
                         Navigator.pushNamed(
                           context,
                           productDetailsScreenRoute,
-                          arguments: index.isEven,
+                          arguments: product.id,
                         );
                       },
                     ),

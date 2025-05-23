@@ -102,16 +102,16 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
                       title: product.title,
                       price: product.price,
                       salePrice: product.salePrice,
-                      discount: product.discount,
                       dicountpercent: product.discountPercent,
                       sku: product.sku,
-                      freeShipping: product.freeShipping,
                       rating: product.rating,
+                      discount: product.discount,
+                      freeShipping: product.freeShipping,
                       press: () {
                         Navigator.pushNamed(
                           context,
                           productDetailsScreenRoute,
-                          arguments: index.isEven,
+                          arguments: product.id,
                         );
                       },
                     ),
