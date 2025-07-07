@@ -15,17 +15,29 @@ import 'components/product_info.dart';
 import 'package:flutter_html/flutter_html.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
-  const ProductDetailsScreen({super.key, required this.productId, required this.onLocaleChange});
+  const ProductDetailsScreen({
+    super.key,
+    required this.productId,
+    required this.onLocaleChange,
+  });
+
   final Function(String) onLocaleChange;
   final int productId;
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
+
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Map<String, dynamic>? product;
   bool isLoading = true;
   String? _currentLocale;
+
+  // 🧪 Replace with real user logic
+  Map<String, dynamic>? user = {
+    "name": "Guest User",
+    "email": "guest@example.com",
+  };
 
   @override
   void didChangeDependencies() {
@@ -71,134 +83,136 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     return Scaffold(
       appBar: const CustomAppBar(),
-      endDrawer: CustomEndDrawer(onLocaleChange: widget.onLocaleChange),
-        bottomNavigationBar: CartButton(
-          price: (product!['price'] as num).toDouble(),
-          salePrice: product!['sale_price'] != null
-              ? (product!['sale_price'] as num).toDouble()
-              : null,
-          onAddToCart: () {
-            // TODO: Add to cart logic
-          },
-          onBuyNow: () {
-            // TODO: Buy now logic
-          },
-        ),
+      endDrawer: CustomEndDrawer(
+        onLocaleChange: widget.onLocaleChange,
+        user: user, // ✅ user passed here
+      ),
+      bottomNavigationBar: CartButton(
+        price: (product!['price'] as num).toDouble(),
+        salePrice: product!['sale_price'] != null
+            ? (product!['sale_price'] as num).toDouble()
+            : null,
+        onAddToCart: () {
+          // TODO: Add to cart logic
+        },
+        onBuyNow: () {
+          // TODO: Buy now logic
+        },
+      ),
       body: SafeArea(
         child: RefreshIndicator(
-        onRefresh: fetchProductDetails,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              floating: true,
-              actions: [
-                IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset(
-                    "assets/icons/Bookmark.svg",
-                    color: Theme.of(context).textTheme.bodyLarge!.color,
+          onRefresh: fetchProductDetails,
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                floating: true,
+                actions: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: SvgPicture.asset(
+                      "assets/icons/Bookmark.svg",
+                      color: Theme.of(context).textTheme.bodyLarge!.color,
+                    ),
+                  ),
+                ],
+              ),
+              ProductImages(
+                images: (product?['gallery'] as List<dynamic>?)
+                    ?.map((item) => item as String)
+                    .toList() ??
+                    [],
+                isBestSeller: product?['is_best_seller'] == 1,
+              ),
+              ProductInfo(
+                category: product!['category'] ?? "Unknown Category",
+                sku: product!['sku'] ?? "Unknown SKU",
+                title: product!['title'] ?? "Unknown Title",
+                summaryName: product!['summary_name'] ?? "",
+                rating: (product!['rating'] as num?)?.toDouble() ?? 0.0,
+                numOfReviews: product!['num_of_reviews'] ?? 0,
+              ),
+              if (product!['attributes'].isNotEmpty)
+                ExpandableSection(
+                  title: "Product Attributes",
+                  initiallyExpanded: true,
+                  leadingIcon: Icons.category,
+                  child: ProductAttributes(
+                    attributes: (product!['attributes'] is Map<String, dynamic>)
+                        ? product!['attributes'] as Map<String, dynamic>
+                        : {},
                   ),
                 ),
-              ],
-            ),
-            ProductImages(
-              images: (product?['gallery'] as List<dynamic>?)
-                  ?.map((item) => item as String)
-                  .toList() ?? [],
-              isBestSeller: product?['is_best_seller'] == 1,
-            ),
-            ProductInfo(
-              category: product!['category'] ?? "Unknown Category",
-              sku: product!['sku'] ?? "Unknown SKU",
-              title: product!['title'] ?? "Unknown Title",
-              summaryName: product!['summary_name'] ?? "",
-              rating: (product!['rating'] as num?)?.toDouble() ?? 0.0,
-              numOfReviews: product!['num_of_reviews'] ?? 0,
-            ),
-
-            if(product!['attributes'].isNotEmpty)
-            ExpandableSection(
-              title: "Product Attributes",
-              initiallyExpanded: true,
-              leadingIcon: Icons.category,
-              child: ProductAttributes(
-                attributes: (product!['attributes'] is Map<String, dynamic>)
-                    ? product!['attributes'] as Map<String, dynamic>
-                    : {},
-              ),
-            ),
-
-            ExpandableSection(
-              title: "Product Description",
-              leadingIcon: Icons.description,
-              child: Html(
-                data: product!['description'] ?? "<p>No description available.</p>",
-                style: {
-                  "body": Style(
-                    fontSize: FontSize(13.0),
-                    lineHeight: const LineHeight(1.6),
-                  ),
-                  "p": Style(
-                    color: Colors.black87,
-                    margin: Margins.zero,
-                    padding: HtmlPaddings.zero,
-                  ),
-                  "li": Style(
-                    color: Colors.black87,
-                    margin: Margins.zero,
-                    lineHeight: const LineHeight(2),
-                  ),
-                  "ul": Style(
-                    padding: HtmlPaddings.only(left: 25),
-                  ),
-
-                  "h1": Style(
-                    color: Colors.red,
-                    fontSize: FontSize.xLarge,
-                    padding: HtmlPaddings.only(bottom: 6),
-                    margin: Margins.only(bottom: 8),
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
-                  ),
-                  "h2": Style(
-                    color: Colors.red,
-                    fontSize: FontSize.larger,
-                    padding: HtmlPaddings.only(bottom: 6),
-                    margin: Margins.only(bottom: 8),
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
-                  ),
-                  "h3": Style(
-                    color: Colors.red,
-                    fontSize: FontSize.large,
-                    padding: HtmlPaddings.only(bottom: 6),
-                    margin: Margins.only(bottom: 8),
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
-                  ),
-                },
-              ),
-            ),
-
-            //faq section
-            if (product!['faq'] != null && product!['faq'] is List && product!['faq'].isNotEmpty)
               ExpandableSection(
-                title: "FAQ",
-                initiallyExpanded: false,
-                leadingIcon: Icons.question_answer,
-                child: ProductFaq(
-                  faq: List<List<String>>.from(
-                    (product!['faq'] as List).map((item) => List<String>.from(item)),
-                  ),
+                title: "Product Description",
+                leadingIcon: Icons.description,
+                child: Html(
+                  data: product!['description'] ?? "<p>No description available.</p>",
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(13.0),
+                      lineHeight: const LineHeight(1.6),
+                    ),
+                    "p": Style(
+                      color: Colors.black87,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                    "li": Style(
+                      color: Colors.black87,
+                      margin: Margins.zero,
+                      lineHeight: const LineHeight(2),
+                    ),
+                    "ul": Style(
+                      padding: HtmlPaddings.only(left: 25),
+                    ),
+                    "h1": Style(
+                      color: Colors.red,
+                      fontSize: FontSize.xLarge,
+                      padding: HtmlPaddings.only(bottom: 6),
+                      margin: Margins.only(bottom: 8),
+                      border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                    ),
+                    "h2": Style(
+                      color: Colors.red,
+                      fontSize: FontSize.larger,
+                      padding: HtmlPaddings.only(bottom: 6),
+                      margin: Margins.only(bottom: 8),
+                      border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                    ),
+                    "h3": Style(
+                      color: Colors.red,
+                      fontSize: FontSize.large,
+                      padding: HtmlPaddings.only(bottom: 6),
+                      margin: Margins.only(bottom: 8),
+                      border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                    ),
+                  },
                 ),
               ),
-
-
-            SliverToBoxAdapter(
-              child: RelatedProducts(productId: widget.productId),
-            ),
-          ],
-         ),
+              if (product!['faq'] != null &&
+                  product!['faq'] is List &&
+                  product!['faq'].isNotEmpty)
+                ExpandableSection(
+                  title: "FAQ",
+                  initiallyExpanded: false,
+                  leadingIcon: Icons.question_answer,
+                  child: ProductFaq(
+                    faq: List<List<String>>.from(
+                      (product!['faq'] as List).map((item) => List<String>.from(item)),
+                    ),
+                  ),
+                ),
+              SliverToBoxAdapter(
+                child: RelatedProducts(productId: widget.productId),
+              ),
+            ],
+          ),
         ),
-      )
+      ),
     );
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/route_constants.dart';
-
-import 'components/login_form.dart';
+import 'package:shop/services/auth_service.dart';
+import '../../../components/common/MainScaffold.dart';
+import '../../../entry_point.dart';
+import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,75 +13,93 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isLoading = false;
+  String? error;
+
+  Future<void> _login() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+
+    final success = await AuthService.login(emailController.text, passwordController.text);
+
+    setState(() => isLoading = false);
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EntryPoint(
+            onLocaleChange: (locale) {
+              // Optional: handle locale change after login
+            },
+          ),
+        ),
+      );
+    } else {
+      setState(() => error = 'Invalid email or password.');
+    }
+  }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
-    return Scaffold(
-      body: SingleChildScrollView(
+    return MainScaffold(
+      currentIndex: 4, // or 0 if you want it on home
+      onTabChanged: (index) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EntryPoint(
+              onLocaleChange: (locale) {
+                // Optional: handle locale change after login
+              },
+            ),
+          ),
+        );
+      },
+      onLocaleChange: (locale) {}, // if not needed, pass a dummy function
+      user: null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.asset(
-              "assets/images/login_dark.png",
-              fit: BoxFit.cover,
+            if (error != null)
+              Text(error!, style: const TextStyle(color: Colors.red)),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
-            Padding(
-              padding: const EdgeInsets.all(defaultPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Welcome back!",
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
-                  const Text(
-                    "Log in with your data that you intered during your registration.",
-                  ),
-                  const SizedBox(height: defaultPadding),
-                  LogInForm(formKey: _formKey),
-                  Align(
-                    child: TextButton(
-                      child: const Text("Forgot password"),
-                      onPressed: () {
-                        Navigator.pushNamed(
-                            context, passwordRecoveryScreenRoute);
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    height: size.height > 700
-                        ? size.height * 0.1
-                        : defaultPadding,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            entryPointScreenRoute,
-                            ModalRoute.withName(logInScreenRoute));
-                      }
-                    },
-                    child: const Text("Log in"),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Don't have an account?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, signUpScreenRoute);
-                        },
-                        child: const Text("Sign up"),
-                      )
-                    ],
-                  ),
-                ],
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: isLoading ? null : _login,
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text("Login"),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
               ),
-            )
+              child: const Text("Forgot Password?"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RegisterScreen()),
+              ),
+              child: const Text("Create Account"),
+            ),
           ],
         ),
       ),

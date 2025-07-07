@@ -17,5 +17,12 @@
    "reviews": "Reviews",
    "productInfo": "Product info",
    "sku": "SKU:",
-   "relatedProducts": "Related Products"
+   "relatedProducts": "Related Products",
+   "addToCart": "Add to Cart",
+   "search": "Search",
+   "categoriesSectionTitle": "Categories",
+   "currency": "Currency",
+   "usd": "USD ($)",
+   "eur": "EUR (€)",
+   "turkishLira": "TRY (₺)"
 }

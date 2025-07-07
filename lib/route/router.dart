@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
+import 'package:shop/screens/auth/views/password_recovery_screen.dart';
 
 import 'screen_export.dart';
 import "package:shop/controllers/locale_controller.dart";
@@ -78,7 +79,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case signUpScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const SignUpScreen(),
+        builder: (context) => const RegisterScreen(),
       );
     // case profileSetupScreenRoute:
     //   return MaterialPageRoute(

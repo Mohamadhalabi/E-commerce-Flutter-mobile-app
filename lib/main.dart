@@ -27,8 +27,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static void Function(String)? updateLocale;
-
   Locale? _locale;
 
   @override

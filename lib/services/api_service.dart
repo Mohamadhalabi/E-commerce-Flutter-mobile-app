@@ -18,8 +18,6 @@ class ApiService {
   // Home Page API
   static Future<List<CategoryModel>> fetchCategories(String locale) async {
     try {
-      print("categories language");
-      print(locale);
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
@@ -50,11 +48,41 @@ class ApiService {
       throw Exception("Error: $e");
     }
   }
+  static Future<List<CategoryModel>> fetchBrands(String locale) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/get-brands';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': locale,
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final List data = jsonResponse['brands'] ?? [];
+
+        return data.map((item) => CategoryModel.fromJson(item)).toList();
+      } else {
+        throw Exception("Failed to load categories");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
 
   static Future<List<ProductModel>> fetchLatestProducts(String locale) async {
     try {
-      print("hello it is moe");
-      print(locale);
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';

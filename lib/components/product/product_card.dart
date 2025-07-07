@@ -273,7 +273,7 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                         // Add your add to cart logic here
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: redColor, // Or your theme color
+                        backgroundColor: redColor,
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),

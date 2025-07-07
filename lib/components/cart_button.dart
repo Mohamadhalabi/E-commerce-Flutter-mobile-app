@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CartButton extends StatelessWidget {
   const CartButton({
@@ -21,8 +22,17 @@ class CartButton extends StatelessWidget {
 
     return SafeArea(
       child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2), // Shadow above the container
+            ),
+          ],
+        ),
         padding: const EdgeInsets.all(12),
-        color: const Color(0xFFE5E5E5),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -39,7 +49,7 @@ class CartButton extends StatelessWidget {
                         Text(
                           "\$${salePrice!.toStringAsFixed(2)}",
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.red,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -48,7 +58,7 @@ class CartButton extends StatelessWidget {
                         Text(
                           "\$${price.toStringAsFixed(2)}",
                           style: const TextStyle(
-                            color: Colors.white70,
+                            color: Colors.grey,
                             fontSize: 14,
                             decoration: TextDecoration.lineThrough,
                           ),
@@ -59,15 +69,11 @@ class CartButton extends StatelessWidget {
                     Text(
                       "\$${price.toStringAsFixed(2)}",
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                        color: Colors.red,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  const Text(
-                    "Unit price",
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
-                  ),
                 ],
               ),
             ),
@@ -80,32 +86,13 @@ class CartButton extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onAddToCart,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
+                    backgroundColor: redColor,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text("Add to Cart"),
-                ),
-              ),
-            ),
-
-            // Buy Now Button
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: ElevatedButton(
-                  onPressed: onBuyNow,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text("Buy Now"),
+                  child: Text(AppLocalizations.of(context)!.addToCart),
                 ),
               ),
             ),
