@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
 import 'package:shop/screens/auth/views/password_recovery_screen.dart';
-
+import '../screens/category/sub_category_screen.dart';
 import 'screen_export.dart';
 import "package:shop/controllers/locale_controller.dart";
 // Yuo will get 50+ screens and more once you have the full template
@@ -297,18 +297,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const CartScreen(),
       );
-    // case paymentMethodScreenRoute:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const PaymentMethodScreen(),
-    //   );
-    // case addNewCardScreenRoute:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const AddNewCardScreen(),
-    //   );
-    // case thanksForOrderScreenRoute:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const ThanksForOrderScreen(),
-    //   );
+    case subCategoryScreenRoute:
+      final args = settings.arguments as Map<String, dynamic>;
+      return MaterialPageRoute(
+        builder: (_) => SubCategoryScreen(
+          parentId: args['parentId'],
+          title: args['title'],
+          currentIndex: args['currentIndex'], // pass this
+          user: args['user'],
+          onTabChanged: args['onTabChanged'],
+          onLocaleChange: args['onLocaleChange'],
+        ),
+      );
     default:
       return MaterialPageRoute(
         // Make a screen for undefine

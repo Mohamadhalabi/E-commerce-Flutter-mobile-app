@@ -26,6 +26,7 @@ class MainScaffold extends StatelessWidget {
       drawer: CustomEndDrawer(
         onLocaleChange: onLocaleChange,
         user: user,
+        onTabChanged: onTabChanged!,
       ),
       body: child,
       bottomNavigationBar: CustomBottomNavigationBar(

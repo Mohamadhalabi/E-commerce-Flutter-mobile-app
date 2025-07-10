@@ -84,7 +84,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       appBar: const CustomAppBar(),
       endDrawer: CustomEndDrawer(
         onLocaleChange: widget.onLocaleChange,
-        user: user, // ✅ user passed here
+        user: user,
+        onTabChanged: (int _) {},
       ),
       bottomNavigationBar: CartButton(
         price: (product!['price'] as num).toDouble(),

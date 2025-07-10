@@ -8,6 +8,7 @@ import 'package:shop/models/manufacturer_model.dart';
 import 'package:shop/services/api_service.dart';
 
 import '../../constants.dart';
+import '../../route/route_constants.dart';
 import '../skleton/common/skeleton_circle.dart';
 
 List<CategoryModel>? _cachedCategories;
@@ -18,11 +19,13 @@ String? _cachedLocale;
 class CustomEndDrawer extends StatefulWidget {
   final Function(String) onLocaleChange;
   final Map<String, dynamic>? user;
+  final Function(int) onTabChanged;
 
   const CustomEndDrawer({
     super.key,
     required this.onLocaleChange,
     required this.user,
+    required this.onTabChanged,
   });
 
   @override
@@ -161,6 +164,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                 children: isLoadingCategories
                     ? [_buildLoadingIndicator()]
                     : [_buildGrid(categories.map((cat) => {
+                  'id' : cat.id,
                   'title': cat.name,
                   'image': cat.image,
                   'route': cat.route,
@@ -278,8 +282,19 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
           return GestureDetector(
             onTap: () {
               Navigator.pop(context);
-              if (item['route'] != null) {
-                Navigator.pushNamed(context, item['route']);
+              if (item['id'] != null) {
+                Navigator.pushNamed(
+                  context,
+                  subCategoryScreenRoute,
+                  arguments: {
+                    'parentId': item['id'],
+                    'title': item['title'],
+                    'currentIndex': 0,
+                    'onTabChanged': widget.onTabChanged,
+                    'onLocaleChange': widget.onLocaleChange,
+                    'user': widget.user,
+                  },
+                );
               }
             },
             child: Column(
@@ -311,11 +326,11 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 Text(
                   item['title'] ?? '',
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,
                   ),

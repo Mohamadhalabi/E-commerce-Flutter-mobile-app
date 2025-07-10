@@ -24,7 +24,7 @@ class ApiService {
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
       String secretKey = dotenv.env['SECRET_KEY'] ?? '';
-      String url = '$apiBaseUrl/get-categories';
+      String url = '$apiBaseUrl/get-category';
 
       final response = await http.get(
         Uri.parse(url),
@@ -44,7 +44,7 @@ class ApiService {
 
         return data.map((item) => CategoryModel.fromJson(item)).toList();
       } else {
-        throw Exception("Failed to load categories");
+        throw Exception("Failed to load category");
       }
     } catch (e) {
       throw Exception("Error: $e");
@@ -373,6 +373,37 @@ class ApiService {
       }
     } catch (e) {
       throw Exception("Error: $e");
+    }
+  }
+  // fetch subcategories (using the id of the category)
+  static Future<List<dynamic>> fetchSubcategories(int parentId) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+      final response = await http.get(
+        Uri.parse('$apiBaseUrl/categories/$parentId/subcategories'),
+        headers: {
+          'Accept-Language': 'en', // You can pass locale dynamically if needed
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      } else {
+        throw Exception('Failed to load subcategories: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching subcategories: $e');
+      return [];
     }
   }
 }

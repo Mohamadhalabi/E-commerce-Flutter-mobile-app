@@ -47,7 +47,7 @@ class _CategoriesState extends State<Categories> {
     if (isLoading) return const Center(child: CategoriesSkelton());
 
     if (categories.isEmpty) {
-      return const Center(child: Text("No categories found"));
+      return const Center(child: Text("No category found"));
     }
 
     return SingleChildScrollView(
@@ -90,44 +90,47 @@ class CategoryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: press,
-      borderRadius: BorderRadius.circular(15),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                )
-              ],
-            ),
-            child: Image.network(image, fit: BoxFit.contain),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: 130,
-            child: Text(
-              category,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: greenColor
+    return Material( // ✅ This fixes the "No Material widget" error
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: press,
+        borderRadius: BorderRadius.circular(15),
+        child: Column(
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                  )
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              child: Image.network(image, fit: BoxFit.contain),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 130,
+              child: Text(
+                category,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: greenColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

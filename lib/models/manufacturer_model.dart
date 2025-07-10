@@ -65,7 +65,7 @@ class _BrandsState extends State<Brands> {
     if (isLoading) return const Center(child: CategoriesSkelton());
 
     if (brands.isEmpty) {
-      return const Center(child: Text("No categories found"));
+      return const Center(child: Text("No category found"));
     }
 
     return SingleChildScrollView(

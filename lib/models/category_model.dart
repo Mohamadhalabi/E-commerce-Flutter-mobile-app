@@ -5,11 +5,13 @@ import '../../../../constants.dart';
 import '../screens/home/views/components/categories.dart';
 
 class CategoryModel {
+  final int id;
   final String name;
   final String image;
   final String? route;
 
   CategoryModel({
+    required this.id,
     required this.name,
     required this.image,
     this.route,
@@ -17,6 +19,7 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
+      id: json['id'],
       name: json['name'],
       image: json['icon'] ?? 'https://dev-srv.tlkeys.com/storage/AAAA/180x180.jpg',
       route: json['slug'],
@@ -65,7 +68,7 @@ class _CategoriesState extends State<Categories> {
     if (isLoading) return const Center(child: CategoriesSkelton());
 
     if (categories.isEmpty) {
-      return const Center(child: Text("No categories found"));
+      return const Center(child: Text("No category found"));
     }
 
     return SingleChildScrollView(
