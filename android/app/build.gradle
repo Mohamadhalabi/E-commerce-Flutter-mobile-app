@@ -23,9 +23,9 @@ if (flutterVersionName == null) {
 }
 
 android {
+    ndkVersion = "27.0.12077973"
     namespace "com.example.shop"
     compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21

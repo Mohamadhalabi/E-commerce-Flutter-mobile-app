@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/skleton/skelton.dart';
-import 'package:shop/constants.dart';
 import 'package:shop/screens/product/views/components/product_attributes.dart';
 import 'package:shop/screens/product/views/components/product_faq.dart';
 import '../../../components/common/app_bar.dart';

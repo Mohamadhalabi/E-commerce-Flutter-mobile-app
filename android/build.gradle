@@ -1,3 +1,17 @@
+buildscript {
+    ext {
+        ndkVersion = "27.0.12077973"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.0'
+        // other dependencies
+    }
+}
+
 allprojects {
     repositories {
         google()

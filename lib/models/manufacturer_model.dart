@@ -4,19 +4,19 @@ import 'package:shop/services/api_service.dart';
 import '../../../../constants.dart';
 import '../screens/home/views/components/categories.dart';
 
-class BrandModel {
+class ManufacturerModel {
   final String title;
   final String image;
   final String? slug;
 
-  BrandModel({
+  ManufacturerModel({
     required this.title,
     required this.image,
     this.slug,
   });
 
-  factory BrandModel.fromJson(Map<String, dynamic> json) {
-    return BrandModel(
+  factory ManufacturerModel.fromJson(Map<String, dynamic> json) {
+    return ManufacturerModel(
       title: json['title'],
       image: json['image'] ?? 'https://dev-srv.tlkeys.com/storage/AAAA/180x180.jpg',
       slug: json['slug'],
@@ -32,7 +32,7 @@ class Brands extends StatefulWidget {
 }
 
 class _BrandsState extends State<Brands> {
-  List<BrandModel> brands = [];
+  List<ManufacturerModel> brands = [];
   bool isLoading = true;
   String? _currentLocale;
 
@@ -43,14 +43,14 @@ class _BrandsState extends State<Brands> {
     final newLocale = Localizations.localeOf(context).languageCode;
     if (_currentLocale != newLocale) {
       _currentLocale = newLocale;
-      fetchBrands(_currentLocale!);
+      fetchManufacturers(_currentLocale!);
     }
   }
 
-  Future<void> fetchBrands(String locale) async {
+  Future<void> fetchManufacturers(String locale) async {
     setState(() => isLoading = true);
     try {
-      final response = await ApiService.fetchBrands(locale);
+      final response = await ApiService.fetchManufacturers(locale);
       setState(() {
         brands = response;
         isLoading = false;

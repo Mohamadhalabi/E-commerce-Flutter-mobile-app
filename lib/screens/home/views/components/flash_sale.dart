@@ -81,7 +81,7 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
           VisibilityDetector(
             key: Key('flash-sale-products'), // Unique key for visibility detection
             onVisibilityChanged: (VisibilityInfo visibilityInfo) {
-              double visiblePercentage = visibilityInfo.visibleFraction * 100;
+              // double visiblePercentage = visibilityInfo.visibleFraction * 100;
             },
             child: SizedBox(
               height: 370,

@@ -24,5 +24,7 @@
    "currency": "Currency",
    "usd": "USD ($)",
    "eur": "EUR (€)",
-   "turkishLira": "TRY (₺)"
+   "turkishLira": "TRY (₺)",
+   "manufacturers" : "Manufacturers",
+   "brands" : "Brands"
 }

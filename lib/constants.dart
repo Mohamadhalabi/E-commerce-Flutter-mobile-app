@@ -21,21 +21,23 @@ const grandisExtendedFont = "Poppins";
 
 // On color 80, 60.... those means opacity
 
-const Color primaryColor = Color(0xFF7B61FF);
+const Color primaryColor = Color(0xFFA51517);
 
-const MaterialColor primaryMaterialColor =
-    MaterialColor(0xFF9581FF, <int, Color>{
-  50: Color(0xFFEFECFF),
-  100: Color(0xFFD7D0FF),
-  200: Color(0xFFBDB0FF),
-  300: Color(0xFFA390FF),
-  400: Color(0xFF8F79FF),
-  500: Color(0xFF7B61FF),
-  600: Color(0xFF7359FF),
-  700: Color(0xFF684FFF),
-  800: Color(0xFF5E45FF),
-  900: Color(0xFF6C56DD),
-});
+const MaterialColor primaryMaterialColor = MaterialColor(
+  0xFFA51517,
+  <int, Color>{
+    50: Color(0xFFFFEBEE),
+    100: Color(0xFFFFCDD2),
+    200: Color(0xFFEF9A9A),
+    300: Color(0xFFE57373),
+    400: Color(0xFFEF5350),
+    500: Color(0xFFA51517), // same as base
+    600: Color(0xFFE53935),
+    700: Color(0xFFD32F2F),
+    800: Color(0xFFC62828),
+    900: Color(0xFFB71C1C),
+  },
+);
 
 const Color blackColor = Color(0xFF16161E);
 const Color blackColor80 = Color(0xFF45454B);

@@ -1,4 +1,3 @@
-// lib/components/common/main_scaffold.dart
 import 'package:flutter/material.dart';
 import 'CustomBottomNavigationBar.dart';
 import 'app_bar.dart';

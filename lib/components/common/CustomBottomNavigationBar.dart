@@ -1,4 +1,3 @@
-// lib/components/common/bottom_nav_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
@@ -32,7 +31,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       selectedFontSize: 12,
       selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.transparent,
       backgroundColor: Theme.of(context).brightness == Brightness.light
           ? Colors.white
           : const Color(0xFF101015),

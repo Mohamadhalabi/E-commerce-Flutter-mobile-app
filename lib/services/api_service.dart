@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shop/models/brand_model.dart';
+import 'package:shop/models/manufacturer_model.dart';
 import '../models/product_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/category_model.dart';
@@ -48,13 +50,16 @@ class ApiService {
       throw Exception("Error: $e");
     }
   }
-  static Future<List<CategoryModel>> fetchBrands(String locale) async {
+  static Future<List<BrandModel>> fetchBrands(String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
       String secretKey = dotenv.env['SECRET_KEY'] ?? '';
       String url = '$apiBaseUrl/get-brands';
+
+      print('📡 Calling: $url');
+      print('📥 Headers: Accept-Language=$locale, api-key=$apiKey, secret-key=$secretKey');
 
       final response = await http.get(
         Uri.parse(url),
@@ -72,9 +77,42 @@ class ApiService {
         final jsonResponse = json.decode(response.body);
         final List data = jsonResponse['brands'] ?? [];
 
-        return data.map((item) => CategoryModel.fromJson(item)).toList();
+        return data.map((item) => BrandModel.fromJson(item)).toList();
       } else {
-        throw Exception("Failed to load categories");
+        throw Exception("Failed to load brands");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  static Future<List<ManufacturerModel>> fetchManufacturers(String locale) async {
+    try {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+      String url = '$apiBaseUrl/get-manufacturers';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept-Language': locale,
+          'Content-Type': 'application/json',
+          'currency': 'USD',
+          'Accept': 'application/json',
+          'secret-key': secretKey,
+          'api-key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final List data = jsonResponse['manufacturers'] ?? [];
+
+        return data.map((item) => ManufacturerModel.fromJson(item)).toList();
+      } else {
+        throw Exception("Failed to load manufacturers");
       }
     } catch (e) {
       throw Exception("Error: $e");

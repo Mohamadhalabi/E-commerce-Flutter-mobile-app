@@ -9,21 +9,20 @@ import 'components/bundle_products.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: OffersCarouselAndCategories()),
-            SliverToBoxAdapter(child: NewArrivalProducts()),
-            SliverToBoxAdapter(child: SliderCarousel()),
-            SliverToBoxAdapter(child: FlashSaleProducts()),
-            SliverToBoxAdapter(child: FreeShippingProducts()),
-            SliverToBoxAdapter(child: BannerFetcher()),
-            SliverToBoxAdapter(child: BundleProducts()),
-          ],
-        ),
+    return const SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: OffersCarouselAndCategories()),
+          SliverToBoxAdapter(child: NewArrivalProducts()),
+          SliverToBoxAdapter(child: SliderCarousel()),
+          SliverToBoxAdapter(child: FlashSaleProducts()),
+          SliverToBoxAdapter(child: FreeShippingProducts()),
+          SliverToBoxAdapter(child: BannerFetcher()),
+          SliverToBoxAdapter(child: BundleProducts()),
+        ],
       ),
     );
   }

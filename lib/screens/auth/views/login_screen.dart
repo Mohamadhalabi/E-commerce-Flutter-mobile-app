@@ -45,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return MainScaffold(
       currentIndex: 4, // or 0 if you want it on home
