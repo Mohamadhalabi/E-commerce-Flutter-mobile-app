@@ -13,17 +13,21 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: OffersCarouselAndCategories()),
-          SliverToBoxAdapter(child: NewArrivalProducts()),
-          SliverToBoxAdapter(child: SliderCarousel()),
-          SliverToBoxAdapter(child: FlashSaleProducts()),
-          SliverToBoxAdapter(child: FreeShippingProducts()),
-          SliverToBoxAdapter(child: BannerFetcher()),
-          SliverToBoxAdapter(child: BundleProducts()),
-        ],
+      child: ColoredBox(
+        color: Colors.white, // ⬅️ This ensures the background is white
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: OffersCarouselAndCategories()),
+            SliverToBoxAdapter(child: NewArrivalProducts()),
+            SliverToBoxAdapter(child: SliderCarousel()),
+            SliverToBoxAdapter(child: FlashSaleProducts()),
+            SliverToBoxAdapter(child: FreeShippingProducts()),
+            SliverToBoxAdapter(child: BannerFetcher()),
+            SliverToBoxAdapter(child: BundleProducts()),
+          ],
+        ),
       ),
     );
   }
 }
+

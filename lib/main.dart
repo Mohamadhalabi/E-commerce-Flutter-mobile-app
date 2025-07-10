@@ -7,7 +7,7 @@ import 'package:shop/services/api_initializer.dart';
 import 'package:shop/theme/app_theme.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/router.dart' as router;
-
+import 'package:flutter/services.dart';
 import "controllers/locale_controller.dart";
 
 void main() async {
@@ -15,6 +15,11 @@ void main() async {
 
   await dotenv.load();
   await initApiClient();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   runApp(const MyApp());
 }

@@ -43,7 +43,6 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     final locale = Localizations.localeOf(context).languageCode;
 
     if (_currentLocale != locale) {
@@ -128,155 +127,123 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     final localizations = AppLocalizations.of(context)!;
 
     return Drawer(
-      child: Container(
-        color: const Color(0xFFFBFBFD),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            Container(
-              height: 90,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+      child: SafeArea(
+        child: Container(
+          color: const Color(0xFFFBFBFD),
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 20),
+            children: [
+              Container(
+                height: 90,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 0, 0, 0.1),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/logo/techno-lock-mobile-logo.webp',
+                  height: 70,
+                  fit: BoxFit.contain,
+                ),
               ),
-              child: Image.asset(
-                'assets/logo/techno-lock-mobile-logo.webp',
-                height: 70,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Categories
-            _buildExpansionSection(
-              context,
-              icon: Icons.category,
-              title: localizations.categoriesSectionTitle,
-              children: isLoadingCategories
-                  ? [_buildLoadingIndicator()]
-                  : [
-                _buildGrid(categories.map((cat) => {
+              _buildExpansionSection(
+                context,
+                icon: Icons.category,
+                title: localizations.categoriesSectionTitle,
+                children: isLoadingCategories
+                    ? [_buildLoadingIndicator()]
+                    : [_buildGrid(categories.map((cat) => {
                   'title': cat.name,
                   'image': cat.image,
                   'route': cat.route,
-                }).toList())
-              ],
-            ),
+                }).toList())],
+              ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Manufacturers
-            _buildExpansionSection(
-              context,
-              icon: Icons.precision_manufacturing,
-              title: localizations.manufacturers,
-              children: isLoadingManufacturers
-                  ? [_buildLoadingIndicator()]
-                  : [
-                _buildGrid(manufacturers.map((man) => {
+              _buildExpansionSection(
+                context,
+                icon: Icons.precision_manufacturing,
+                title: localizations.manufacturers,
+                children: isLoadingManufacturers
+                    ? [_buildLoadingIndicator()]
+                    : [_buildGrid(manufacturers.map((man) => {
                   'title': man.title,
                   'image': man.image,
                   'route': '/manufacturers/${man.slug}',
-                }).toList())
-              ],
-            ),
+                }).toList())],
+              ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Brands
-            _buildExpansionSection(
-              context,
-              icon: Icons.branding_watermark_outlined,
-              title: localizations.brands,
-              children: isLoadingBrands
-                  ? [_buildLoadingIndicator()]
-                  : [
-                Container(
-                  margin: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFBFBFD),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildGrid(brands.map((brand) => {
-                      'title': brand.title,
-                      'image': brand.image,
-                      'route': '/brands/${brand.slug}',
-                    }).toList()),
-                  ),
-                ),
-              ],
-            ),
+              _buildExpansionSection(
+                context,
+                icon: Icons.branding_watermark_outlined,
+                title: localizations.brands,
+                children: isLoadingBrands
+                    ? [_buildLoadingIndicator()]
+                    : [
+                  _buildGrid(brands.map((brand) => {
+                    'title': brand.title,
+                    'image': brand.image,
+                    'route': '/brands/${brand.slug}',
+                  }).toList())
+                ],
+              ),
 
+              const SizedBox(height: 12),
 
+              _buildExpansionSection(
+                context,
+                icon: Icons.language,
+                title: localizations.language,
+                children: [
+                  _buildLanguageOption(context, flagAsset: '🇬🇧', label: localizations.english, localeCode: 'en'),
+                  _buildLanguageOption(context, flagAsset: '🇸🇦', label: localizations.arabic, localeCode: 'ar'),
+                  _buildLanguageOption(context, flagAsset: '🇪🇸', label: localizations.spanish, localeCode: 'es'),
+                ],
+              ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Language Selector
-            _buildExpansionSection(
-              context,
-              icon: Icons.language,
-              title: localizations.language,
-              children: [
-                _buildLanguageOption(context,
-                    flagAsset: '🇬🇧',
-                    label: localizations.english,
-                    localeCode: 'en'),
-                _buildLanguageOption(context,
-                    flagAsset: '🇸🇦',
-                    label: localizations.arabic,
-                    localeCode: 'ar'),
-                _buildLanguageOption(context,
-                    flagAsset: '🇪🇸',
-                    label: localizations.spanish,
-                    localeCode: 'es'),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Currency Selector
-            _buildExpansionSection(
-              context,
-              icon: Icons.attach_money,
-              title: 'Currency',
-              children: [
-                ListTile(title: Text(localizations.usd)),
-                ListTile(title: Text(localizations.eur)),
-                ListTile(title: Text(localizations.turkishLira)),
-              ],
-            ),
-          ],
+              _buildExpansionSection(
+                context,
+                icon: Icons.attach_money,
+                title: 'Currency',
+                children: [
+                  ListTile(title: Text(localizations.usd)),
+                  ListTile(title: Text(localizations.eur)),
+                  ListTile(title: Text(localizations.turkishLira)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildExpansionSection(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required List<Widget> children,
-      }) {
+  Widget _buildExpansionSection(BuildContext context,
+      {required IconData icon, required String title, required List<Widget> children}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFFBFBFD),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Color.fromRGBO(0, 0, 0, 0.1),
               blurRadius: 4,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -286,8 +253,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             leading: Icon(icon),
             title: Text(title),
-            iconColor: primaryColor, // only active state will use primaryColor
-            // collapsedIconColor not set, so default will be used
+            iconColor: primaryColor,
             children: children,
           ),
         ),
@@ -296,8 +262,10 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
   }
 
   Widget _buildGrid(List<Map<String, dynamic>> items) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    final double gridHeight = (items.length / 2).ceil() * 170.0;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: gridHeight),
       child: GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,
@@ -305,6 +273,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 0.85,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: items.map((item) {
           return GestureDetector(
             onTap: () {
@@ -316,13 +285,13 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
             child: Column(
               children: [
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Color.fromRGBO(0, 0, 0, 0.1),
                         blurRadius: 6,
-                        offset: const Offset(0, 3),
+                        offset: Offset(0, 3),
                       ),
                     ],
                   ),
@@ -348,7 +317,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey
+                    color: Colors.grey,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
@@ -362,12 +331,8 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     );
   }
 
-  Widget _buildLanguageOption(
-      BuildContext context, {
-        required String flagAsset,
-        required String label,
-        required String localeCode,
-      }) {
+  Widget _buildLanguageOption(BuildContext context,
+      {required String flagAsset, required String label, required String localeCode}) {
     return ListTile(
       leading: Text(flagAsset, style: const TextStyle(fontSize: 20)),
       title: Text(label),
