@@ -7,6 +7,7 @@ class AppConstants {
   static final String apiKey = dotenv.env['API_KEY'] ?? '';
   static final String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 }
+
 // Just for demo
 const productDemoImg1 = "";
 const productDemoImg2 = "";
@@ -14,14 +15,13 @@ const productDemoImg3 = "";
 const productDemoImg4 = "";
 const productDemoImg5 = "";
 const productDemoImg6 = "";
-
 // End For demo
 
 const grandisExtendedFont = "Poppins";
 
 // On color 80, 60.... those means opacity
 
-const Color primaryColor = Color(0xFFA51517);
+const Color primaryColor = Color(0xFFDC2626);
 
 const MaterialColor primaryMaterialColor = MaterialColor(
   0xFFA51517,
@@ -58,8 +58,11 @@ const Color whileColor5 = Color(0xFF0D0D0D);
 const Color greyColor = Color(0xFFB8B5C3);
 const Color lightGreyColor = Color(0xFFF8F8F9);
 const Color darkGreyColor = Color(0xFF1C1C25);
-const Color greenColor = Color(0xFF556B2F);
-const Color redColor = Color(0xFF892118);
+
+// --- UPDATED COLORS FOR PRODUCT CARD ---
+const Color greenColor = Color(0xFF1B5E20); // Updated to match the dark SKU green
+const Color redColor = Color(0xFFD32F2F);   // Updated to match the vivid Price/Button red
+
 // const Color greyColor80 = Color(0xFFC6C4CF);
 // const Color greyColor60 = Color(0xFFD4D3DB);
 // const Color greyColor40 = Color(0xFFE3E1E7);

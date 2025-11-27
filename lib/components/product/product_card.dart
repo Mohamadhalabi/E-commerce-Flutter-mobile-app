@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../constants.dart';
+
 class ProductCard extends StatefulWidget {
   const ProductCard({
     super.key,
@@ -28,258 +30,222 @@ class ProductCard extends StatefulWidget {
   State<ProductCard> createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<ProductCard> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scaleAnimation;
+class _ProductCardState extends State<ProductCard> {
+  late TextEditingController _qtyController;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _qtyController = TextEditingController(text: "1");
   }
+
   @override
   void dispose() {
-    _controller.dispose();
+    _qtyController.dispose();
     super.dispose();
+  }
+
+  void _incrementQuantity() {
+    int current = int.tryParse(_qtyController.text) ?? 1;
+    setState(() {
+      _qtyController.text = (current + 1).toString();
+    });
+  }
+
+  void _decrementQuantity() {
+    int current = int.tryParse(_qtyController.text) ?? 1;
+    if (current > 1) {
+      setState(() {
+        _qtyController.text = (current - 1).toString();
+      });
+    }
+  }
+
+  void _handleManualInput(String value) {
+    if (value.isEmpty) return;
+    int? val = int.tryParse(value);
+    if (val != null && val < 1) {
+      _qtyController.text = "1";
+      _qtyController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _qtyController.text.length),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final discount = widget.discount;
-    return OutlinedButton(
-      onPressed: widget.press,
-      style: OutlinedButton.styleFrom(
-          minimumSize: const Size(160, 160),
-          maximumSize: const Size(160, 160),
-          padding: const EdgeInsets.all(0.2)),
+    return Container(
+      width: 200,
+      decoration: BoxDecoration(
+        color: whiteColor,
+        borderRadius: BorderRadius.circular(defaultBorderRadious),
+        border: Border.all(color: blackColor10),
+        boxShadow: [
+          BoxShadow(
+            color: blackColor.withOpacity(0.05),
+            offset: const Offset(0, 4),
+            blurRadius: 10,
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // Align everything to left
         children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: Stack(
-              children: [
-                Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          offset: const Offset(0, 8), // Only bottom shadow
-                          blurRadius: 15,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(defaultBorderRadious),
-                      child: Image.network(
-                        widget.image,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
+          // 1. Image Section
+          GestureDetector(
+            onTap: widget.press,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(defaultPadding / 2),
+              decoration: const BoxDecoration(
+                color: whiteColor,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(defaultBorderRadious),
                 ),
-
-                if (discount != null &&
-                    discount['type'] != null &&
-                    discount['value'] != null)
-                  Positioned(
-                    right: defaultPadding / 2,
-                    top: defaultPadding / 2,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: errorColor,
-                          borderRadius: BorderRadius.all(Radius.circular(defaultBorderRadious)),
-                        ),
-                        child: Builder(
-                          builder: (context) {
-                            String label = '';
-                            final String? discountType = discount['type'];
-                            final dynamic discountValue = discount['value'];
-
-                            if (discountType == 'percent') {
-                              double percent = double.tryParse(discountValue.toString()) ?? 0;
-                              label = '${percent.toStringAsFixed(0)}% OFF';
-                            } else if (discountType == 'fixed') {
-                              double fixed = double.tryParse(discountValue.toString()) ?? 0;
-                              label = '\$${fixed.toStringAsFixed(0)} OFF';
-                            }
-
-                            return Text(
-                              label,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                border: Border(
+                  bottom: BorderSide(color: blackColor10, width: 1),
+                ),
+              ),
+              child: AspectRatio(
+                aspectRatio: 1.1,
+                child: Image.network(
+                  widget.image,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
+
+          // 2. Details Section
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: defaultPadding / 2, vertical: defaultPadding / 2),
+              padding: const EdgeInsets.all(defaultPadding / 2),
               child: Column(
+                // CHANGED: Aligned to start (Left)
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: defaultPadding / 2),
-                  Center(
-                    child: Text(
-                      widget.category,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: whileColor60,
+
+                  // CHANGED: Category and SKU in same row
+                  Row(
+                    children: [
+                      const SizedBox(width: 6),
+                      // SKU
+                      Text(
+                        widget.sku,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: greenColor, // Green for SKU
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: defaultPadding / 2),
-                  Text(
-                    widget.sku,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: greenColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+
+                  const SizedBox(height: 4),
+
+                  // CHANGED: Title Left Aligned & Increased Height
                   Text(
                     widget.title,
-                    maxLines: 2,
+                    textAlign: TextAlign.left,
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: List.generate(5, (index) {
-                      if (index < widget.rating.floor()) {
-                        return const Icon(Icons.star, color: Colors.amber, size: 14);
-                      } else if (index < widget.rating && widget.rating - index >= 0.5) {
-                        return const Icon(Icons.star_half, color: Colors.amber, size: 14);
-                      } else {
-                        return const Icon(Icons.star_border, color: Colors.amber, size: 14);
-                      }
-                    }),
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
-                  // ... price section continues here
-                  Builder(
-                    builder: (context) {
-                      double finalPrice = widget.price;
-                      String? discountType = discount?['type'];
-                      dynamic discountValue = discount?['value'];
-
-                      if (discount != null && discountType != null && discountValue != null) {
-                        if (discountType == 'fixed') {
-                          finalPrice = widget.price - double.tryParse(discountValue.toString())!;
-                        } else if (discountType == 'percent') {
-                          finalPrice = widget.price - (widget.price * (double.tryParse(discountValue.toString())! / 100));
-                        }
-                      }
-
-                      bool isStandardDiscount = discountType == 'fixed' || discountType == 'percent';
-                      bool showSalePriceInstead = !isStandardDiscount && widget.salePrice != null;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (isStandardDiscount)
-                            Row(
-                              children: [
-                                Text(
-                                  "\$${finalPrice.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    color: Color(0xFFF52020),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: defaultPadding / 4),
-                                Text(
-                                  "\$${widget.price.toStringAsFixed(2)}",
-                                  style: TextStyle(
-                                    color: Theme.of(context).textTheme.bodyMedium!.color,
-                                    fontSize: 14,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                              ],
-                            )
-                          else if (showSalePriceInstead)
-                            Row(
-                              children: [
-                                Text(
-                                  "\$${widget.salePrice!.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    color: Color(0xFFF52020),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: defaultPadding / 4),
-                                Text(
-                                  "\$${widget.price.toStringAsFixed(2)}",
-                                  style: TextStyle(
-                                    color: Theme.of(context).textTheme.bodyMedium!.color,
-                                    fontSize: 14,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            Text(
-                              "\$${widget.price.toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                color: Color(0xFFF52020),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                        ],
-                      );
-                    },
+                    style: const TextStyle(
+                      color: blackColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.7, // Increased line height for better spacing
+                    ),
                   ),
 
                   const Spacer(),
-                  /// 🛒 Add to Cart button here
+
+                  // Price
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      "\$${widget.price.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                        color: primaryColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+
+                  // Quantity Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildQuantityButton(
+                        icon: Icons.remove,
+                        onTap: _decrementQuantity,
+                      ),
+
+                      // Manual Input Field
+                      Container(
+                        width: 90,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: whiteColor,
+                          border: Border.all(color: blackColor10),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: TextField(
+                          controller: _qtyController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: _handleManualInput,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(3),
+                          ],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: blackColor,
+                          ),
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.only(bottom: 8),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+
+                      _buildQuantityButton(
+                        icon: Icons.add,
+                        onTap: _incrementQuantity,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Add to Cart Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Add your add to cart logic here
+                        int qty = int.tryParse(_qtyController.text) ?? 1;
+                        print("Added $qty of ${widget.title} to cart");
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: redColor,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        backgroundColor: primaryColor,
+                        foregroundColor: whiteColor,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       child: const Text(
                         "Add to Cart",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -288,6 +254,27 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuantityButton({required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: whiteColor,
+          border: Border.all(color: blackColor10),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: blackColor60,
+        ),
       ),
     );
   }
