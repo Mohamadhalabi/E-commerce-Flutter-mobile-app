@@ -11,7 +11,6 @@ class ProductCard extends StatefulWidget {
     required this.rating,
     required this.sku,
     this.salePrice,
-    this.dicountpercent,
     this.discount,
     this.freeShipping,
     required this.press,
@@ -21,7 +20,7 @@ class ProductCard extends StatefulWidget {
   final double price, rating;
   final double? salePrice;
   final Map<String, dynamic>? discount;
-  final int? dicountpercent, id;
+  final int? id;
   final bool? freeShipping;
   final VoidCallback press;
 

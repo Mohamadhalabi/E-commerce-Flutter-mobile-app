@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -36,29 +37,24 @@ class CustomBottomNavigationBar extends StatelessWidget {
           : const Color(0xFF101015),
       items: [
         BottomNavigationBarItem(
-          icon: svgIcon("assets/icons/Shop.svg"),
-          activeIcon: svgIcon("assets/icons/Shop.svg", color: primaryColor),
-          label: "Shop",
+          icon: const Icon(Icons.home),
+          label: AppLocalizations.of(context)!.home,
         ),
         BottomNavigationBarItem(
-          icon: svgIcon("assets/icons/Category.svg"),
-          activeIcon: svgIcon("assets/icons/Category.svg", color: primaryColor),
-          label: "Discover",
+          icon: const Icon(Icons.search),
+          label: AppLocalizations.of(context)!.search,
         ),
         BottomNavigationBarItem(
-          icon: svgIcon("assets/icons/Bookmark.svg"),
-          activeIcon: svgIcon("assets/icons/Bookmark.svg", color: primaryColor),
-          label: "Bookmark",
+          icon: const Icon(Icons.store),
+          label: AppLocalizations.of(context)!.shop,
         ),
         BottomNavigationBarItem(
-          icon: svgIcon("assets/icons/Bag.svg"),
-          activeIcon: svgIcon("assets/icons/Bag.svg", color: primaryColor),
-          label: "Cart",
+          icon: const Icon(Icons.shopping_cart),
+          label: AppLocalizations.of(context)!.cart,
         ),
         BottomNavigationBarItem(
-          icon: svgIcon("assets/icons/Profile.svg"),
-          activeIcon: svgIcon("assets/icons/Profile.svg", color: primaryColor),
-          label: "Profile",
+          icon: const Icon(Icons.person),
+          label: AppLocalizations.of(context)!.profile,
         ),
       ],
     );

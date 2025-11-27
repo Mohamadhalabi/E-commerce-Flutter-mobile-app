@@ -24,24 +24,24 @@ class _LoginScreenState extends State<LoginScreen> {
       error = null;
     });
 
-    final success = await AuthService.login(emailController.text, passwordController.text);
-
-    setState(() => isLoading = false);
-
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EntryPoint(
-            onLocaleChange: (locale) {
-              // Optional: handle locale change after login
-            },
-          ),
-        ),
-      );
-    } else {
-      setState(() => error = 'Invalid email or password.');
-    }
+    // final success = await AuthService.login(emailController.text, passwordController.text);
+    //
+    // setState(() => isLoading = false);
+    //
+    // if (success) {
+    //   Navigator.pushReplacement(
+    //     context,
+    //     MaterialPageRoute(
+    //       builder: (context) => EntryPoint(
+    //         onLocaleChange: (locale) {
+    //           // Optional: handle locale change after login
+    //         },
+    //       ),
+    //     ),
+    //   );
+    // } else {
+    //   setState(() => error = 'Invalid email or password.');
+    // }
   }
 
   @override

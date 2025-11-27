@@ -103,7 +103,6 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
                     title: product.title,
                     price: product.price,
                     salePrice: product.salePrice,
-                    dicountpercent: product.discountPercent,
                     sku: product.sku,
                     rating: product.rating,
                     discount: product.discount,

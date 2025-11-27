@@ -406,4 +406,67 @@ class ApiService {
       return [];
     }
   }
+
+  // fetch sub category products
+  static Future<Map<String, dynamic>> fetchProductsBySubcategory(int subCategoryId, String locale, {int page = 1}) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+    String url = '$apiBaseUrl/products/by-subcategory/$subCategoryId?page=$page';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: _buildHeaders(locale, apiKey, secretKey),
+    );
+    if (response.statusCode == 200) {
+      final jsonBody = jsonDecode(response.body);
+      print("⚙️ Full API Response Page $page: $jsonBody");
+
+      return {
+        'products': (jsonBody['products'] as List).map((item) => ProductModel.fromJson(item)).toList(),
+        'current_page': jsonBody['current_page'],
+        'last_page': jsonBody['last_page'],
+      };
+    } else {
+      throw Exception("Failed to load paginated products");
+    }
+  }
+
+  //search by category
+
+  static Future<List<ProductModel>> searchSubCategoryProducts(
+      int subCategoryId,
+      String query,
+      String locale,
+      ) async {
+    await dotenv.load();
+
+    final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final String apiKey = dotenv.env['API_KEY'] ?? '';
+    final String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    final Uri url = Uri.parse(
+      '$baseUrl/subcategories/$subCategoryId/search?q=$query',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Accept-Language': locale,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'currency': 'USD',
+        'api-key': apiKey,
+        'secret-key': secretKey,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((item) => ProductModel.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to fetch search results: ${response.statusCode}');
+    }
+  }
 }

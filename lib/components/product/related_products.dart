@@ -99,7 +99,6 @@ class _RelatedProductsState extends State<RelatedProducts> {
                     title: product.title,
                     price: product.price,
                     salePrice: product.salePrice,
-                    dicountpercent: product.discountPercent,
                     sku: product.sku,
                     rating: product.rating,
                     discount: product.discount,

@@ -19,12 +19,17 @@
    "sku": "SKU:",
    "relatedProducts": "Related Products",
    "addToCart": "Add to Cart",
-   "search": "Search",
    "categoriesSectionTitle": "Categories",
    "currency": "Currency",
    "usd": "USD ($)",
    "eur": "EUR (€)",
    "turkishLira": "TRY (₺)",
    "manufacturers" : "Manufacturers",
-   "brands" : "Brands"
+   "brands" : "Brands",
+   "home": "Home",
+   "search": "Search",
+   "shop": "Shop",
+   "cart": "Cart",
+   "profile": "Profile",
+   "search_for_title": "Search for {title}"
 }

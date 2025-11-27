@@ -4,6 +4,7 @@ import 'package:shop/screens/auth/views/password_recovery_screen.dart';
 import '../screens/category/sub_category_screen.dart';
 import 'screen_export.dart';
 import "package:shop/controllers/locale_controller.dart";
+
 // Yuo will get 50+ screens and more once you have the full template
 // 🔗 Full template: https://theflutterway.gumroad.com/l/fluttershop
 

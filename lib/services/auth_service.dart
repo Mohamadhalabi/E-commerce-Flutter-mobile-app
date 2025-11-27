@@ -8,120 +8,70 @@ class AuthService {
   static final String apiKey = dotenv.env['API_KEY']!;
   static final String secretKey = dotenv.env['SECRET_KEY']!;
 
-  static Map<String, String> get _headers => {
+  static Map<String, String> _baseHeaders = {
     'Accept': 'application/json',
     'API-KEY': apiKey,
     'SECRET-KEY': secretKey,
   };
 
-  /// LOGIN USER
-  static Future<bool> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/user/auth/login'),
-      headers: _headers,
-      body: {
-        'email': email,
-        'password': password,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final token = data['token'];
-
-      if (token != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
-
-        // Fetch and save user profile
-        final userResponse = await http.post(
-          Uri.parse('$baseUrl/me'),
-          headers: {
-            ..._headers,
-            'Authorization': 'Bearer $token',
-          },
-        );
-
-        if (userResponse.statusCode == 200) {
-          final userData = json.decode(userResponse.body);
-          await prefs.setString('user', jsonEncode(userData));
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /// REGISTER USER
-  static Future<bool> register(String name, String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/user/auth/register'),
-      headers: _headers,
-      body: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': password,
-      },
-    );
-
-    return response.statusCode == 200 || response.statusCode == 201;
-  }
-
-  /// FETCH USER (fresh from API)
-  static Future<Map<String, dynamic>?> fetchUser() async {
+  // Get stored token
+  static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token == null) return null;
+    return prefs.getString('auth_token'); // Make sure you store token on login
+  }
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/me'),
-      headers: {
-        ..._headers,
+  // Get user profile from Laravel backend
+  static Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null; // Not logged in
+
+      final headers = {
+        ..._baseHeaders,
         'Authorization': 'Bearer $token',
-      },
-    );
+      };
 
-    if (response.statusCode == 200) {
-      final userData = json.decode(response.body);
-      await prefs.setString('user', jsonEncode(userData));
-      return userData;
+      final response = await http.get(
+        Uri.parse('$baseUrl/user'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 401) {
+        // Token expired or invalid
+        return null;
+      }
+    } catch (e) {
+      print("getUserProfile error: $e");
     }
-
     return null;
   }
 
-  /// GET USER FROM CACHE
-  static Future<Map<String, dynamic>?> getCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString('user');
-    if (userJson == null) return null;
-    return json.decode(userJson);
-  }
+  // Logout user
+  static Future<bool> logoutUser() async {
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
 
-  /// CHECK IF USER IS LOGGED IN
-  static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token') != null;
-  }
+      final headers = {
+        ..._baseHeaders,
+        'Authorization': 'Bearer $token',
+      };
 
-  /// LOGOUT USER
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token != null) {
-      await http.post(
-        Uri.parse('$baseUrl/user/auth/logout'),
-        headers: {
-          ..._headers,
-          'Authorization': 'Bearer $token',
-        },
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: headers,
       );
-    }
 
-    await prefs.remove('token');
-    await prefs.remove('user');
+      // Clear local token
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('auth_token');
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("logoutUser error: $e");
+      return false;
+    }
   }
 }

@@ -104,7 +104,6 @@ class _BundleProductsState extends State<BundleProducts> {
                       title: product.title,
                       price: product.price,
                       salePrice: product.salePrice,
-                      dicountpercent: product.discountPercent,
                       sku: product.sku,
                       rating: product.rating,
                       discount: product.discount,

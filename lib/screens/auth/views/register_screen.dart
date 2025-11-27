@@ -15,30 +15,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   bool isLoading = false;
   String? error;
-
-  Future<void> _register() async {
-    setState(() {
-      isLoading = true;
-      error = null;
-    });
-
-    final success = await AuthService.register(
-      nameController.text,
-      emailController.text,
-      passwordController.text,
-    );
-
-    setState(() => isLoading = false);
-
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    } else {
-      setState(() => error = 'Registration failed.');
-    }
-  }
+  //
+  // Future<void> _register() async {
+  //   setState(() {
+  //     isLoading = true;
+  //     error = null;
+  //   });
+  //
+  //   final success = await AuthService.register(
+  //     nameController.text,
+  //     emailController.text,
+  //     passwordController.text,
+  //   );
+  //
+  //   setState(() => isLoading = false);
+  //
+  //   if (success) {
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (_) => const LoginScreen()),
+  //     );
+  //   } else {
+  //     setState(() => error = 'Registration failed.');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +64,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: isLoading ? null : _register,
-              child: isLoading ? const CircularProgressIndicator() : const Text("Register"),
-            ),
+            // ElevatedButton(
+            //   onPressed: isLoading ? null : _register,
+            //   child: isLoading ? const CircularProgressIndicator() : const Text("Register"),
+            // ),
           ],
         ),
       ),
