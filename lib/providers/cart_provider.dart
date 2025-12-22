@@ -105,7 +105,6 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  // ✅ UPDATED: Now accepts SKU and STOCK
   Future<void> addToCart({
     required int productId,
     required String title,
@@ -113,7 +112,7 @@ class CartProvider with ChangeNotifier {
     required String image,
     required double price,
     required int quantity,
-    required int stock, // ✅ Added Stock parameter
+    required int stock,
     required BuildContext context,
   }) async {
     _isLoading = true;
@@ -121,20 +120,18 @@ class CartProvider with ChangeNotifier {
 
     final tr = AppLocalizations.of(context)!;
 
-    // ✅ 1. CHECK STOCK AVAILABILITY FIRST
     if (quantity > stock) {
       _isLoading = false;
       notifyListeners();
 
-      // Show Red Warning Notification
       NotificationService.show(
         context: context,
         title: "Unavailable",
-        message: tr.stockLimitWarning(sku), // "Selected qty not available..."
+        message: tr.stockLimitWarning(sku),
         image: image,
-        isError: true, // 🔴 Red Style
+        isError: true,
       );
-      return; // 🛑 Stop execution
+      return;
     }
 
     bool success = false;
@@ -153,14 +150,13 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     if (success) {
-      // ✅ Success: Green Notification with SKU
       NotificationService.show(
         context: context,
         title: tr.itemAddedTitle,
         message: "$title has been added.",
-        sku: sku, // ✅ Pass SKU for styling
+        sku: sku,
         image: image,
-        isError: false, // Green
+        isError: false,
         onActionPressed: () {
           Navigator.pushNamed(context, cartScreenRoute);
         },
@@ -197,7 +193,6 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  // ✅ UPDATED: Removal Notification with SKU
   Future<void> removeItem(int productId, BuildContext context) async {
     int index = _cartItems.indexWhere((item) => item.id == productId);
     CartItem? removedItem;
@@ -218,9 +213,9 @@ class CartProvider with ChangeNotifier {
             context: context,
             title: tr.itemRemovedTitle,
             message: "${removedItem.title} removed from cart.",
-            sku: removedItem.sku, // ✅ Pass SKU
+            sku: removedItem.sku,
             image: removedItem.image,
-            isError: true, // 🔴 Red Style
+            isError: true,
           );
         }
       }
@@ -234,9 +229,9 @@ class CartProvider with ChangeNotifier {
           context: context,
           title: tr.itemRemovedTitle,
           message: "${removedItem.title} removed from cart.",
-          sku: removedItem.sku, // ✅ Pass SKU
+          sku: removedItem.sku,
           image: removedItem.image,
-          isError: true, // 🔴 Red Style
+          isError: true,
         );
       }
     }
@@ -258,7 +253,6 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  // ✅ UPDATED: Accepts SKU and Stock
   Future<void> _addToLocalCart(int id, String title, String sku, String image, double price, int qty, int stock) async {
     int index = _cartItems.indexWhere((item) => item.id == id);
     if (index >= 0) {
@@ -292,5 +286,12 @@ class CartProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     String encoded = jsonEncode(_cartItems.map((e) => e.toJson()).toList());
     await prefs.setString('guest_cart', encoded);
+  }
+
+  // ✅ NEW METHOD: Clears the cart locally (UI only) without calling server
+  void clearLocalCart() {
+    _cartItems = [];
+    _authToken = null;
+    notifyListeners();
   }
 }

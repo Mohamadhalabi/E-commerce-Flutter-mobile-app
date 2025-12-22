@@ -467,6 +467,48 @@ class ApiService {
     }
   }
 
+  // API for Register
+  static Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/auth/register';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey),
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'phone': phone,
+          'password': password,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      if (response.statusCode == 201) {
+        return {'success': true, ...responseData};
+      } else {
+        String message = responseData['message'] ?? 'Registration failed';
+        return {
+          'success': false,
+          'message': message,
+          'errors': responseData['errors']
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
 // In lib/services/api_service.dart
 
 // API to fetch logged-in user profile

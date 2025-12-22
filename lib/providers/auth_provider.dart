@@ -13,8 +13,8 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _token != null;
   bool get isLoading => _isLoading;
 
-  // FIX: Added the missing getter 'isLoggedIn' to resolve the error.
-  bool get isLoggedIn => _token != null; // Alias for isAuthenticated
+  // Alias for isAuthenticated
+  bool get isLoggedIn => _token != null;
 
   static const _tokenKey = 'authToken';
   static const _userKey = 'userData';
@@ -58,6 +58,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ LOGIN METHOD
   Future<bool> login(String email, String password) async {
     _setLoading(true);
     try {
@@ -79,7 +80,49 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // ✅ REGISTER METHOD (Now uses ApiService)
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    _setLoading(true);
+
+    try {
+      // Calls the new function in ApiService
+      final response = await ApiService.register(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+
+      // Check success
+      if (response['success'] == true && response['token'] != null && response['user'] != null) {
+        // Auto-login: Save the new token and user data
+        await _saveAuthData(response['token'], response['user']);
+
+        _setLoading(false);
+        return true;
+      } else {
+        print("Register Failed: ${response['message']}");
+        if (response['errors'] != null) {
+          print("Validation Errors: ${response['errors']}");
+        }
+        _setLoading(false);
+        return false;
+      }
+    } catch (e) {
+      print("Register Exception: $e");
+      _setLoading(false);
+      return false;
+    }
+  }
+
   Future<void> logout() async {
+    // Optional: Call API to revoke token on server if needed
+    // if (_token != null) await ApiService.logout(_token!);
     await _clearAuthData();
   }
 

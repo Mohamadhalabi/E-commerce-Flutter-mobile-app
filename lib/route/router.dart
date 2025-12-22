@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
 import 'package:shop/screens/auth/views/password_recovery_screen.dart';
+import '../screens/auth/views/sign_up_screen.dart';
 import '../screens/category/sub_category_screen.dart';
+import '../screens/profile/views/info_screens.dart';
 import 'screen_export.dart';
 import "package:shop/controllers/locale_controller.dart";
 
@@ -78,11 +80,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const LoginScreen(),
       );
-    case signUpScreenRoute:
+    case signUpScreenRoute: // ✅ Add this case
       return MaterialPageRoute(
-        builder: (context) => const RegisterScreen(),
+        builder: (context) => const SignUpScreen(),
       );
-    // case profileSetupScreenRoute:
+      // case profileSetupScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const ProfileSetupScreen(),
     //   );
@@ -246,10 +248,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return MaterialPageRoute(
     //     builder: (context) => const NoAddressScreen(),
     //   );
-    case addressesScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const AddressesScreen(),
-      );
+
     // case addNewAddressesScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const AddNewAddressScreen(),
@@ -311,6 +310,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           onLocaleChange: args['onLocaleChange'],
         ),
       );
+
+    case addressesScreenRoute:
+      return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text("Addresses Screen Placeholder")))); // Replace with actual screen
+
+    case aboutUsScreenRoute:
+      return MaterialPageRoute(builder: (_) => const AboutUsScreen());
+    case deliveryInfoScreenRoute:
+      return MaterialPageRoute(builder: (_) => const DeliveryInfoScreen());
+    case termsConditionScreenRoute:
+      return MaterialPageRoute(builder: (_) => const TermsConditionScreen());
+    case contactUsScreenRoute:
+      return MaterialPageRoute(builder: (_) => const ContactUsScreen());
+
     default:
       return MaterialPageRoute(
         // Make a screen for undefine

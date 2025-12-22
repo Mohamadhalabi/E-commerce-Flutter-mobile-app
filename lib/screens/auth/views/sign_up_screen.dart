@@ -5,33 +5,37 @@ import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-// ✅ Import Custom Bottom Bar
 import '../../../../components/common/CustomBottomNavigationBar.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscureText = true;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   void _onBottomNavTap(int index) {
     if (index == 4) return;
+
     if (index == 0) {
       Navigator.popUntil(context, (route) => route.isFirst);
     } else {
@@ -41,13 +45,17 @@ class _LoginScreenState extends State<LoginScreen> {
         case 2: routeName = discoverScreenRoute; break;
         case 3: routeName = cartScreenRoute; break;
       }
-      if (routeName != null) Navigator.pushNamed(context, routeName);
+      if (routeName != null) {
+        Navigator.pushNamed(context, routeName);
+      }
     }
   }
 
-  // ✅ CUSTOM NOTIFICATION
+  // ✅ CUSTOM TOP NOTIFICATION
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
     final tr = AppLocalizations.of(context)!;
+
+    // Calculate margin to position at TOP of screen
     final topMargin = MediaQuery.of(context).size.height - 230;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border(
-              left: BorderSide(color: isSuccess ? Colors.green : Colors.red, width: 6),
+              left: BorderSide(
+                color: isSuccess ? Colors.green : Colors.red,
+                width: 6,
+              ),
             ),
             boxShadow: [
               BoxShadow(
@@ -82,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isSuccess ? tr.success : tr.error,
+                      isSuccess ? tr.success : tr.error, // ✅ Translated Success/Error
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -92,7 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
                     Text(
                       message,
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -112,16 +126,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final tr = AppLocalizations.of(context)!;
+
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final tr = AppLocalizations.of(context)!;
 
-    bool success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text
+    bool success = await authProvider.register(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
+      password: _passwordController.text,
     );
 
     if (!mounted) return;
@@ -131,17 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
         cartProvider.setAuthToken(authProvider.token);
         await cartProvider.mergeLocalCartToAccount(authProvider.token!);
       }
-      _showCustomNotification(context, tr.loginSuccess, true);
+      _showCustomNotification(context, tr.registerSuccess, true);
       Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
     } else {
-      _showCustomNotification(context, tr.loginFailed, false);
+      _showCustomNotification(context, tr.registerFailed, false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final tr = AppLocalizations.of(context)!;
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
+    final tr = AppLocalizations.of(context)!; // ✅ Translations loaded
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -149,16 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text(tr.login, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          tr.signUp, // ✅ "Sign Up"
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, entryPointScreenRoute);
-            }
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
@@ -167,7 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: CustomBottomNavigationBar(currentIndex: 4, onTap: _onBottomNavTap),
+
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: 4,
+        onTap: _onBottomNavTap,
+      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(defaultPadding),
@@ -176,9 +195,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Text(
-                  tr.welcome,
+                  tr.createAccount, // ✅ "Create Account"
                   style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -186,28 +205,63 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                Text(tr.signInPrompt, style: const TextStyle(color: Colors.grey)), // ✅ Translated
+                // ✅ TRANSLATED SUBTITLE
+                Text(
+                  tr.registerPrompt, // "Enter your details to register"
+                  style: const TextStyle(color: Colors.grey),
+                ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
+
+                // Name
                 TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) => (value == null || value.isEmpty) ? tr.validEmail : null, // ✅ Translated
+                  controller: _nameController,
+                  validator: (value) => (value == null || value.isEmpty) ? tr.requiredField : null,
                   decoration: InputDecoration(
-                    labelText: tr.email,
-                    hintText: tr.enterEmail, // ✅ Translated "Enter your email"
+                    labelText: tr.name,
+                    hintText: tr.enterName, // ✅ "Enter your full name"
                     floatingLabelBehavior: FloatingLabelBehavior.always,
-                    suffixIcon: const Padding(padding: EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined)),
+                    suffixIcon: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.person_outline)),
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => (value == null || value.isEmpty || !value.contains('@')) ? tr.validEmail : null,
+                  decoration: InputDecoration(
+                    labelText: tr.email,
+                    hintText: tr.enterEmail, // ✅ "Enter your email"
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    suffixIcon: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.email_outlined)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Phone
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) => (value == null || value.isEmpty) ? tr.requiredField : null,
+                  decoration: InputDecoration(
+                    labelText: tr.phoneNumber,
+                    hintText: tr.enterPhone, // ✅ "Enter your phone number"
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    suffixIcon: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.phone_android_outlined)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscureText,
-                  validator: (value) => (value == null || value.isEmpty) ? tr.minPassword : null, // ✅ Translated
+                  validator: (value) => (value == null || value.length < 8) ? tr.minPassword : null,
                   decoration: InputDecoration(
                     labelText: tr.password,
-                    hintText: tr.enterPassword, // ✅ Translated "Enter your password"
+                    hintText: tr.enterPassword, // ✅ "Enter your password"
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     suffixIcon: IconButton(
                       icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
@@ -215,7 +269,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 40),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -227,17 +283,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: isLoading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(tr.login, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                        : Text(tr.signUp, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: 20),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(tr.noAccount, style: const TextStyle(color: Colors.grey)), // ✅ Translated
+                    // ✅ TRANSLATED "Already have an account?"
+                    Text(tr.alreadyHaveAccount, style: const TextStyle(color: Colors.grey)),
                     GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, signUpScreenRoute),
-                      child: Text(tr.signUp, style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                      onTap: () => Navigator.pop(context),
+                      child: Text(tr.login, style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold)), // "Login"
                     ),
                   ],
                 ),
