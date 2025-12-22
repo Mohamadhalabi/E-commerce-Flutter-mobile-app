@@ -55,5 +55,11 @@
  "removeItemConfirmation": "Are you sure you want to remove this item?",
  "cancel": "Cancel",
  "remove": "Remove",
- "stockLimitWarning": "The selected quantity for product {sku} is currently not available but we will try to get it for you, if not we will issue a refund."
+ "stockLimitWarning": "The selected quantity for product {sku} is currently not available but we will try to get it for you, if not we will issue a refund.",
+ "itemAddedTitle": "Added to Cart",
+ "itemRemovedTitle": "Removed",
+ "itemAddedMessage": "Item has been added to your cart.",
+ "itemRemovedMessage": "Item has been removed from your cart.",
+ "continueShopping": "Continue Shopping",
+ "clickCheckoutMessage": "Click the checkout button to complete the purchase process."
 }

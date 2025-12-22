@@ -1,49 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/route/screen_export.dart';
+import 'package:shop/route/route_constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AddedToCartMessageScreen extends StatelessWidget {
   const AddedToCartMessageScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tr = AppLocalizations.of(context)!;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+          padding: const EdgeInsets.all(defaultPadding),
           child: Column(
             children: [
               const Spacer(),
-              Image.asset(
-                Theme.of(context).brightness == Brightness.light
-                    ? "assets/Illustration/success.png"
-                    : "assets/Illustration/success_dark.png",
-                height: MediaQuery.of(context).size.height * 0.3,
+              // Icon with Circle Background
+              Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  "assets/Illustration/success.png", // Ensure this exists, or use Icon below
+                  // icon: const Icon(Icons.check_circle, size: 80, color: Color(0xFF4CAF50)),
+                  height: MediaQuery.of(context).size.height * 0.2,
+                ),
               ),
-              const Spacer(flex: 2),
+              const Spacer(),
               Text(
-                "Added to cart",
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall!
-                    .copyWith(fontWeight: FontWeight.w500),
+                tr.itemAddedTitle,
+                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
-              const SizedBox(height: defaultPadding / 2),
-              const Text(
-                "Click the checkout button to complete the purchase process.",
+              const SizedBox(height: 16),
+              Text(
+                tr.clickCheckoutMessage,
                 textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
               ),
               const Spacer(flex: 2),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, entryPointScreenRoute);
-                },
-                child: const Text("Continue shopping"),
+
+              // Buttons
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, cartScreenRoute);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text(tr.checkout, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
               ),
-              const SizedBox(height: defaultPadding),
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text("Checkout"),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  child: Text(tr.continueShopping, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                ),
               ),
               const Spacer(),
             ],

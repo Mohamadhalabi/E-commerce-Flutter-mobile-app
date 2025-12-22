@@ -1,19 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
+import '../route/route_constants.dart';
 
 class CartItem {
   final int id;
   final String title;
-  final String sku; // ✅ Added
+  final String sku;
   final String image;
 
-  double price; // Effective Price
-  final double regularPrice; // ✅ Added
-
+  double price;
+  final double regularPrice;
   int quantity;
-  final int stock; // ✅ Added
+  final int stock;
 
   CartItem({
     required this.id,
@@ -45,7 +47,6 @@ class CartItem {
       title: json['title'] ?? 'Unknown',
       sku: json['sku'] ?? '',
       image: json['image']?.toString() ?? '',
-      // Ensure we parse numbers safely
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       regularPrice: (json['regular_price'] as num?)?.toDouble() ?? 0.0,
       quantity: json['quantity'] ?? 1,
@@ -104,28 +105,47 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  // ✅ UPDATED: Now accepts SKU and STOCK
   Future<void> addToCart({
     required int productId,
     required String title,
+    required String sku,
     required String image,
     required double price,
     required int quantity,
+    required int stock, // ✅ Added Stock parameter
     required BuildContext context,
   }) async {
     _isLoading = true;
     notifyListeners();
 
+    final tr = AppLocalizations.of(context)!;
+
+    // ✅ 1. CHECK STOCK AVAILABILITY FIRST
+    if (quantity > stock) {
+      _isLoading = false;
+      notifyListeners();
+
+      // Show Red Warning Notification
+      NotificationService.show(
+        context: context,
+        title: "Unavailable",
+        message: tr.stockLimitWarning(sku), // "Selected qty not available..."
+        image: image,
+        isError: true, // 🔴 Red Style
+      );
+      return; // 🛑 Stop execution
+    }
+
     bool success = false;
 
     if (isLoggedIn) {
-      // 1. SERVER FLOW
       success = await ApiService.addToCart(productId, quantity, _authToken!, 'en');
       if (success) {
         await fetchServerCart();
       }
     } else {
-      // 2. GUEST FLOW (Local)
-      await _addToLocalCart(productId, title, image, price, quantity);
+      await _addToLocalCart(productId, title, sku, image, price, quantity, stock);
       success = true;
     }
 
@@ -133,12 +153,21 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("$title added to cart"), backgroundColor: Colors.green),
+      // ✅ Success: Green Notification with SKU
+      NotificationService.show(
+        context: context,
+        title: tr.itemAddedTitle,
+        message: "$title has been added.",
+        sku: sku, // ✅ Pass SKU for styling
+        image: image,
+        isError: false, // Green
+        onActionPressed: () {
+          Navigator.pushNamed(context, cartScreenRoute);
+        },
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to add to cart"), backgroundColor: Colors.red),
+        SnackBar(content: Text(tr.addedToCartFail), backgroundColor: Colors.red),
       );
     }
   }
@@ -150,40 +179,66 @@ class CartProvider with ChangeNotifier {
     if (index == -1) return;
 
     if (isLoggedIn) {
-      // Optimistic Update
       _cartItems[index].quantity = quantity;
       notifyListeners();
 
-      // Call API
       double? newUnitPrice = await ApiService.updateCartQuantity(productId, quantity, _authToken!);
 
       if (newUnitPrice != null && newUnitPrice >= 0) {
-        // Update Price from Server (Table Pricing)
         _cartItems[index].price = newUnitPrice;
         notifyListeners();
       } else {
-        // Failed, revert
         await fetchServerCart();
       }
     } else {
-      // Guest Logic
       _cartItems[index].quantity = quantity;
       await _saveCartToPrefs();
       notifyListeners();
     }
   }
 
-  Future<void> removeItem(int productId) async {
+  // ✅ UPDATED: Removal Notification with SKU
+  Future<void> removeItem(int productId, BuildContext context) async {
+    int index = _cartItems.indexWhere((item) => item.id == productId);
+    CartItem? removedItem;
+    if (index != -1) {
+      removedItem = _cartItems[index];
+    }
+
+    final tr = AppLocalizations.of(context)!;
+
     if (isLoggedIn) {
       bool success = await ApiService.removeFromCart(productId, _authToken!);
       if (success) {
         _cartItems.removeWhere((item) => item.id == productId);
         notifyListeners();
+
+        if (removedItem != null) {
+          NotificationService.show(
+            context: context,
+            title: tr.itemRemovedTitle,
+            message: "${removedItem.title} removed from cart.",
+            sku: removedItem.sku, // ✅ Pass SKU
+            image: removedItem.image,
+            isError: true, // 🔴 Red Style
+          );
+        }
       }
     } else {
       _cartItems.removeWhere((item) => item.id == productId);
       await _saveCartToPrefs();
       notifyListeners();
+
+      if (removedItem != null) {
+        NotificationService.show(
+          context: context,
+          title: tr.itemRemovedTitle,
+          message: "${removedItem.title} removed from cart.",
+          sku: removedItem.sku, // ✅ Pass SKU
+          image: removedItem.image,
+          isError: true, // 🔴 Red Style
+        );
+      }
     }
   }
 
@@ -203,25 +258,21 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  // ==========================================================
-  // LOCAL STORAGE HELPERS
-  // ==========================================================
-  Future<void> _addToLocalCart(int id, String title, String image, double price, int qty) async {
+  // ✅ UPDATED: Accepts SKU and Stock
+  Future<void> _addToLocalCart(int id, String title, String sku, String image, double price, int qty, int stock) async {
     int index = _cartItems.indexWhere((item) => item.id == id);
     if (index >= 0) {
       _cartItems[index].quantity += qty;
     } else {
-      // For local add, we might not have SKU/Stock/RegularPrice yet.
-      // Use defaults until user logs in or we fetch full details.
       _cartItems.add(CartItem(
         id: id,
         title: title,
-        sku: '', // Placeholder
+        sku: sku,
         image: image,
         price: price,
-        regularPrice: price, // Placeholder
+        regularPrice: price,
         quantity: qty,
-        stock: 9999, // Assume in stock locally until verified
+        stock: stock,
       ));
     }
     await _saveCartToPrefs();

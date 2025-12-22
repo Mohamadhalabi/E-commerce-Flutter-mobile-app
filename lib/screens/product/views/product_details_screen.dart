@@ -161,6 +161,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               onQtyChanged: (val) => setState(() => _quantity = val),
               onAddToCart: () {
                 final cart = Provider.of<CartProvider>(context, listen: false);
+
                 String imgUrl = "";
                 if (product!['image'] != null) {
                   imgUrl = product!['image'];
@@ -168,12 +169,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   imgUrl = product!['gallery'][0];
                 }
 
+                // ✅ FIX: Retrieve SKU and Stock
+                String sku = product!['sku'] ?? 'N/A';
+                int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
+
                 cart.addToCart(
                   productId: widget.productId,
                   title: product!['title'] ?? 'Unknown',
+                  sku: sku, // ✅ Pass SKU
                   image: imgUrl,
                   price: currentUnitPrice,
                   quantity: _quantity,
+                  stock: stock, // ✅ Pass Stock
                   context: context,
                 );
               },

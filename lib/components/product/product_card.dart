@@ -17,6 +17,7 @@ class ProductCard extends StatefulWidget {
     this.salePrice,
     this.discount,
     this.freeShipping,
+    this.stock = 9999, // ✅ Added stock parameter (default to high if unknown)
     required this.press,
   });
 
@@ -26,6 +27,7 @@ class ProductCard extends StatefulWidget {
   final Map<String, dynamic>? discount;
   final int? id;
   final bool? freeShipping;
+  final int stock; // ✅ Field for stock
   final VoidCallback press;
 
   @override
@@ -110,6 +112,8 @@ class _ProductCardState extends State<ProductCard> {
                 child: Image.network(
                   widget.image,
                   fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.image_not_supported, color: Colors.grey),
                 ),
               ),
             ),
@@ -137,7 +141,7 @@ class _ProductCardState extends State<ProductCard> {
 
                   const SizedBox(height: 4),
 
-                  // TITLE (Up to 4 lines)
+                  // TITLE
                   Text(
                     widget.title,
                     maxLines: 4,
@@ -146,13 +150,11 @@ class _ProductCardState extends State<ProductCard> {
                       color: Colors.black87,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      height: 1.5, // 🟢 INCREASED HEIGHT (Line Spacing)
+                      height: 1.5,
                     ),
                   ),
 
-                  // Spacer pushes everything below to the bottom
                   const Spacer(),
-
                   const SizedBox(height: 6),
 
                   // PRICE
@@ -226,8 +228,10 @@ class _ProductCardState extends State<ProductCard> {
                                 productId: widget.id!,
                                 title: widget.title,
                                 image: widget.image,
+                                sku: widget.sku,
                                 price: widget.salePrice ?? widget.price,
                                 quantity: qty,
+                                stock: widget.stock, // ✅ Pass Stock Here
                                 context: context,
                               );
                             }
