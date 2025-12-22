@@ -31,30 +31,70 @@ class _ExpandableSectionState extends State<ExpandableSection> {
 
   @override
   Widget build(BuildContext context) {
+    // 🎨 White block design separates it from the grey background
     return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Divider(height: 0.1),
-          ListTile(
-            onTap: () => setState(() => isExpanded = !isExpanded),
-            leading: Icon(
-              widget.leadingIcon ?? Icons.info_outline,
-              color: Theme.of(context).iconTheme.color,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () => setState(() => isExpanded = !isExpanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    if (widget.leadingIcon != null) ...[
+                      Icon(
+                        widget.leadingIcon,
+                        size: 22,
+                        color: Colors.black87, // Darker, cleaner icon color
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600, // Semi-bold title
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    // ✨ Animated Rotation for the arrow
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded, // Sleeker chevron
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            title: Text(widget.title),
-            trailing: Icon(
-              isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Theme.of(context).iconTheme.color,
+
+            // Content
+            AnimatedCrossFade(
+              firstChild: Container(),
+              secondChild: Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+                child: widget.child ??
+                    Text(
+                      widget.text ?? '',
+                      style: const TextStyle(height: 1.5, color: Colors.black54),
+                    ),
+              ),
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
             ),
-          ),
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: widget.child ?? Text(widget.text ?? ''),
-            ),
-          const Divider(height: 1),
-        ],
+          ],
+        ),
       ),
     );
   }

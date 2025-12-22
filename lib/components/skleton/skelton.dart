@@ -1,46 +1,52 @@
 import 'package:flutter/material.dart';
 
-import '../../constants.dart';
-
 class Skeleton extends StatelessWidget {
-  const Skeleton(
-      {super.key,
-      this.height,
-      this.width,
-      this.layer = 1,
-      this.radious = defaultPadding});
+  const Skeleton({
+    super.key,
+    this.height,
+    this.width,
+    double? radius,
+    double? radious, // 👈 backward compatible
+  }) : radius = radius ?? radious ?? 12;
 
-  final double? height, width;
-  final int layer;
-  final double radious;
+  final double? height;
+  final double? width;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = Colors.grey.shade300; // soft neutral
+
     return Container(
-      height: height,
-      width: width,
-      padding: const EdgeInsets.all(defaultPadding / 2),
+      height: height ?? 16,
+      width: width ?? double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-          color: Theme.of(context).iconTheme.color!.withOpacity(0.04 * layer),
-          borderRadius: BorderRadius.all(Radius.circular(radious))),
+        color: baseColor.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(radius),
+      ),
     );
   }
 }
 
 class CircleSkeleton extends StatelessWidget {
-  const CircleSkeleton({super.key, this.size = 24});
+  const CircleSkeleton({
+    super.key,
+    this.size = 40,
+  });
 
-  final double? size;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = Colors.grey.shade300;
+
     return Container(
       height: size,
       width: size,
-      // padding: const EdgeInsets.all(defaultPadding),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        // color: Theme.of(context).primaryColor.withOpacity(0.04),
-        color: Theme.of(context).iconTheme.color!.withOpacity(0.04),
+        color: baseColor.withOpacity(0.35),
         shape: BoxShape.circle,
       ),
     );

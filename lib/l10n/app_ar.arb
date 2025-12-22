@@ -17,5 +17,20 @@
   "reviews": "مراجعات",
   "productInfo": "معلومات المنتج",
   "sku": "رمز المنتج:",
-  "relatedProducts": "منتجات ذات صلة"
+  "relatedProducts": "منتجات ذات صلة",
+  "addedToCartSuccess": "تمت الإضافة إلى السلة بنجاح!",
+  "addedToCartFail": "فشل إضافة المنتج إلى السلة. يرجى المحاولة مرة أخرى.",
+  "viewCart": "عرض السلة",
+  "yourCart": "عربة التسوق",
+  "items": "عناصر",
+  "checkout": "الدفع",
+  "total": "المجموع",
+  "loginToCheckout": "سجل الدخول للدفع",
+  "emptyCart": "عربة التسوق فارغة",
+  "startShopping": "ابدأ التسوق",
+  "loginSuccess": "تم تسجيل الدخول بنجاح",
+  "loginFailed": "فشل تسجيل الدخول",
+  "email": "البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "login": "تسجيل الدخول"
 }

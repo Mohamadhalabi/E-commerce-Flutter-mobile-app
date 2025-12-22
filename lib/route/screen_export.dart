@@ -14,7 +14,7 @@ export '/screens/product/views/product_details_screen.dart';
 export '/screens/reviews/view/product_reviews_screen.dart';
 export '/screens/search/views/search_screen.dart';
 export '/screens/address/views/addresses_screen.dart';
-export '/screens/checkout/views/cart_screen.dart';
+export '/screens/cart/views/cart_screen.dart';
 
 export '/screens/notification/view/enable_notification_screen.dart';
 export '/screens/notification/view/no_notification_screen.dart';

@@ -24,7 +24,7 @@ class _ProductImagesState extends State<ProductImages> {
 
   @override
   void initState() {
-    _controller = PageController(viewportFraction: 0.9, initialPage: _currentPage);
+    _controller = PageController(viewportFraction: 1.0, initialPage: _currentPage);
     super.initState();
   }
 
@@ -52,68 +52,68 @@ class _ProductImagesState extends State<ProductImages> {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
+    // ⚠️ REMOVED SliverToBoxAdapter wrapper here.
+    // It is now a normal Container (Box Widget).
+    return Container(
+      color: Colors.white,
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: 1,
-            child: PageView.builder(
-              controller: _controller,
-              onPageChanged: (pageNum) {
-                setState(() {
-                  _currentPage = pageNum;
-                });
-              },
-              itemCount: widget.images.length,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(defaultBorderRadious * 2)),
-                    child: GestureDetector(
-                      onTap: () => _openImageModal(index),
-                      child: Stack(
-                        alignment: Alignment.topLeft,
-                        children: [
-                          NetworkImageWithLoader(widget.images[index]),
-                          if (widget.isBestSeller)
-                            Positioned(
-                              top: 10,
-                              left: 10,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  AppLocalizations.of(context)!.bestSeller,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+            aspectRatio: 1.1,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _controller,
+                  onPageChanged: (pageNum) {
+                    setState(() {
+                      _currentPage = pageNum;
+                    });
+                  },
+                  itemCount: widget.images.length,
+                  itemBuilder: (context, index) => GestureDetector(
+                    onTap: () => _openImageModal(index),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: NetworkImageWithLoader(
+                        widget.images[index],
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
                 ),
-              ),
+                if (widget.isBestSeller)
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context)!.bestSeller.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           if (widget.images.length > 1)
             Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 16),
+              padding: const EdgeInsets.only(bottom: 16),
               child: SizedBox(
-                height: 64,
-                child: ListView.builder(
+                height: 60,
+                child: ListView.separated(
                   scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: widget.images.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final isActive = index == _currentPage;
                     return GestureDetector(
@@ -124,22 +124,21 @@ class _ProductImagesState extends State<ProductImages> {
                           curve: Curves.easeInOut,
                         );
                       },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 6),
-                        padding: const EdgeInsets.all(4),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 60,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: isActive ? Colors.orange : Colors.grey.shade300,
-                            width: isActive ? 2 : 1,
+                            color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
+                            width: 2,
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade50,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: Image.network(
                             widget.images[index],
-                            width: 50,
-                            height: 50,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -149,7 +148,6 @@ class _ProductImagesState extends State<ProductImages> {
                 ),
               ),
             ),
-          const Divider(thickness: 0.1, color: Colors.grey),
         ],
       ),
     );

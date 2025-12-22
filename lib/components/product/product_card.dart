@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shop/providers/cart_provider.dart';
 import '../../constants.dart';
 
 class ProductCard extends StatefulWidget {
@@ -77,34 +79,31 @@ class _ProductCardState extends State<ProductCard> {
     return Container(
       width: 200,
       decoration: BoxDecoration(
-        color: whiteColor,
-        borderRadius: BorderRadius.circular(defaultBorderRadious),
-        border: Border.all(color: blackColor10),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: blackColor.withOpacity(0.05),
-            offset: const Offset(0, 4),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, 3),
+            blurRadius: 6,
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // Align everything to left
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Image Section
+          // ------------------------------------------
+          // 1. IMAGE SECTION
+          // ------------------------------------------
           GestureDetector(
             onTap: widget.press,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(defaultPadding / 2),
+              padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                color: whiteColor,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(defaultBorderRadious),
-                ),
-                border: Border(
-                  bottom: BorderSide(color: blackColor10, width: 1),
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: AspectRatio(
                 aspectRatio: 1.1,
@@ -116,137 +115,150 @@ class _ProductCardState extends State<ProductCard> {
             ),
           ),
 
-          // 2. Details Section
+          // ------------------------------------------
+          // 2. CONTENT SECTION
+          // ------------------------------------------
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(defaultPadding / 2),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Column(
-                // CHANGED: Aligned to start (Left)
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // CHANGED: Category and SKU in same row
-                  Row(
-                    children: [
-                      const SizedBox(width: 6),
-                      // SKU
-                      Text(
-                        widget.sku,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: greenColor, // Green for SKU
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
+                  // SKU
+                  Text(
+                    "SKU: ${widget.sku}",
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
 
                   const SizedBox(height: 4),
 
-                  // CHANGED: Title Left Aligned & Increased Height
+                  // TITLE (Up to 4 lines)
                   Text(
                     widget.title,
-                    textAlign: TextAlign.left,
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: blackColor,
-                      fontSize: 13,
+                      color: Colors.black87,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      height: 1.7, // Increased line height for better spacing
+                      height: 1.5, // 🟢 INCREASED HEIGHT (Line Spacing)
                     ),
                   ),
 
+                  // Spacer pushes everything below to the bottom
                   const Spacer(),
 
-                  // Price
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      "\$${widget.price.toStringAsFixed(2)}",
-                      style: const TextStyle(
-                        color: primaryColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
+                  const SizedBox(height: 6),
+
+                  // PRICE
+                  Text(
+                    "\$${widget.price.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: primaryColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
 
-                  // Quantity Row
+                  const SizedBox(height: 8),
+
+                  // ------------------------------------------
+                  // 3. BOTTOM ACTIONS
+                  // ------------------------------------------
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildQuantityButton(
-                        icon: Icons.remove,
-                        onTap: _decrementQuantity,
-                      ),
-
-                      // Manual Input Field
-                      Container(
-                        width: 90,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: whiteColor,
-                          border: Border.all(color: blackColor10),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: TextField(
-                          controller: _qtyController,
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          onChanged: _handleManualInput,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(3),
-                          ],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: blackColor,
+                      _buildQtyBtn(Icons.remove, _decrementQuantity),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade200),
+                            borderRadius: BorderRadius.circular(4),
+                            color: const Color(0xFFF9F9F9),
                           ),
-                          decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.only(bottom: 8),
-                            border: InputBorder.none,
-                            isDense: true,
+                          child: TextField(
+                            controller: _qtyController,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            onChanged: _handleManualInput,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Colors.black87,
+                            ),
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.only(bottom: 14),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
                           ),
                         ),
                       ),
-
-                      _buildQuantityButton(
-                        icon: Icons.add,
-                        onTap: _incrementQuantity,
-                      ),
+                      const SizedBox(width: 8),
+                      _buildQtyBtn(Icons.add, _incrementQuantity),
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // Add to Cart Button
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        int qty = int.tryParse(_qtyController.text) ?? 1;
-                        print("Added $qty of ${widget.title} to cart");
+                    height: 38,
+                    child: Consumer<CartProvider>(
+                      builder: (context, cartProvider, child) {
+                        return ElevatedButton(
+                          onPressed: () {
+                            int qty = int.tryParse(_qtyController.text) ?? 1;
+                            if (widget.id != null) {
+                              cartProvider.addToCart(
+                                productId: widget.id!,
+                                title: widget.title,
+                                image: widget.image,
+                                price: widget.salePrice ?? widget.price,
+                                quantity: qty,
+                                context: context,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: cartProvider.isLoading
+                              ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                              : const Text(
+                            "Add to Cart",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: whiteColor,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "Add to Cart",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -258,22 +270,22 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Widget _buildQuantityButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildQtyBtn(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: whiteColor,
-          border: Border.all(color: blackColor10),
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade300),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Icon(
           icon,
-          size: 20,
-          color: blackColor60,
+          size: 16,
+          color: Colors.black54,
         ),
       ),
     );

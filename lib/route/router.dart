@@ -296,7 +296,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case cartScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const CartScreen(),
+        // ✅ Pass isStandalone: true to show the bottom menu
+        builder: (context) => const CartScreen(isStandalone: true),
       );
     case subCategoryScreenRoute:
       final args = settings.arguments as Map<String, dynamic>;

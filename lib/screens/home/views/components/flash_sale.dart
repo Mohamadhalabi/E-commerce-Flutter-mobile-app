@@ -84,7 +84,7 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
               // double visiblePercentage = visibilityInfo.visibleFraction * 100;
             },
             child: SizedBox(
-              height: 450,
+              height: 390,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,

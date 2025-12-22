@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:shop/components/list_tile/divider_list_tile.dart';
+import 'package:provider/provider.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/route/screen_export.dart';
-import 'package:shop/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'components/profile_card.dart';
@@ -18,35 +17,16 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isAuthenticated = false;
-  Map<String, dynamic>? user;
   bool isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
-    _checkAuth();
     _loadTheme();
-  }
-
-  Future<void> _checkAuth() async {
-    try {
-      final userData = await AuthService.getUserProfile();
-      if (userData != null) {
-        setState(() {
-          isAuthenticated = true;
-          user = userData;
-        });
-      } else {
-        setState(() {
-          isAuthenticated = false;
-        });
-      }
-    } catch (_) {
-      setState(() {
-        isAuthenticated = false;
-      });
-    }
+    // Fetch profile data when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
+    });
   }
 
   Future<void> _loadTheme() async {
@@ -62,27 +42,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       isDarkMode = value;
     });
-    // If you have a theme provider, notify it here
   }
 
-  void _logout() async {
-    await AuthService.logoutUser();
-    setState(() {
-      isAuthenticated = false;
-      user = null;
-    });
+  void _logout(BuildContext context) async {
+    await Provider.of<AuthProvider>(context, listen: false).logout();
+    // Optional: Refresh the screen or go to login
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isAuthenticated = authProvider.isAuthenticated;
+    final user = authProvider.user;
+
     return Scaffold(
       body: ListView(
         children: [
-          // Profile card for both states
+          // 1. Profile Card
           if (isAuthenticated)
             ProfileCard(
-              name: "${user?['first_name'] ?? ''} ${user?['last_name'] ?? ''}",
-              email: user?['email'] ?? '',
+              // Use user data safely
+              name: user?['name'] ?? "User",
+              email: user?['email'] ?? "",
               imageSrc: user?['avatar'] ?? "https://i.imgur.com/IXnwbLk.png",
               press: () {
                 Navigator.pushNamed(context, userInfoScreenRoute);
@@ -92,14 +74,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ProfileCard(
               name: "Guest",
               email: "Please login or register",
-              imageSrc:
-              "https://cdn-icons-png.flaticon.com/512/847/847969.png", // generic avatar
+              imageSrc: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
               press: () {
-                // Navigator.pushNamed(context, loginScreenRoute);
+                Navigator.pushNamed(context, logInScreenRoute);
               },
             ),
 
-          // Banner for logged-in users only
+          // 2. Banner (Logged in only)
           if (isAuthenticated)
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -110,11 +91,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
+          // 3. Menu Items (Logged in only)
           if (isAuthenticated) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-              child: Text("Account",
-                  style: Theme.of(context).textTheme.titleSmall),
+              child: Text("Account", style: Theme.of(context).textTheme.titleSmall),
             ),
             const SizedBox(height: defaultPadding / 2),
             ProfileMenuListTile(
@@ -131,12 +112,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: defaultPadding),
 
-          // Personalization for all users
+          // 4. Personalization
           Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: defaultPadding, vertical: defaultPadding / 2),
-            child: Text("Personalization",
-                style: Theme.of(context).textTheme.titleSmall),
+            child: Text("Personalization", style: Theme.of(context).textTheme.titleSmall),
           ),
           ProfileMenuListTile(
             text: "Change Language",
@@ -145,13 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pushNamed(context, selectLanguageScreenRoute);
             },
           ),
-          ProfileMenuListTile(
-            text: "Change Currency",
-            svgSrc: "assets/icons/card.svg",
-            press: () {
-              // Navigator.pushNamed(context, selectCurrencyScreenRoute);
-            },
-          ),
+
           SwitchListTile(
             title: const Text("Dark Mode"),
             value: isDarkMode,
@@ -161,22 +135,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: defaultPadding),
 
-          // Logout or Login/Register button
+          // 5. Logout / Login Button (CRASH FIX HERE)
           ListTile(
-            onTap: isAuthenticated ? _logout : () {
-              // Navigator.pushNamed(context, loginScreenRoute);
+            onTap: isAuthenticated ? () => _logout(context) : () {
+              Navigator.pushNamed(context, logInScreenRoute);
             },
             minLeadingWidth: 24,
-            leading: SvgPicture.asset(
-              isAuthenticated
-                  ? "assets/icons/Logout.svg"
-                  : "assets/icons/Login.svg",
-              height: 24,
-              width: 24,
-              colorFilter: ColorFilter.mode(
-                isAuthenticated ? errorColor : Colors.green,
-                BlendMode.srcIn,
-              ),
+            // -----------------------------------------------------------
+            // ✅ FIX: Use Icon() instead of SvgPicture to prevent crashes
+            // -----------------------------------------------------------
+            leading: Icon(
+              isAuthenticated ? Icons.logout : Icons.login,
+              size: 24,
+              color: isAuthenticated ? errorColor : Colors.green,
             ),
             title: Text(
               isAuthenticated ? "Log Out" : "Login / Register",

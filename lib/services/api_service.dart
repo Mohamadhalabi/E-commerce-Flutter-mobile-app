@@ -7,8 +7,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/category_model.dart';
 
 class ApiService {
-  static Map<String, String> _buildHeaders(String locale, String apiKey, String secretKey) {
-    return {
+
+  static Map<String, String> _buildHeaders(String locale, String apiKey, String secretKey, {String? token}) {
+    final headers = {
       'Accept-Language': locale,
       'Content-Type': 'application/json',
       'currency': 'USD',
@@ -16,7 +17,12 @@ class ApiService {
       'secret-key': secretKey,
       'api-key': apiKey,
     };
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
   }
+
   // Home Page API
   static Future<List<CategoryModel>> fetchCategories(String locale) async {
     try {
@@ -28,14 +34,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -63,14 +62,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -96,14 +88,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -160,14 +145,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -201,14 +179,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -241,14 +212,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -279,14 +243,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -307,34 +264,59 @@ class ApiService {
     }
   }
   // product details
+// lib/services/api_service.dart
+
   static Future<Map<String, dynamic>> fetchProductDetails(int id, String locale) async {
     try {
       await dotenv.load();
       String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
       String apiKey = dotenv.env['API_KEY'] ?? '';
       String secretKey = dotenv.env['SECRET_KEY'] ?? '';
-      String url = '$apiBaseUrl/product/$id';
+
+      // ✅ CRITICAL FIX: Added 'table_price' to the list
+      String queryParams = '?include=description,images,attributes,faq,categories,manufacturers,discount,table_price';
+
+      String url = '$apiBaseUrl/product/$id$queryParams';
 
       final response = await http.get(
         Uri.parse(url),
         headers: {
+          ..._buildHeaders(locale, apiKey, secretKey),
           'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
         },
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        return responseData['product_data'];
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final Map<String, dynamic> data = jsonResponse['data'];
+
+        // ... (Keep your existing image gallery transformation logic here) ...
+        List<String> galleryUrls = [];
+        if (data['images'] != null) {
+          for (var img in data['images']) {
+            if (img['src'] != null) {
+              galleryUrls.add(img['src']);
+            }
+          }
+        }
+        if (galleryUrls.isEmpty && data['image'] != null) {
+          galleryUrls.add(data['image']);
+        }
+        data['gallery'] = galleryUrls;
+
+        // Fix Category Name
+        if (data['categories'] != null && (data['categories'] as List).isNotEmpty) {
+          data['category'] = data['categories'][0]['name'];
+        } else {
+          data['category'] = "Unknown";
+        }
+
+        return data;
       } else {
-        throw Exception('Failed to load product');
+        throw Exception('Failed to load product: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception("Error: $e");
+      throw Exception("Error fetching details: $e");
     }
   }
   // fetch Related Products
@@ -348,14 +330,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Accept-Language': locale,
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders(locale, apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -385,14 +360,7 @@ class ApiService {
 
       final response = await http.get(
         Uri.parse('$apiBaseUrl/categories/$parentId/subcategories'),
-        headers: {
-          'Accept-Language': 'en', // You can pass locale dynamically if needed
-          'Content-Type': 'application/json',
-          'currency': 'USD',
-          'Accept': 'application/json',
-          'secret-key': secretKey,
-          'api-key': apiKey,
-        },
+        headers: _buildHeaders('en', apiKey, secretKey),
       );
 
       if (response.statusCode == 200) {
@@ -452,14 +420,7 @@ class ApiService {
 
     final response = await http.get(
       url,
-      headers: {
-        'Accept-Language': locale,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'currency': 'USD',
-        'api-key': apiKey,
-        'secret-key': secretKey,
-      },
+      headers: _buildHeaders(locale, apiKey, secretKey),
     );
 
     if (response.statusCode == 200) {
@@ -468,5 +429,223 @@ class ApiService {
     } else {
       throw Exception('Failed to fetch search results: ${response.statusCode}');
     }
+  }
+
+  // ==================================================
+  // AUTH ROUTES
+  // ==================================================
+
+  // API for login
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? ''; // Load API key
+    String secretKey = dotenv.env['SECRET_KEY'] ?? ''; // Load Secret key
+
+    // Assuming the Laravel route is set up as 'api-mobile/auth/login'
+    String url = '$apiBaseUrl/auth/login';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey),
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, ...responseData};
+      } else {
+        String message = responseData['message'] ?? 'Invalid credentials or login failed';
+        return {'success': false, 'message': message};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network or server error: $e'};
+    }
+  }
+
+// In lib/services/api_service.dart
+
+// API to fetch logged-in user profile
+  static Future<Map<String, dynamic>?> getUserProfile(String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // URL: .../api/api-mobile/auth/me
+    String url = '$apiBaseUrl/auth/me';
+
+    print(">>> Fetching Profile from: $url");
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        // FIX: Use _buildHeaders to include API Key & Secret Key
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print("Profile Error: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Profile Fetch Exception: $e");
+      return null;
+    }
+  }
+  // ==================================================
+  // CART ROUTES
+  // ==================================================
+
+  // Fetch Server Cart
+// ... inside ApiService class
+
+  // ==================================================
+  // CART ROUTES (Updated for api-mobile)
+  // ==================================================
+// ... inside ApiService class
+
+  // ==================================================
+  // CART ROUTES (Updated for api-mobile)
+  // ==================================================
+
+  // 1. Fetch Cart
+  static Future<List<dynamic>> fetchCart(String token, String locale) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // FIX: Removed '/v2', used '/cart' which maps to 'api-mobile/cart'
+    String url = '$apiBaseUrl/cart';
+
+    print(">>> Fetching Cart from: $url"); // DEBUG LOG
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+      );
+
+      print(">>> Cart Status: ${response.statusCode}"); // DEBUG LOG
+      print(">>> Cart Body: ${response.body}"); // DEBUG LOG
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] ?? [];
+      }
+    } catch (e) {
+      print("Fetch Cart Error: $e");
+    }
+    return [];
+  }
+
+  // 2. Add Item
+  static Future<bool> addToCart(int productId, int quantity, String token, String locale) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // FIX: Removed '/v2'
+    String url = '$apiBaseUrl/cart/add';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        body: jsonEncode({
+          'product_id': productId,
+          'quantity': quantity,
+        }),
+      );
+      print("Add Cart Status: ${response.statusCode}"); // DEBUG
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 3. Sync Guest Cart
+  static Future<bool> syncGuestCart(List<Map<String, dynamic>> localCartItems, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // FIX: Removed '/v2'
+    String url = '$apiBaseUrl/cart/sync';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode({
+          'cart_items': localCartItems,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 4. Remove Item
+  static Future<bool> removeFromCart(int productId, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // FIX: Removed '/v2'
+    String url = '$apiBaseUrl/cart/$productId';
+
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 5. Update Quantity
+// 5. Update Quantity
+  // ✅ Changed return type from Future<bool> to Future<double?>
+  static Future<double?> updateCartQuantity(int productId, int quantity, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/cart/$productId';
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode({'quantity': quantity}),
+      );
+
+      if (response.statusCode == 200) {
+        // ✅ FIX: Parse the new unit price from the server response
+        final data = jsonDecode(response.body);
+        if (data['unit_price'] != null) {
+          return (data['unit_price'] as num).toDouble();
+        }
+        return -1.0; // Signal success but no price returned (fallback)
+      }
+    } catch (e) {
+      print("Update Qty Error: $e");
+    }
+    return null; // Signal failure
   }
 }

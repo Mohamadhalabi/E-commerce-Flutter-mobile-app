@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:shop/providers/auth_provider.dart';
+import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/services/api_initializer.dart';
 import 'package:shop/theme/app_theme.dart';
 import 'package:shop/route/route_constants.dart';
@@ -21,7 +23,30 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        // 1. Auth Provider loads first
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+
+        // 2. Cart Provider depends on Auth Provider
+        // This "Proxy" will inject the Auth token into Cart whenever it changes
+        ChangeNotifierProxyProvider<AuthProvider, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (context, auth, cart) {
+            if (cart == null) throw ArgumentError.notNull('cart');
+
+            // If Auth is ready but Cart is missing the token, set it!
+            if (auth.isAuthenticated && !cart.isLoggedIn) {
+              cart.setAuthToken(auth.token);
+            }
+            return cart;
+          },
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

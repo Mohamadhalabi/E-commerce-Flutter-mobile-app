@@ -11,7 +11,7 @@ class ProductsSkelton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 220,
+      height: 250,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 5,

@@ -85,7 +85,7 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
           )
         else
           SizedBox(
-            height: 450,
+            height: 420,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: products.length,
