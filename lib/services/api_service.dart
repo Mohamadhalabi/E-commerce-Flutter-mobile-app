@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shop/models/brand_model.dart';
 import 'package:shop/models/manufacturer_model.dart';
+import '../models/order_model.dart';
 import '../models/product_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/category_model.dart';
-
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 class ApiService {
 
   static Map<String, String> _buildHeaders(String locale, String apiKey, String secretKey, {String? token}) {
@@ -56,9 +58,6 @@ class ApiService {
       String apiKey = dotenv.env['API_KEY'] ?? '';
       String secretKey = dotenv.env['SECRET_KEY'] ?? '';
       String url = '$apiBaseUrl/get-brands';
-
-      print('📡 Calling: $url');
-      print('📥 Headers: Accept-Language=$locale, api-key=$apiKey, secret-key=$secretKey');
 
       final response = await http.get(
         Uri.parse(url),
@@ -389,8 +388,6 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       final jsonBody = jsonDecode(response.body);
-      print("⚙️ Full API Response Page $page: $jsonBody");
-
       return {
         'products': (jsonBody['products'] as List).map((item) => ProductModel.fromJson(item)).toList(),
         'current_page': jsonBody['current_page'],
@@ -520,9 +517,6 @@ class ApiService {
 
     // URL: .../api/api-mobile/auth/me
     String url = '$apiBaseUrl/auth/me';
-
-    print(">>> Fetching Profile from: $url");
-
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -533,11 +527,9 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print("Profile Error: ${response.statusCode}");
         return null;
       }
     } catch (e) {
-      print("Profile Fetch Exception: $e");
       return null;
     }
   }
@@ -566,24 +558,18 @@ class ApiService {
 
     // FIX: Removed '/v2', used '/cart' which maps to 'api-mobile/cart'
     String url = '$apiBaseUrl/cart';
-
-    print(">>> Fetching Cart from: $url"); // DEBUG LOG
-
     try {
       final response = await http.get(
         Uri.parse(url),
         headers: _buildHeaders(locale, apiKey, secretKey, token: token),
       );
 
-      print(">>> Cart Status: ${response.statusCode}"); // DEBUG LOG
-      print(">>> Cart Body: ${response.body}"); // DEBUG LOG
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['data'] ?? [];
       }
     } catch (e) {
-      print("Fetch Cart Error: $e");
+
     }
     return [];
   }
@@ -607,7 +593,6 @@ class ApiService {
           'quantity': quantity,
         }),
       );
-      print("Add Cart Status: ${response.statusCode}"); // DEBUG
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       return false;
@@ -660,7 +645,6 @@ class ApiService {
   }
 
   // 5. Update Quantity
-// 5. Update Quantity
   // ✅ Changed return type from Future<bool> to Future<double?>
   static Future<double?> updateCartQuantity(int productId, int quantity, String token) async {
     await dotenv.load();
@@ -689,5 +673,96 @@ class ApiService {
       print("Update Qty Error: $e");
     }
     return null; // Signal failure
+  }
+
+  // ==================================================
+  // ORDER ROUTES
+  // ==================================================
+
+  // 1. Fetch Order List
+  static Future<List<OrderModel>> fetchOrders(String token, String locale, {int page = 1}) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // 1. Log the URL and Token
+    String url = '$apiBaseUrl/orders?page=$page';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+      );
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final List data = jsonResponse['data'] ?? [];
+        return data.map((item) => OrderModel.fromJson(item)).toList();
+      } else {
+        // 3. Throw explicit error with status code
+        throw Exception("Failed to load orders: Status ${response.statusCode}");
+      }
+    } catch (e) {
+      // 4. Log the specific error
+      throw Exception("Error fetching orders: $e");
+    }
+  }
+
+  // 2. Fetch Single Order Details (For the Detail View)
+  static Future<OrderModel> fetchOrderDetails(int orderId, String token, String locale) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/orders/$orderId';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        // The API returns the resource directly wrapped in data usually
+        return OrderModel.fromJson(jsonResponse['data']);
+      } else {
+        throw Exception("Failed to load order details");
+      }
+    } catch (e) {
+      print("Error fetching order details: $e");
+      throw Exception("Error fetching order details");
+    }
+  }
+
+  // 3. Download Invoice PDF
+  static Future<String?> downloadInvoice(int orderId, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/orders/$orderId/download';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/invoice_$orderId.pdf');
+
+        await file.writeAsBytes(bytes, flush: true);
+        return file.path;
+      } else {
+        throw Exception("Failed to download invoice");
+      }
+    } catch (e) {
+      print("Download Error: $e");
+      return null;
+    }
   }
 }

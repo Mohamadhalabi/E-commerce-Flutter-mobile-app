@@ -56,10 +56,32 @@
  "cancel": "Cancel",
  "remove": "Remove",
  "stockLimitWarning": "The selected quantity for product {sku} is currently not available but we will try to get it for you, if not we will issue a refund.",
+ "@stockLimitWarning": {
+  "placeholders": {
+   "sku": {
+    "type": "String"
+   }
+  }
+ },
+ "unavailableTitle": "Unavailable",
  "itemAddedTitle": "Added to Cart",
  "itemRemovedTitle": "Removed",
- "itemAddedMessage": "Item has been added to your cart.",
- "itemRemovedMessage": "Item has been removed from your cart.",
+ "itemAddedMessage": "{title} has been added to your cart.",
+ "@itemAddedMessage": {
+  "placeholders": {
+   "title": {
+    "type": "String"
+   }
+  }
+ },
+ "itemRemovedMessage": "{title} has been removed from your cart.",
+ "@itemRemovedMessage": {
+  "placeholders": {
+   "title": {
+    "type": "String"
+   }
+  }
+ },
  "continueShopping": "Continue Shopping",
  "clickCheckoutMessage": "Click the checkout button to complete the purchase process.",
  "signUp": "Sign Up",
@@ -68,7 +90,8 @@
  "welcome": "Welcome Back",
  "createAccount": "Create Account",
  "enterEmail": "Please enter your email",
- "enterPassword": "Please enter your password", "guestUser": "Guest User",
+ "enterPassword": "Please enter your password",
+ "guestUser": "Guest User",
  "loginRegisterPrompt": "Please login or register",
  "myAccount": "My Account",
  "myOrders": "My Orders",
@@ -85,7 +108,6 @@
  "logout": "Log Out",
  "loginRegister": "Login / Register",
  "contactUsSubtitle": "If you have any questions, feel free to contact us.",
-
  "aboutUsContent": "We build reliable, secure solutions for automotive locksmiths and workshops. Founded to make key programming and diagnostics simpler, faster, and more accessible. Since day one, we’ve focused on quality products, expert support, and fair pricing.",
  "ourFutureGoals": "Our Future Goals",
  "ourFutureGoalsContent": "We aim to lead with innovation & service, increase market coverage, and improve customer experience through faster delivery.",
@@ -96,7 +118,6 @@
  "offer2Content": "Specialists in programming tools, software, and training resources.",
  "offer3Title": "Expert Support",
  "offer3Content": "Quick, multilingual support from experienced technicians.",
-
  "deliveryProcess": "Delivery Process",
  "addToCartTitle": "Add to Cart",
  "addToCartContent": "Select your products and review quantities before checkout.",
@@ -108,7 +129,6 @@
  "shippingProcessContent": "We confirm your order, pack it securely, and ship with reliable tracked services.",
  "deliveryFees": "Delivery Fees",
  "deliveryFeesContent": "Fees are calculated at checkout based on destination and weight.",
-
  "definition": "Definition",
  "definitionContent": "These Terms & Conditions govern your access to and use of tlkeys.com.",
  "userAccount": "User Account",
@@ -122,7 +142,6 @@
  "whoWeAreText": "Techno Lock Keys Trading is a premier provider of automotive key solutions, serving professionals and car owners alike. Established in 2010, we have grown to become a trusted name in the industry.",
  "ourMissionTitle": "Our Mission",
  "ourMissionText": "We strive to provide the highest quality key programming tools and replacements at unbeatable prices, ensuring security and convenience for all our customers.",
-
  "deliveryInfoTitle": "Delivery Information",
  "shippingPolicyTitle": "Shipping Policy",
  "shippingPolicyText": "We offer worldwide shipping via DHL, FedEx, and UPS. Most orders are processed within 24 hours of payment confirmation.",
@@ -130,7 +149,6 @@
  "estimatedDeliveryText": "• Domestic: 2-3 Business Days\n• International: 5-7 Business Days\n• Express: 1-2 Business Days",
  "trackingOrdersTitle": "Tracking Orders",
  "trackingOrdersText": "Once your order is dispatched, you will receive a tracking number via email to monitor your shipment in real-time.",
-
  "termsConditionsTitle": "Terms & Conditions",
  "termsIntroTitle": "1. Introduction",
  "termsIntroText": "Welcome to our mobile app. By accessing or using our service, you agree to be bound by these terms.",
@@ -138,7 +156,6 @@
  "termsUserAccountsText": "You are responsible for maintaining the confidentiality of your account and password. Any activity under your account is your responsibility.",
  "termsReturnsTitle": "3. Returns & Refunds",
  "termsReturnsText": "Items can be returned within 30 days of receipt if they are in original condition. Digital products (software licenses) are non-refundable once activated.",
-
  "contactUsTitle": "Contact Us",
  "sendMessageButton": "Send Message",
  "getInTouchTitle": "Get in Touch",
@@ -147,7 +164,6 @@
  "callUs": "Call Us",
  "visitUs": "Visit Us",
  "addressFull": "Sharjah – Industrial No. 5, behind Maliha Road Shop No. 8, Property of Ali Nasir Mohamed Suleiman United Arab Emirates",
-
  "enterName": "Enter your full name",
  "enterPhone": "Enter your phone number",
  "minPassword": "Min 8 chars required",
@@ -160,5 +176,20 @@
  "requiredField": "This field is required",
  "alreadyHaveAccount": "Already have an account? ",
  "registerSuccess": "Account Created Successfully!",
- "registerFailed": "Registration Failed. Please check your details."
+ "registerFailed": "Registration Failed. Please check your details.",
+ "noOrdersFound": "No orders found",
+ "orderNumber": "Order",
+ "orderDate": "Date",
+ "shippingMethod": "Shipping Method",
+ "totalAmount": "Total Amount",
+ "orderDetails": "Order Details",
+ "errorLoadingDetails": "Failed to load details",
+ "orderStatus": "Order Status",
+ "placedOn": "Placed on",
+ "shippingDetails": "Shipping Details",
+ "shippingAddress": "Shipping Address",
+ "noAddress": "No address provided",
+ "paymentSummary": "Payment Summary",
+ "subtotal": "Subtotal",
+ "shippingFee": "Shipping Fee"
 }
