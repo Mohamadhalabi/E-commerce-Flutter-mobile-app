@@ -4,9 +4,9 @@ import 'package:shop/screens/auth/views/password_recovery_screen.dart';
 import '../screens/auth/views/sign_up_screen.dart';
 import '../screens/category/sub_category_screen.dart';
 import '../screens/profile/views/info_screens.dart';
-import 'screen_export.dart';
+import 'screen_export.dart' hide UserInfoScreen;
 import "package:shop/controllers/locale_controller.dart";
-
+import 'package:shop/screens/profile/views/user_info_screen.dart';
 // Yuo will get 50+ screens and more once you have the full template
 // 🔗 Full template: https://theflutterway.gumroad.com/l/fluttershop
 

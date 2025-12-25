@@ -10,7 +10,7 @@ class NotificationService {
     required BuildContext context,
     required String title,
     required String message,
-    String? sku, // ✅ Added SKU
+    String? sku,
     String? image,
     VoidCallback? onActionPressed,
     Duration duration = const Duration(seconds: 4),
@@ -26,13 +26,16 @@ class NotificationService {
           child: CustomNotification(
             title: title,
             message: message,
-            sku: sku, // ✅ Pass SKU
+            sku: sku,
             image: image,
             isError: isError,
-            onPressed: () {
+            // ✅ FIX: Pass null if no action is defined, hiding the "View" button
+            onPressed: onActionPressed != null
+                ? () {
               remove();
-              if (onActionPressed != null) onActionPressed();
-            },
+              onActionPressed();
+            }
+                : null,
             onClose: remove,
           ),
         ),
@@ -55,7 +58,6 @@ class NotificationService {
   }
 }
 
-// ... (_AnimatedNotification class remains the same)
 class _AnimatedNotification extends StatefulWidget {
   final Widget child;
   const _AnimatedNotification({required this.child});

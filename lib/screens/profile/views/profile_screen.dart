@@ -66,64 +66,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.only(bottom: 100),
         children: [
           // ------------------------------------------
-          // 1. HEADER SECTION (Fixed)
+          // 1. HEADER SECTION (Clickable)
           // ------------------------------------------
-          Container(
-            padding: const EdgeInsets.all(20), // ✅ Fixed: Removed top:60
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-            ),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade200, width: 2),
-                    image: DecorationImage(
-                      fit: BoxFit.cover,
-                      image: NetworkImage(
-                        isAuthenticated
-                            ? (user?['avatar'] ?? "https://i.imgur.com/IXnwbLk.png")
-                            : "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+          InkWell(
+            onTap: () {
+              if (isAuthenticated) {
+                // ✅ Navigate to User Info Screen if logged in
+                Navigator.pushNamed(context, userInfoScreenRoute);
+              } else {
+                // Navigate to Login if guest
+                Navigator.pushNamed(context, logInScreenRoute);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              ),
+              child: Row(
+                children: [
+                  // Avatar
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade200, width: 2),
+                      image: DecorationImage(
+                        fit: BoxFit.cover,
+                        image: NetworkImage(
+                          isAuthenticated
+                              ? (user?['avatar'] ?? "https://i.imgur.com/IXnwbLk.png")
+                              : "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: 16),
 
-                // Name & Email
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        // ✅ Hardcoded for safety - Replace with tr.guestUser later if needed
-                        isAuthenticated ? (user?['name'] ?? "User") : "Guest User",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                  // Name & Email
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAuthenticated ? (user?['name'] ?? "User") : "Guest User",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        // ✅ Hardcoded for safety
-                        isAuthenticated
-                            ? (user?['email'] ?? "")
-                            : "Welcome to our shop",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
+                        const SizedBox(height: 4),
+                        Text(
+                          isAuthenticated
+                              ? (user?['email'] ?? "")
+                              : "Welcome to our shop",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  // Arrow Icon to indicate it's clickable
+                  if (isAuthenticated)
+                    Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+                ],
+              ),
             ),
           ),
 

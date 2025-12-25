@@ -765,4 +765,61 @@ class ApiService {
       return null;
     }
   }
+
+  // 1. Update Profile (Name & Phone)
+  static Future<bool> updateProfile(String name, String phone, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/account/update-profile';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode({
+          'name': name,
+          'phone': phone,
+        }),
+      );
+
+      // ✅ ADD THESE PRINT LOGS
+      print("Update Profile Status: ${response.statusCode}");
+      print("Update Profile Body: ${response.body}");
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Update Profile Error: $e");
+      return false;
+    }
+  }
+
+  // 2. Update Password
+  static Future<bool> updatePassword(String currentPassword, String newPassword, String confirmPassword, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/account/update-password';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'password': newPassword,
+          'password_confirmation': confirmPassword,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Update Password Error: $e");
+      return false;
+    }
+  }
 }

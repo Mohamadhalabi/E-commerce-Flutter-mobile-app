@@ -191,5 +191,20 @@
  "noAddress": "No address provided",
  "paymentSummary": "Payment Summary",
  "subtotal": "Subtotal",
- "shippingFee": "Shipping Fee"
+ "shippingFee": "Shipping Fee",
+ "accountDetails": "Account Details",
+ "profileDetails": "Profile details",
+ "fullName": "Full name",
+ "phone": "Phone",
+ "saveChanges": "Save changes",
+ "changePassword": "Change password",
+ "currentPassword": "Current password",
+ "newPassword": "New password",
+ "confirmNewPassword": "Confirm new password",
+ "updatePassword": "Update password",
+ "profileUpdatedSuccess": "Profile updated successfully",
+ "profileUpdateFailed": "Failed to update profile",
+ "passwordUpdatedSuccess": "Password updated successfully",
+ "passwordUpdateFailed": "Failed to update password. Check current password.",
+ "passwordsDoNotMatch": "New passwords do not match"
 }
