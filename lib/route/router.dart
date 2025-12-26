@@ -312,8 +312,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
 
     case addressesScreenRoute:
-      return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text("Addresses Screen Placeholder")))); // Replace with actual screen
-
+      return MaterialPageRoute(
+        // ✅ Change this line to use your real screen
+        builder: (_) => const AddressesScreen(),
+      );
     case aboutUsScreenRoute:
       return MaterialPageRoute(builder: (_) => const AboutUsScreen());
     case deliveryInfoScreenRoute:

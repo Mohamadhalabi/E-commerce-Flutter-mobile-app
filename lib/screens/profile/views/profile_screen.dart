@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
+import 'package:shop/providers/theme_provider.dart'; // ✅ Import ThemeProvider
 import 'package:shop/route/route_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -16,29 +16,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isDarkMode = false;
+  // ✅ Color Preserved (Navy)
+  final Color brandingColor = const Color(0xFF0C1E4E);
 
   @override
   void initState() {
     super.initState();
-    _loadTheme();
+    // Removed local _loadTheme because Provider handles it now
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
-    });
-  }
-
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isDarkMode = prefs.getBool('dark_mode') ?? false;
-    });
-  }
-
-  Future<void> _toggleTheme(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dark_mode', value);
-    setState(() {
-      isDarkMode = value;
     });
   }
 
@@ -53,40 +39,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context); // ✅ Listen to Provider
+
     final isAuthenticated = authProvider.isAuthenticated;
     final user = authProvider.user;
+    final isDark = themeProvider.isDarkMode; // ✅ Check current mode
 
-    // Safety check for localization
     final tr = AppLocalizations.of(context);
     if (tr == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
+    // ✅ Define Dynamic Colors based on Mode
+    // If Dark: Dark Background. If Light: Your Original 0xFFF4F5F7
+    final Color scaffoldBg = isDark ? const Color(0xFF101015) : const Color(0xFFF4F5F7);
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.grey.shade600;
+    final Color iconCircleBg = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
+    // For icons: In Dark mode, Navy is hard to see, so we make it White. In Light mode, we keep your Navy.
+    final Color iconColor = isDark ? Colors.white : brandingColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: scaffoldBg,
       body: ListView(
         padding: const EdgeInsets.only(bottom: 100),
         children: [
           // ------------------------------------------
-          // 1. HEADER SECTION (Clickable)
+          // 1. HEADER SECTION
           // ------------------------------------------
           InkWell(
             onTap: () {
               if (isAuthenticated) {
-                // ✅ Navigate to User Info Screen if logged in
                 Navigator.pushNamed(context, userInfoScreenRoute);
               } else {
-                // Navigate to Login if guest
                 Navigator.pushNamed(context, logInScreenRoute);
               }
             },
             child: Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
               ),
               child: Row(
                 children: [
-                  // Avatar
                   Container(
                     width: 70,
                     height: 70,
@@ -104,18 +99,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-
-                  // Name & Email
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           isAuthenticated ? (user?['name'] ?? "User") : "Guest User",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -125,14 +118,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : "Welcome to our shop",
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: subTextColor,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // Arrow Icon to indicate it's clickable
                   if (isAuthenticated)
                     Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
                 ],
@@ -143,30 +134,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 24),
 
           // ------------------------------------------
-          // 2. MY ACCOUNT (Logged In Only)
+          // 2. MY ACCOUNT
           // ------------------------------------------
           if (isAuthenticated) ...[
-            _buildSectionHeader(context, tr.myAccount),
-            _buildMenuCard([
+            _buildSectionHeader(context, tr.myAccount, isDark),
+            _buildMenuCard(cardBg, [
               _buildMenuItem(
                 context,
                 title: tr.myOrders,
                 iconSrc: "assets/icons/Order.svg",
                 onTap: () => Navigator.pushNamed(context, ordersScreenRoute),
+                circleBg: iconCircleBg,
+                iconColor: iconColor,
+                textColor: textColor,
               ),
-              _buildDivider(),
+              _buildDivider(isDark),
               _buildMenuItem(
                 context,
                 title: tr.myAddresses,
                 iconSrc: "assets/icons/Location.svg",
                 onTap: () => Navigator.pushNamed(context, addressesScreenRoute),
+                circleBg: iconCircleBg,
+                iconColor: iconColor,
+                textColor: textColor,
               ),
-              _buildDivider(),
+              _buildDivider(isDark),
               _buildMenuItem(
                 context,
                 title: tr.myWallet,
                 iconSrc: "assets/icons/Wallet.svg",
                 onTap: () => Navigator.pushNamed(context, walletScreenRoute),
+                circleBg: iconCircleBg,
+                iconColor: iconColor,
+                textColor: textColor,
               ),
             ]),
             const SizedBox(height: 24),
@@ -175,34 +175,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // ------------------------------------------
           // 3. INFORMATION
           // ------------------------------------------
-          _buildSectionHeader(context, tr.information),
-          _buildMenuCard([
+          _buildSectionHeader(context, tr.information, isDark),
+          _buildMenuCard(cardBg, [
             _buildMenuItem(
               context,
               title: tr.aboutUs,
               icon: Icons.info_outline_rounded,
               onTap: () => Navigator.pushNamed(context, aboutUsScreenRoute),
+              circleBg: iconCircleBg,
+              iconColor: iconColor,
+              textColor: textColor,
             ),
-            _buildDivider(),
+            _buildDivider(isDark),
             _buildMenuItem(
               context,
               title: tr.deliveryInfo,
               iconSrc: "assets/icons/Delivery.svg",
               onTap: () => Navigator.pushNamed(context, deliveryInfoScreenRoute),
+              circleBg: iconCircleBg,
+              iconColor: iconColor,
+              textColor: textColor,
             ),
-            _buildDivider(),
+            _buildDivider(isDark),
             _buildMenuItem(
               context,
               title: tr.termsConditions,
               icon: Icons.description_outlined,
               onTap: () => Navigator.pushNamed(context, termsConditionScreenRoute),
+              circleBg: iconCircleBg,
+              iconColor: iconColor,
+              textColor: textColor,
             ),
-            _buildDivider(),
+            _buildDivider(isDark),
             _buildMenuItem(
               context,
               title: tr.contactUs,
               icon: Icons.headset_mic_outlined,
               onTap: () => Navigator.pushNamed(context, contactUsScreenRoute),
+              circleBg: iconCircleBg,
+              iconColor: iconColor,
+              textColor: textColor,
             ),
           ]),
 
@@ -211,33 +223,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // ------------------------------------------
           // 4. SETTINGS
           // ------------------------------------------
-          _buildSectionHeader(context, tr.settings),
-          _buildMenuCard([
+          _buildSectionHeader(context, tr.settings, isDark),
+          _buildMenuCard(cardBg, [
             _buildMenuItem(
               context,
               title: tr.changeLanguage,
               iconSrc: "assets/icons/Language.svg",
               onTap: () => Navigator.pushNamed(context, selectLanguageScreenRoute),
+              circleBg: iconCircleBg,
+              iconColor: iconColor,
+              textColor: textColor,
             ),
-            _buildDivider(),
+            _buildDivider(isDark),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: iconCircleBg,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.dark_mode_outlined, color: primaryColor, size: 20),
+                child: Icon(Icons.dark_mode_outlined, color: iconColor, size: 20),
               ),
               title: Text(
                 tr.darkMode,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
               ),
               trailing: Switch.adaptive(
-                value: isDarkMode,
-                onChanged: _toggleTheme,
-                activeColor: primaryColor,
+                // ✅ Connect to Provider
+                value: themeProvider.isDarkMode,
+                onChanged: (value) => themeProvider.toggleTheme(value),
+                activeColor: brandingColor,
               ),
             ),
           ]),
@@ -245,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 30),
 
           // ------------------------------------------
-          // 5. LOGIN / LOGOUT BUTTON
+          // 5. LOGIN / LOGOUT
           // ------------------------------------------
           if (isAuthenticated)
             Padding(
@@ -281,7 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () => Navigator.pushNamed(context, logInScreenRoute),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: primaryColor,
+                  backgroundColor: brandingColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
@@ -304,13 +320,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // --- WIDGET BUILDERS ---
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _buildSectionHeader(BuildContext context, String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Colors.grey.shade600,
+          color: isDark ? Colors.white70 : Colors.grey.shade600,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
@@ -318,11 +334,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuCard(List<Widget> children) {
+  Widget _buildMenuCard(Color bgColor, List<Widget> children) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: defaultPadding),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -342,6 +358,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         String? iconSrc,
         IconData? icon,
         required VoidCallback onTap,
+        required Color circleBg,
+        required Color iconColor,
+        required Color textColor,
       }) {
     return ListTile(
       onTap: onTap,
@@ -349,26 +368,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: primaryColor.withOpacity(0.1),
+          color: circleBg,
           shape: BoxShape.circle,
         ),
         child: iconSrc != null
             ? SvgPicture.asset(
           iconSrc,
           width: 20,
-          colorFilter: const ColorFilter.mode(primaryColor, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
         )
-            : Icon(icon, size: 20, color: primaryColor),
+            : Icon(icon, size: 20, color: iconColor),
       ),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
+        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
       ),
       trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: Colors.grey.shade100, indent: 60, endIndent: 20);
+  Widget _buildDivider(bool isDark) {
+    return Divider(
+        height: 1,
+        thickness: 1,
+        color: isDark ? Colors.white10 : Colors.grey.shade100,
+        indent: 60,
+        endIndent: 20
+    );
   }
 }

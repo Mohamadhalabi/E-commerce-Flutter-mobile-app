@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shop/models/brand_model.dart';
 import 'package:shop/models/manufacturer_model.dart';
+import '../models/address_model.dart';
+import '../models/country_model.dart';
 import '../models/order_model.dart';
 import '../models/product_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -556,7 +558,6 @@ class ApiService {
     String apiKey = dotenv.env['API_KEY'] ?? '';
     String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 
-    // FIX: Removed '/v2', used '/cart' which maps to 'api-mobile/cart'
     String url = '$apiBaseUrl/cart';
     try {
       final response = await http.get(
@@ -581,7 +582,6 @@ class ApiService {
     String apiKey = dotenv.env['API_KEY'] ?? '';
     String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 
-    // FIX: Removed '/v2'
     String url = '$apiBaseUrl/cart/add';
 
     try {
@@ -606,7 +606,6 @@ class ApiService {
     String apiKey = dotenv.env['API_KEY'] ?? '';
     String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 
-    // FIX: Removed '/v2'
     String url = '$apiBaseUrl/cart/sync';
 
     try {
@@ -630,7 +629,6 @@ class ApiService {
     String apiKey = dotenv.env['API_KEY'] ?? '';
     String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 
-    // FIX: Removed '/v2'
     String url = '$apiBaseUrl/cart/$productId';
 
     try {
@@ -820,6 +818,203 @@ class ApiService {
     } catch (e) {
       print("Update Password Error: $e");
       return false;
+    }
+  }
+
+  // ==================================================
+  // ADDRESS ROUTES
+  // ==================================================
+// 1. Fetch All Addresses
+  static Future<List<AddressModel>> fetchAddresses(String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/addresses';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+
+      print("Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        // ✅ Fix: New controller returns direct List [...], not {data: [...]}
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) => AddressModel.fromJson(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      print("Fetch Addresses Error: $e");
+      return [];
+    }
+  }
+
+  // 2. Add New Address
+  static Future<bool> addAddress(Map<String, dynamic> data, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/addresses';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode(data),
+      );
+      print("Add Address: ${response.statusCode} - ${response.body}");
+      // 201 Created is returned by your new controller
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 3. Update Existing Address
+  static Future<bool> updateAddress(int id, Map<String, dynamic> data, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // ✅ Fix: Route is now POST /edit-addresses/{id}
+    String url = '$apiBaseUrl/edit-addresses/$id';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+        body: jsonEncode(data),
+      );
+      print("Update Address: ${response.statusCode}");
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 4. Delete Address
+  static Future<bool> deleteAddress(int id, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // ✅ Fix: Route is now POST /delete-addresses/{id}
+    String url = '$apiBaseUrl/delete-addresses/$id';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 5. Set Default Address
+  static Future<bool> setDefaultAddress(int id, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/addresses/$id/default';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+      // Backend returns "204 No Content" on success
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+// 1. Fetch Countries (Fixed with Headers)
+  static Future<List<CountryModel>> fetchCountries(String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/get-countries';
+
+    print("------------------------------------------------");
+    print("🌍 FETCHING COUNTRIES");
+    print("🔗 URL: $url");
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        // ✅ Pass the token here
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic jsonResponse = jsonDecode(response.body);
+
+        // Handle different JSON formats
+        if (jsonResponse is List) {
+          return jsonResponse.map((item) => CountryModel.fromJson(item)).toList();
+        }
+        else if (jsonResponse is Map && jsonResponse.containsKey('result')) {
+          final List list = jsonResponse['result'];
+          return list.map((item) => CountryModel.fromJson(item)).toList();
+        }
+        else if (jsonResponse is Map && jsonResponse.containsKey('data')) {
+          final List list = jsonResponse['data'];
+          return list.map((item) => CountryModel.fromJson(item)).toList();
+        }
+        return [];
+      } else {
+        print("❌ Server Error: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("🔥 EXCEPTION: $e");
+      return [];
+    }
+  }
+  // 2. Fetch Cities from External API (CountriesNow)
+  static Future<List<String>> fetchCities(String countryName) async {
+    try {
+      // 1. Build the URL with Query Parameters (GET format)
+      // The server asked us to use: /api/v0.1/countries/cities/q?country=...
+      final uri = Uri.https(
+        'countriesnow.space',
+        '/api/v0.1/countries/cities/q',
+        {'country': countryName.trim()},
+      );
+      // 2. Use GET instead of POST
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+
+        // Check for error flag (some APIs use 'error': false, others 'msg')
+        if (jsonResponse['error'] == false) {
+          final cities = List<String>.from(jsonResponse['data']);
+          return cities;
+        } else {
+
+        }
+      } else {
+
+      }
+      return [];
+
+    } catch (e) {
+      print("🔥 EXCEPTION: $e");
+      return [];
     }
   }
 }

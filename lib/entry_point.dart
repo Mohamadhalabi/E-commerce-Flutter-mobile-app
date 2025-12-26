@@ -25,6 +25,9 @@ class _EntryPointState extends State<EntryPoint> {
   ];
 
   int _currentIndex = 0;
+
+  final List<int> _history = [0];
+
   Map<String, dynamic>? user;
 
   @override
@@ -45,27 +48,47 @@ class _EntryPointState extends State<EntryPoint> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
-      user: user,
-      onLocaleChange: widget.onLocaleChange,
-      currentIndex: _currentIndex,
-      onTabChanged: (index) {
-        if (index != _currentIndex) {
-          setState(() {
-            _currentIndex = index;
-          });
-        }
+    return PopScope(
+      // 2. LOGIC CHANGE:
+      // Only allow the app to close if we have 1 item left in history (which is the starting Home).
+      canPop: _history.length <= 1,
+
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+
+        // 3. GO BACK STEP:
+        // Remove the current tab from history and go back to the previous one.
+        setState(() {
+          _history.removeLast();
+          _currentIndex = _history.last;
+        });
       },
-      child: PageTransitionSwitcher(
-        duration: defaultDuration,
-        transitionBuilder: (child, animation, secondAnimation) {
-          return FadeThroughTransition(
-            animation: animation,
-            secondaryAnimation: secondAnimation,
-            child: child,
-          );
+
+      child: MainScaffold(
+        user: user,
+        onLocaleChange: widget.onLocaleChange,
+        currentIndex: _currentIndex,
+        onTabChanged: (index) {
+          // 4. NAVIGATION LOGIC:
+          if (index != _currentIndex) {
+            setState(() {
+              _currentIndex = index;
+              // Add the new tab to our history list so we can go back to it later
+              _history.add(index);
+            });
+          }
         },
-        child: _pages[_currentIndex],
+        child: PageTransitionSwitcher(
+          duration: defaultDuration,
+          transitionBuilder: (child, animation, secondAnimation) {
+            return FadeThroughTransition(
+              animation: animation,
+              secondaryAnimation: secondAnimation,
+              child: child,
+            );
+          },
+          child: _pages[_currentIndex],
+        ),
       ),
     );
   }

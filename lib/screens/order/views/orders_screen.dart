@@ -6,8 +6,8 @@ import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/services/api_service.dart';
 import 'package:shop/screens/order/views/order_details_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shop/components/common/CustomBottomNavigationBar.dart'; // ✅ Import this
-import 'package:shop/route/route_constants.dart'; // ✅ Import routes
+import 'package:shop/components/common/CustomBottomNavigationBar.dart';
+import 'package:shop/route/route_constants.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -24,7 +24,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
   int _currentPage = 1;
   bool _hasMore = true;
 
-  // ✅ 1. Define current tab index (4 = Profile)
   int _currentIndex = 4;
 
   @override
@@ -142,7 +141,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  // ... (Keep _buildEmptyState, _buildOrderCard, etc. exactly as they were)
   Widget _buildEmptyState(AppLocalizations? tr) {
     return Center(
       child: Column(
