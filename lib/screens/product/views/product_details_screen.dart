@@ -4,11 +4,12 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shop/providers/cart_provider.dart';
+import '../../../components/skleton/product_details_skeleton.dart';
 import '../../../route/route_constants.dart';
+import '../../../constants.dart';
 
-import 'package:shop/components/skleton/skelton.dart';
+// --- COMPONENTS IMPORTS ---
 import 'package:shop/screens/product/views/components/product_attributes.dart';
-import 'package:shop/screens/product/views/components/product_faq.dart';
 import '../../../components/common/drawer.dart';
 import '../../../components/common/CustomBottomNavigationBar.dart';
 import '../../../components/product/related_products.dart';
@@ -71,22 +72,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  // Navigation Logic
   void _onBottomNavTap(int index) {
-    setState(() => _currentIndex = index);
     if (index == 0) {
       Navigator.popUntil(context, (route) => route.isFirst);
     } else if (index == 3) {
       Navigator.pushNamed(context, cartScreenRoute);
+    } else {
+      setState(() => _currentIndex = index);
     }
   }
 
-  // Calculate Unit Price locally
   double _calculateUnitPrice(int qty) {
     if (product == null) return 0.0;
 
     double finalPrice = (product!['price'] as num).toDouble();
 
-    // 1. Table Price (Volume)
     if (product!['table_price'] is List && (product!['table_price'] as List).isNotEmpty) {
       List tiers = product!['table_price'];
       for (var tier in tiers) {
@@ -99,7 +100,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       }
     }
 
-    // 2. Active Discount (SAFE CHECK)
     if (product!['discount'] != null && product!['discount'] is Map) {
       var d = product!['discount'];
       if (d.isNotEmpty) {
@@ -117,13 +117,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) return const ProductDetailsSkeleton();
+
+    if (product == null) {
+      return Scaffold(
+        appBar: AppBar(leading: const BackButton()),
+        body: const Center(child: Text("Product not found.")),
+      );
+    }
+
     double currentUnitPrice = _calculateUnitPrice(_quantity);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent, // Keeps header white on scroll
         elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : null,
@@ -142,8 +153,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Colors.grey.shade100, height: 1.0),
+          preferredSize: const Size.fromHeight(4.0),
+          child: Container(
+            // ERROR WAS HERE: "color: Colors.white," -> REMOVED
+            height: 1.0,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white, // Color must be inside decoration
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4.0,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       drawer: CustomEndDrawer(
@@ -154,37 +179,35 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (product != null)
-            BottomCartAction(
-              unitPrice: currentUnitPrice,
-              quantity: _quantity,
-              onQtyChanged: (val) => setState(() => _quantity = val),
-              onAddToCart: () {
-                final cart = Provider.of<CartProvider>(context, listen: false);
+          BottomCartAction(
+            unitPrice: currentUnitPrice,
+            quantity: _quantity,
+            onQtyChanged: (val) => setState(() => _quantity = val),
+            onAddToCart: () {
+              final cart = Provider.of<CartProvider>(context, listen: false);
 
-                String imgUrl = "";
-                if (product!['image'] != null) {
-                  imgUrl = product!['image'];
-                } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
-                  imgUrl = product!['gallery'][0];
-                }
+              String imgUrl = "";
+              if (product!['image'] != null) {
+                imgUrl = product!['image'];
+              } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
+                imgUrl = product!['gallery'][0];
+              }
 
-                // ✅ FIX: Retrieve SKU and Stock
-                String sku = product!['sku'] ?? 'N/A';
-                int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
+              String sku = product!['sku'] ?? 'N/A';
+              int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
 
-                cart.addToCart(
-                  productId: widget.productId,
-                  title: product!['title'] ?? 'Unknown',
-                  sku: sku, // ✅ Pass SKU
-                  image: imgUrl,
-                  price: currentUnitPrice,
-                  quantity: _quantity,
-                  stock: stock, // ✅ Pass Stock
-                  context: context,
-                );
-              },
-            ),
+              cart.addToCart(
+                productId: widget.productId,
+                title: product!['title'] ?? 'Unknown',
+                sku: sku,
+                image: imgUrl,
+                price: currentUnitPrice,
+                quantity: _quantity,
+                stock: stock,
+                context: context,
+              );
+            },
+          ),
           CustomBottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: _onBottomNavTap,
@@ -192,130 +215,129 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ],
       ),
       body: SafeArea(
-        child: Builder(
-          builder: (context) {
-            if (isLoading) return const Center(child: CircularProgressIndicator());
-            if (product == null) return const Center(child: Text("Product not found."));
-
-            // --- 🟢 FIX: SAFE DATA PARSING ---
-
-            // 1. Rating
-            double rating = 0.0;
-            int reviewCount = 0;
-            if (product!['rating'] is Map) {
-              rating = (product!['rating']['average'] as num?)?.toDouble() ?? 0.0;
-              reviewCount = (product!['rating']['count'] as num?)?.toInt() ?? 0;
-            } else if (product!['rating'] is num) {
-              rating = (product!['rating'] as num).toDouble();
-              reviewCount = product!['num_of_reviews'] ?? 0;
-            }
-
-            // 2. Discount (Fix Crash: Check if Map)
-            Map<String, dynamic>? discountData;
-            if (product!['discount'] is Map) {
-              discountData = product!['discount'] as Map<String, dynamic>;
-              if (discountData.isEmpty) discountData = null;
-            }
-
-            // 3. Table Price (Fix Crash: Check if List)
-            List<Map<String, dynamic>> tablePrices = [];
-            if (product!['table_price'] is List) {
-              tablePrices = List<Map<String, dynamic>>.from(product!['table_price']);
-            }
-
-            // 4. Attributes (Pass raw data, widget handles null/list/map internally)
-            var attributesData = product!['attributes'];
-            // --------------------
-
-            return RefreshIndicator(
-              onRefresh: fetchProductDetails,
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Stack(
-                      children: [
-                        ProductImages(
-                          images: (product?['gallery'] as List<dynamic>?)
-                              ?.map((item) => item as String)
-                              .toList() ?? [],
-                          isBestSeller: product?['is_best_seller'] == 1,
-                        ),
-                        if (discountData != null)
-                          Positioned(
-                            top: 16,
-                            right: 16,
-                            child: DiscountTimerBanner(discount: discountData, isBadge: true),
-                          ),
-                      ],
+        child: RefreshIndicator(
+          onRefresh: fetchProductDetails,
+          color: primaryColor,
+          child: CustomScrollView(
+            slivers: [
+              // 1. PRODUCT IMAGES (With Bottom Border)
+              SliverToBoxAdapter(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFF0F0F0), width: 1),
                     ),
                   ),
-
-                  ProductInfo(
-                    category: product!['category'] ?? "Unknown",
-                    sku: product!['sku'] ?? "Unknown",
-                    title: product!['title'] ?? "Unknown",
-                    summaryName: product!['summary_name'] ?? "",
-                    rating: rating,
-                    numOfReviews: reviewCount,
-                  ),
-
-                  const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
-
-                  if (tablePrices.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: ModernTablePriceList(tiers: tablePrices),
+                  child: Stack(
+                    children: [
+                      ProductImages(
+                        images: (product?['gallery'] as List<dynamic>?)
+                            ?.map((item) => item as String)
+                            .toList() ?? [],
+                        isBestSeller: product?['is_best_seller'] == 1,
                       ),
-                    ),
-
-                  if (discountData != null)
-                    SliverToBoxAdapter(
-                      child: DiscountTimerBanner(discount: discountData, isBadge: false),
-                    ),
-
-                  if (attributesData != null)
-                    ExpandableSection(
-                      title: "Product Specifications",
-                      initiallyExpanded: true,
-                      leadingIcon: Icons.tune_outlined,
-                      child: ProductAttributes(attributes: attributesData),
-                    ),
-
-                  const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
-
-                  ExpandableSection(
-                    title: "Description",
-                    leadingIcon: Icons.notes_outlined,
-                    child: Html(
-                      data: product!['description'] ?? "",
-                      style: {"body": Style(fontSize: FontSize(14.0), color: Colors.black87)},
-                    ),
+                      if (product!['discount'] is Map && (product!['discount'] as Map).isNotEmpty)
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: DiscountTimerBanner(discount: product!['discount'], isBadge: true),
+                        ),
+                    ],
                   ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                  SliverToBoxAdapter(
-                    child: Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: RelatedProducts(productId: widget.productId),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
-                ],
+                ),
               ),
-            );
-          },
+
+              // 2. PRODUCT INFO
+              ProductInfo(
+                category: product!['category'] ?? "Unknown",
+                sku: product!['sku'] ?? "Unknown",
+                title: product!['title'] ?? "Unknown",
+                summaryName: product!['summary_name'] ?? "",
+                rating: (product!['rating'] is Map)
+                    ? (product!['rating']['average'] as num?)?.toDouble() ?? 0.0
+                    : (product!['rating'] as num?)?.toDouble() ?? 0.0,
+                numOfReviews: (product!['rating'] is Map)
+                    ? (product!['rating']['count'] as num?)?.toInt() ?? 0
+                    : product!['num_of_reviews'] ?? 0,
+              ),
+
+              const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
+
+              // 3. BULK SAVINGS TABLE
+              if (product!['table_price'] is List && (product!['table_price'] as List).isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ModernTablePriceList(tiers: List<Map<String, dynamic>>.from(product!['table_price'])),
+                  ),
+                ),
+
+              // 4. DISCOUNT TIMER
+              if (product!['discount'] is Map && (product!['discount'] as Map).isNotEmpty)
+                SliverToBoxAdapter(
+                  child: DiscountTimerBanner(discount: product!['discount'], isBadge: false),
+                ),
+
+              // 5. ATTRIBUTES
+              if (product!['attributes'] != null)
+                ExpandableSection(
+                  title: "Product Specifications",
+                  initiallyExpanded: true,
+                  leadingIcon: Icons.tune_outlined,
+                  child: ProductAttributes(attributes: product!['attributes']),
+                ),
+
+              const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
+
+              // 6. DESCRIPTION
+              ExpandableSection(
+                title: "Description",
+                leadingIcon: Icons.notes_outlined,
+                child: Html(
+                  data: product!['description'] ?? "",
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(14.0),
+                      color: Colors.black87,
+                      lineHeight: LineHeight(1.5),
+                    ),
+                  },
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+              // 7. RELATED PRODUCTS
+              SliverToBoxAdapter(
+                child: Container(
+                  color: const Color(0xFFF9F9F9),
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          "You might also like",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      RelatedProducts(productId: widget.productId),
+                    ],
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 30)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ----------------------------------------------------
-// COMPONENTS
-// ----------------------------------------------------
+// --- SUPPORTING WIDGETS ---
 
 class BottomCartAction extends StatelessWidget {
   final double unitPrice;
@@ -433,6 +455,10 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
     try {
       DateTime end = DateTime.parse(widget.discount['end_date']);
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
         final now = DateTime.now();
         if (end.isAfter(now)) {
           setState(() {
@@ -448,7 +474,7 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    if (mounted && _timer.isActive) _timer.cancel();
     super.dispose();
   }
 
@@ -491,7 +517,7 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
             child: const Icon(Icons.local_fire_department, color: Colors.red, size: 20),
           ),
           const SizedBox(width: 12),

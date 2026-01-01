@@ -33,9 +33,9 @@ class CustomEndDrawer extends StatefulWidget {
 }
 
 class _CustomEndDrawerState extends State<CustomEndDrawer> {
-  // ✅ Branding Colors
+  // Branding Colors
   final Color brandingColor = const Color(0xFF0C1E4E);
-  final Color activeHighlight = Colors.white; // Very light grey-blue for expanded items
+  final Color activeHighlight = Colors.white;
 
   List<CategoryModel> categories = [];
   List<BrandModel> brands = [];
@@ -58,7 +58,6 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     }
   }
 
-  // (Fetch methods remain the same)
   Future<void> fetchCategories(String locale) async {
     if (_cachedCategories != null && _cachedLocale == locale) {
       setState(() { categories = _cachedCategories!; isLoadingCategories = false; });
@@ -100,14 +99,14 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     final localizations = AppLocalizations.of(context)!;
 
     return Drawer(
-      backgroundColor: Colors.white, // ✅ Clean White Background
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topRight: Radius.circular(0), bottomRight: Radius.circular(0)), // Standard straight edge
+        borderRadius: BorderRadius.only(topRight: Radius.circular(0), bottomRight: Radius.circular(0)),
       ),
       child: SafeArea(
         child: Column(
           children: [
-            // 1. HEADER (Logo Area)
+            // 1. HEADER
             Container(
               height: 150,
               width: double.infinity,
@@ -136,10 +135,10 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     children: isLoadingCategories
                         ? [_buildLoadingIndicator()]
                         : [_buildGrid(categories.map((cat) => {
-                      'id' : cat.id,
+                      'type': 'category', // ✅ Identify Type
+                      'id': cat.id,
                       'title': cat.name,
                       'image': cat.image,
-                      'route': cat.route,
                     }).toList())],
                   ),
 
@@ -153,9 +152,10 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     children: isLoadingManufacturers
                         ? [_buildLoadingIndicator()]
                         : [_buildGrid(manufacturers.map((man) => {
+                      'type': 'manufacturer', // ✅ Identify Type
+                      'slug': man.slug,       // ✅ Pass slug
                       'title': man.title,
                       'image': man.image,
-                      'route': '/manufacturers/${man.slug}',
                     }).toList())],
                   ),
 
@@ -169,9 +169,10 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     children: isLoadingBrands
                         ? [_buildLoadingIndicator()]
                         : [_buildGrid(brands.map((brand) => {
+                      'type': 'brand',    // ✅ Identify Type
+                      'slug': brand.slug, // ✅ Pass slug
                       'title': brand.title,
                       'image': brand.image,
-                      'route': '/brands/${brand.slug}',
                     }).toList())],
                   ),
 
@@ -215,20 +216,17 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
       {required IconData icon, required IconData activeIcon, required String title, required List<Widget> children}) {
     return Theme(
       data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent, // Removes top/bottom lines
-        splashColor: Colors.transparent,  // Removes tap splash
-        highlightColor: Colors.transparent, // Removes tap highlight
+        dividerColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
       ),
       child: ExpansionTile(
         backgroundColor: Colors.white,
         collapsedBackgroundColor: Colors.white,
-
         shape: const Border(),
         collapsedShape: const Border(),
-
         tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         childrenPadding: const EdgeInsets.only(bottom: 16),
-
         leading: Icon(icon, color: Colors.grey.shade700, size: 24),
         title: Text(
           title,
@@ -240,7 +238,6 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
         ),
         iconColor: brandingColor,
         textColor: brandingColor,
-
         children: children,
       ),
     );
@@ -252,9 +249,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: gridHeight),
       child: Container(
-        // ✅ CHANGE: Set to transparent or remove the color property entirely
         color: Colors.transparent,
-
         child: GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -266,8 +261,12 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
           children: items.map((item) {
             return GestureDetector(
               onTap: () {
-                Navigator.pop(context);
-                if (item['id'] != null) {
+                Navigator.pop(context); // Close the drawer first
+
+                final String type = item['type'] ?? 'category';
+
+                // 1. CATEGORY CLICKED -> Go to SubCategory Screen
+                if (type == 'category' && item['id'] != null) {
                   Navigator.pushNamed(
                     context,
                     subCategoryScreenRoute,
@@ -281,12 +280,45 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     },
                   );
                 }
+                // 2. BRAND CLICKED -> Go to Products Screen (Filtered by Brand)
+                else if (type == 'brand') {
+                  // Make sure 'subCategoryProductsScreenRoute' is defined in your constants
+                  Navigator.pushNamed(
+                      context,
+                      // Use the route constant for "SubCategoryProductsScreen"
+                      "sub_category_products_screen",
+                      arguments: {
+                        'categorySlug': '', // Empty because we are filtering by brand
+                        'initialBrandSlug': item['slug'],
+                        'title': item['title'],
+                        'currentIndex': 0,
+                        'user': widget.user,
+                        'onTabChanged': widget.onTabChanged,
+                        'onLocaleChange': widget.onLocaleChange,
+                      }
+                  );
+                }
+                // 3. MANUFACTURER CLICKED -> Go to Products Screen (Filtered by Manufacturer)
+                else if (type == 'manufacturer') {
+                  Navigator.pushNamed(
+                      context,
+                      "sub_category_products_screen",
+                      arguments: {
+                        'categorySlug': '', // Empty because we are filtering by manufacturer
+                        'initialManufacturerSlug': item['slug'],
+                        'title': item['title'],
+                        'currentIndex': 0,
+                        'user': widget.user,
+                        'onTabChanged': widget.onTabChanged,
+                        'onLocaleChange': widget.onLocaleChange,
+                      }
+                  );
+                }
               },
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  // ✅ Added a subtle grey border to separate items since background is white now
                   border: Border.all(color: Colors.grey.shade100, width: 1.5),
                   boxShadow: [
                     BoxShadow(
@@ -337,7 +369,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
   Widget _buildLanguageOption(BuildContext context,
       {required String flagAsset, required String label, required String localeCode}) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 40), // Indented for hierarchy
+      contentPadding: const EdgeInsets.symmetric(horizontal: 40),
       dense: true,
       leading: Text(flagAsset, style: const TextStyle(fontSize: 20)),
       title: Text(label, style: const TextStyle(fontSize: 14)),
@@ -353,7 +385,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 40),
       dense: true,
       title: Text(label, style: const TextStyle(fontSize: 14)),
-      onTap: () {}, // Add logic later
+      onTap: () {},
     );
   }
 

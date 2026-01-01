@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/components/network_image_with_loader.dart';
-import '../../../../constants.dart';
 import 'image_gallery_modal.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -52,8 +51,6 @@ class _ProductImagesState extends State<ProductImages> {
 
   @override
   Widget build(BuildContext context) {
-    // ⚠️ REMOVED SliverToBoxAdapter wrapper here.
-    // It is now a normal Container (Box Widget).
     return Container(
       color: Colors.white,
       child: Column(
@@ -128,8 +125,11 @@ class _ProductImagesState extends State<ProductImages> {
                         duration: const Duration(milliseconds: 200),
                         width: 60,
                         decoration: BoxDecoration(
+                          // ✅ FIXED: Border is now Orange when active
                           border: Border.all(
-                            color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
+                            color: isActive
+                                ? const Color(0xFFF37A20) // The Orange Color you requested
+                                : Colors.transparent,
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(8),

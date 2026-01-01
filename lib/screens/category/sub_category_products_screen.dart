@@ -8,6 +8,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../components/common/CustomBottomNavigationBar.dart';
 import '../../components/skleton/product/product_card_skelton.dart';
 import 'package:shop/route/route_constants.dart';
+import '../../constants.dart';
 
 class SubCategoryProductsScreen extends StatefulWidget {
   final String categorySlug;
@@ -38,7 +39,6 @@ class SubCategoryProductsScreen extends StatefulWidget {
 }
 
 class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
-  // ... existing variables ...
   List<ProductModel> products = [];
   bool isLoading = true;
   bool isLoadingMore = false;
@@ -74,9 +74,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     });
   }
 
-  // ... dispose, _fetchData, _onScroll, _onSearchChanged, _lookupName, _lookupAttributeName, _buildActiveFilters, _buildChip, _openFilterModal ...
-  // (Keep all existing helper methods exactly as they were)
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -86,7 +83,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   Future<void> _fetchData({bool refresh = false}) async {
-    // ... same as before ...
     if (isLoadingMore) return;
     final locale = Localizations.localeOf(context).languageCode;
     if (refresh) {
@@ -246,27 +242,25 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     );
   }
 
-  // ✅ FIXED NAVIGATION: Reset Stack completely
   void _onTabTapped(int index) {
     setState(() {
       _localCurrentIndex = index;
     });
 
     if (index == widget.currentIndex) {
-      // If same tab, pop to root of that tab
       Navigator.of(context).popUntil((route) => route.isFirst);
       return;
     }
 
-    // PUSH NEW ENTRY POINT -> NO FLASH
     Navigator.pushNamedAndRemoveUntil(
       context,
       entryPointScreenRoute,
-          (route) => false, // Remove all previous routes
-      arguments: index, // Pass the tab index
+          (route) => false,
+      arguments: index,
     );
   }
 
+  // ✅ Helper for Grid Delegate
   Widget _buildGridDelegate({required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
     return GridView.builder(
       controller: _scrollController,
@@ -274,7 +268,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       itemCount: itemCount,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.47,
+        childAspectRatio: 0.45,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -342,36 +336,57 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
           ),
           _buildActiveFilters(),
           Expanded(
-            child: isLoading && products.isEmpty
-                ? _buildGridDelegate(
-              itemCount: 6,
-              itemBuilder: (ctx, i) => const ProductCardSkeleton(),
-            )
-                : products.isEmpty
-                ? Center(child: Text(noProductsText))
-                : _buildGridDelegate(
-              itemCount: products.length + (isLoadingMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= products.length) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final product = products[index];
-                return ProductCard(
-                  id: product.id,
-                  image: product.image,
-                  category: widget.title,
-                  title: product.title,
-                  price: product.price,
-                  salePrice: product.salePrice ?? 0.0,
-                  sku: product.sku,
-                  rating: product.rating,
-                  discount: product.discount,
-                  freeShipping: product.freeShipping,
-                  press: () {
-                    Navigator.pushNamed(context, '/product-details', arguments: product.id);
-                  },
-                );
-              },
+            child: RefreshIndicator(
+              onRefresh: () => _fetchData(refresh: true),
+              color: primaryColor,
+              backgroundColor: Colors.white,
+              child: isLoading && products.isEmpty
+              // State 1: Initial Loading (Show 6 Skeletons)
+                  ? _buildGridDelegate(
+                itemCount: 6,
+                itemBuilder: (ctx, i) => const ProductCardSkeleton(),
+              )
+                  : products.isEmpty
+              // State 2: Empty List
+                  ? LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Center(child: Text(noProductsText)),
+                  ),
+                ),
+              )
+              // State 3: List Data + Infinite Scroll Skeletons
+                  : _buildGridDelegate(
+                // ✅ Show 2 extra items if loading more
+                itemCount: products.length + (isLoadingMore ? 2 : 0),
+                itemBuilder: (context, index) {
+                  // ✅ Show Skeletons at the bottom if we ran out of products
+                  if (index >= products.length) {
+                    return const ProductCardSkeleton();
+                  }
+
+                  final product = products[index];
+                  return ProductCard(
+                    id: product.id,
+                    image: product.image,
+                    category: widget.title,
+                    title: product.title,
+                    price: product.price,
+                    salePrice: product.salePrice ?? 0.0,
+                    sku: product.sku,
+                    rating: product.rating,
+                    discount: product.discount,
+                    freeShipping: product.freeShipping,
+                    press: () {
+                      Navigator.pushNamed(context, '/product-details', arguments: product.id);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
