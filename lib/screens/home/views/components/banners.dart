@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../components/skleton/others/offers_skelton.dart';
+import '../../../../components/skleton/others/banner_skeleton.dart'; // ADD THIS
+import '../../../../components/skleton/skeleton.dart';
 import '../../../../constants.dart';
 import '../../../../services/api_initializer.dart';
-import 'package:visibility_detector/visibility_detector.dart'; // Import VisibilityDetector
+import 'package:visibility_detector/visibility_detector.dart';
 
 class BannerFetcher extends StatefulWidget {
   const BannerFetcher({super.key});
@@ -13,10 +14,9 @@ class BannerFetcher extends StatefulWidget {
 }
 
 class _BannerFetcherState extends State<BannerFetcher> {
-  bool isSectionVisible = false; // Track if the section is visible
+  bool isSectionVisible = false;
   Future<Map<String, String>?>? _bannerFuture;
 
-  // Fetch banner only when the section is visible
   Future<Map<String, String>?> _fetchBanner() async {
     try {
       final data = await apiClient.get('/get-banners?image=bottom_big_banner_image&link=bottom_big_banner_link');
@@ -28,7 +28,7 @@ class _BannerFetcherState extends State<BannerFetcher> {
         };
       }
     } catch (e) {
-      print(e); // Handle error accordingly
+      print(e);
     }
     return null;
   }
@@ -36,21 +36,21 @@ class _BannerFetcherState extends State<BannerFetcher> {
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
-      key: Key('banner-section'),
+      key: const Key('banner-section'),
       onVisibilityChanged: (visibilityInfo) {
-        // Check if the section is at least 50% visible before fetching
         if (visibilityInfo.visibleFraction > 0.5 && !isSectionVisible) {
           setState(() {
             isSectionVisible = true;
-            _bannerFuture = _fetchBanner(); // Trigger fetch when section is visible
+            _bannerFuture = _fetchBanner();
           });
         }
       },
       child: FutureBuilder<Map<String, String>?>(
         future: _bannerFuture,
         builder: (context, snapshot) {
+          // 1. API LOADING STATE: Show BannerSkeleton
           if (snapshot.connectionState == ConnectionState.waiting || !isSectionVisible) {
-            return const OffersSkelton();
+            return const BannerSkeleton();
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
@@ -107,20 +107,57 @@ class BannerM extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: press,
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                image,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                const Center(child: Icon(Icons.broken_image)),
-                loadingBuilder: (context, child, loadingProgress) => child,
+        // 1. Force the container to hold the 2.0 ratio CONSTANTLY.
+        // This prevents layout jumps when switching from Skeleton to Image.
+        child: AspectRatio(
+          aspectRatio: 2.0,
+          child: Stack(
+            fit: StackFit.expand, // Ensures children fill the box
+            children: [
+              // 2. LAYER 0: THE SKELETON
+              // This sits behind the image. If the image is loading (transparent),
+              // the user sees this skeleton.
+              const ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                child: Skeleton(width: double.infinity, height: double.infinity),
               ),
-            ),
-            ...children,
-          ],
+
+              // 3. LAYER 1: THE IMAGE
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  image,
+                  fit: BoxFit.cover,
+
+                  // We use frameBuilder to smoothly fade the image in over the skeleton
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+
+                    // While frame is null, opacity is 0 (invisible), showing the Skeleton below.
+                    // When frame arrives, opacity becomes 1, covering the Skeleton.
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
+
+                  // NOTE: We don't need loadingBuilder anymore because the
+                  // Skeleton is already in the Stack behind the image!
+
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(
+                        color: Colors.grey[200],
+                        child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                      ),
+                ),
+              ),
+
+              // 4. LAYER 2: OVERLAY CHILDREN (Text, etc.)
+              ...children,
+            ],
+          ),
         ),
       ),
     );

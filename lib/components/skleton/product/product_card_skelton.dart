@@ -1,75 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/skleton/skelton.dart';
+import '../skeleton.dart'; // Adjust if needed
 
 class ProductCardSkeleton extends StatelessWidget {
   const ProductCardSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 1. Flat Image Placeholder
-        AspectRatio(
-          aspectRatio: 1.1,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[200], // Flat grey, no border
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // 2. Title Block (Long)
-        Container(
-          height: 14,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // 3. Title Block (Short)
-        Container(
-          height: 14,
-          width: 80,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-
-        const Spacer(),
-
-        // 4. Price & Button
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Price
-            Container(
-              height: 18,
-              width: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
+    return Container(
+      width: 200,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. IMAGE SECTION (Keep aspect ratio 1.1)
+          Padding(
+            padding: EdgeInsets.all(12),
+            child: AspectRatio(
+              aspectRatio: 1.1,
+              child: Skeleton(
+                width: double.infinity,
+                height: double.infinity,
+                layer: 1,
               ),
             ),
-            // Button
-            Container(
-              height: 32,
-              width: 70,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
+          ),
+
+          // 2. CONTENT SECTION
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // SKU
+                  Skeleton(width: 80, height: 10),
+                  SizedBox(height: 12),
+
+                  // Title (2 longer lines for realistic feel)
+                  Skeleton(width: double.infinity, height: 12),
+                  SizedBox(height: 8),
+                  Skeleton(width: 140, height: 12),
+
+                  Spacer(),
+
+                  // Price
+                  Skeleton(width: 100, height: 20),
+                  SizedBox(height: 12),
+
+                  // 3. BOTTOM ACTIONS
+                  // Quantity Row
+                  Row(
+                    children: [
+                      Skeleton(width: 32, height: 32),
+                      SizedBox(width: 8),
+                      Expanded(child: Skeleton(width: double.infinity, height: 32)),
+                      SizedBox(width: 8),
+                      Skeleton(width: 32, height: 32),
+                    ],
+                  ),
+
+                  SizedBox(height: 10),
+
+                  // Add to Cart Button
+                  Skeleton(width: double.infinity, height: 38),
+
+                  // Extra padding at bottom to match real card container
+                  SizedBox(height: 4),
+                ],
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

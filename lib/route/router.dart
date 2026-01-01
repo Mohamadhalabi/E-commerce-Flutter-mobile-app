@@ -153,8 +153,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //     builder: (context) => const AddReviewScreen(),
     //   );
     case homeScreenRoute:
+    // ✅ FIX: Return EntryPoint instead of HomeScreen directly
       return MaterialPageRoute(
-        builder: (context) => const HomeScreen(),
+        builder: (context) => EntryPoint(
+          initialIndex: 0,
+          onLocaleChange: (locale) {
+            LocaleController.updateLocale?.call(locale);
+          },
+        ),
       );
     // case brandScreenRoute:
     //   return MaterialPageRoute(
@@ -198,10 +204,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       if (args is int) {
         initialIndex = args;
       }
-
       return MaterialPageRoute(
         builder: (context) => EntryPoint(
-          initialIndex: initialIndex, // Passing it here
+          initialIndex: initialIndex,
           onLocaleChange: (locale) {
             LocaleController.updateLocale?.call(locale);
           },
@@ -306,12 +311,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (context) => const CartScreen(isStandalone: true),
       );
     case subCategoryScreenRoute:
+    // This looks correct, assuming arguments are passed correctly from Categories
       final args = settings.arguments as Map<String, dynamic>;
       return MaterialPageRoute(
         builder: (_) => SubCategoryScreen(
           parentId: args['parentId'],
           title: args['title'],
-          currentIndex: args['currentIndex'], // pass this
+          currentIndex: args['currentIndex'],
           user: args['user'],
           onTabChanged: args['onTabChanged'],
           onLocaleChange: args['onLocaleChange'],
@@ -333,9 +339,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => const ContactUsScreen());
 
     default:
+    // ✅ FIX: Default to EntryPoint
       return MaterialPageRoute(
-        // Make a screen for undefine
-        builder: (context) => const HomeScreen(),
+        builder: (context) => EntryPoint(
+          initialIndex: 0,
+          onLocaleChange: (locale) {
+            LocaleController.updateLocale?.call(locale);
+          },
+        ),
       );
   }
 }

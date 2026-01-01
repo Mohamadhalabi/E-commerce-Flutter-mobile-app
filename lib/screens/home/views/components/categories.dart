@@ -3,9 +3,22 @@ import 'package:shop/components/skleton/others/categories_skelton.dart';
 import '../../../../constants.dart';
 import '../../../../services/api_service.dart';
 import 'package:shop/models/category_model.dart';
+import 'package:shop/screens/category/sub_category_screen.dart'; // Import the screen
 
 class Categories extends StatefulWidget {
-  const Categories({super.key});
+  // Add these fields so they can be passed to the SubCategoryScreen
+  final int currentIndex;
+  final Map<String, dynamic>? user;
+  final Function(int) onTabChanged;
+  final Function(String) onLocaleChange;
+
+  const Categories({
+    super.key,
+    required this.currentIndex,
+    required this.user,
+    required this.onTabChanged,
+    required this.onLocaleChange,
+  });
 
   @override
   State<Categories> createState() => _CategoriesState();
@@ -19,9 +32,7 @@ class _CategoriesState extends State<Categories> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     final newLocale = Localizations.localeOf(context).languageCode;
-
     if (_currentLocale != newLocale) {
       _currentLocale = newLocale;
       fetchCategories(newLocale);
@@ -30,7 +41,6 @@ class _CategoriesState extends State<Categories> {
 
   Future<void> fetchCategories(String locale) async {
     setState(() => isLoading = true);
-
     try {
       final data = await ApiService.fetchCategories(locale);
       setState(() {
@@ -64,9 +74,22 @@ class _CategoriesState extends State<Categories> {
               category: categories[index].name,
               image: categories[index].image,
               press: () {
-                if (categories[index].route != null) {
-                  Navigator.pushNamed(context, categories[index].route!);
-                }
+                // NAVIGATION LOGIC
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SubCategoryScreen(
+                      // Assuming your CategoryModel has an 'id' field
+                      parentId: categories[index].id,
+                      title: categories[index].name,
+                      // Pass the required parameters down
+                      currentIndex: widget.currentIndex,
+                      user: widget.user,
+                      onTabChanged: widget.onTabChanged,
+                      onLocaleChange: widget.onLocaleChange,
+                    ),
+                  ),
+                );
               },
             ),
           ),
@@ -90,7 +113,7 @@ class CategoryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material( // ✅ This fixes the "No Material widget" error
+    return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: press,
@@ -123,7 +146,7 @@ class CategoryBtn extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: greenColor,
+                  color: greenColor, // Ensure greenColor is defined in constants
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
