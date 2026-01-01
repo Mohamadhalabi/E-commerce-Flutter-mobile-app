@@ -1105,4 +1105,40 @@ class ApiService {
       throw Exception("Error fetching catalog: $e");
     }
   }
+
+  // Search Suggestions (Live Search)
+  static Future<List<ProductModel>> fetchSearchSuggestions(String query, String locale) async {
+    if (query.length < 3) return []; // API requires min 3 chars
+
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // Route defined in api.php: /search/suggest
+    final Uri url = Uri.parse('$apiBaseUrl/search/suggest?search=$query&limit=10&currency=USD');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: _buildHeaders(locale, apiKey, secretKey),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final List data = jsonResponse['data'] ?? [];
+
+        return data.map((item) {
+          // The search controller returns a slightly different structure (e.g. 'href'),
+          // but ProductModel.fromJson should handle the common fields (id, title, image, price).
+          return ProductModel.fromJson(item);
+        }).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print("Search Suggest Error: $e");
+      return [];
+    }
+  }
 }

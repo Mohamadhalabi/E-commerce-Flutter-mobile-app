@@ -154,6 +154,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           categorySlug: args['categorySlug'] ?? '',
           initialBrandSlug: args['initialBrandSlug'],
           initialManufacturerSlug: args['initialManufacturerSlug'],
+
+          // ✅ Add this line
+          searchQuery: args['searchQuery'],
+
           title: args['title'] ?? 'Products',
           currentIndex: args['currentIndex'] ?? 0,
           user: args['user'],

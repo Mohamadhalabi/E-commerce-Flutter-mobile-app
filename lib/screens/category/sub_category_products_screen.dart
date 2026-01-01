@@ -18,6 +18,7 @@ class SubCategoryProductsScreen extends StatefulWidget {
 
   final String? initialBrandSlug;
   final String? initialManufacturerSlug;
+  final String? searchQuery;
 
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
@@ -30,6 +31,7 @@ class SubCategoryProductsScreen extends StatefulWidget {
     required this.user,
     this.initialBrandSlug,
     this.initialManufacturerSlug,
+    this.searchQuery,
     required this.onTabChanged,
     required this.onLocaleChange,
   });
@@ -65,9 +67,16 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     _scrollController = ScrollController()..addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
 
+    // Initialize Base Filters
     if (widget.categorySlug.isNotEmpty) _selectedCategories.add(widget.categorySlug);
     if (widget.initialBrandSlug != null) _selectedBrands.add(widget.initialBrandSlug!);
     if (widget.initialManufacturerSlug != null) _selectedManufacturers.add(widget.initialManufacturerSlug!);
+
+    // Initialize Search Query
+    if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
+      _currentQuery = widget.searchQuery!;
+      _searchController.text = widget.searchQuery!;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchData(refresh: true);
@@ -134,12 +143,40 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       final query = _searchController.text.trim();
+
+      // ✅ CHECK: Only search if empty (to reset) OR if 3+ characters
+      if (query.isNotEmpty && query.length < 3) return;
+
       if (query != _currentQuery) {
         setState(() {
           _currentQuery = query;
+
+          // 1. Clear Applied Attributes
+          _selectedAttributes.clear();
+
+          // 2. Reset Brands (Restore initial only)
+          _selectedBrands.clear();
+          if (widget.initialBrandSlug != null) {
+            _selectedBrands.add(widget.initialBrandSlug!);
+          }
+
+          // 3. Reset Manufacturers (Restore initial only)
+          _selectedManufacturers.clear();
+          if (widget.initialManufacturerSlug != null) {
+            _selectedManufacturers.add(widget.initialManufacturerSlug!);
+          }
+
+          // 4. Reset Categories (Restore initial only)
+          _selectedCategories.clear();
+          if (widget.categorySlug.isNotEmpty) {
+            _selectedCategories.add(widget.categorySlug);
+          }
+
+          // 5. Clear Products & Reset Loading
           products.clear();
           isLoading = true;
         });
+
         _fetchData(refresh: true);
       }
     });
@@ -176,12 +213,15 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       _fetchData(refresh: true);
     }
     for (var slug in _selectedBrands) {
+      if (widget.initialBrandSlug == slug) continue;
       chips.add(_buildChip(_lookupName(slug, 'brands'), () => removeFilter(() => _selectedBrands.remove(slug))));
     }
     for (var slug in _selectedManufacturers) {
+      if (widget.initialManufacturerSlug == slug) continue;
       chips.add(_buildChip(_lookupName(slug, 'manufacturers'), () => removeFilter(() => _selectedManufacturers.remove(slug))));
     }
     for (var slug in _selectedCategories) {
+      if (widget.categorySlug == slug) continue;
       chips.add(_buildChip(_lookupName(slug, 'categories'), () => removeFilter(() => _selectedCategories.remove(slug))));
     }
     _selectedAttributes.forEach((group, items) {
@@ -260,7 +300,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     );
   }
 
-  // ✅ Helper for Grid Delegate
   Widget _buildGridDelegate({required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
     return GridView.builder(
       controller: _scrollController,
@@ -341,13 +380,11 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
               color: primaryColor,
               backgroundColor: Colors.white,
               child: isLoading && products.isEmpty
-              // State 1: Initial Loading (Show 6 Skeletons)
                   ? _buildGridDelegate(
                 itemCount: 6,
                 itemBuilder: (ctx, i) => const ProductCardSkeleton(),
               )
                   : products.isEmpty
-              // State 2: Empty List
                   ? LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -359,12 +396,9 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                   ),
                 ),
               )
-              // State 3: List Data + Infinite Scroll Skeletons
                   : _buildGridDelegate(
-                // ✅ Show 2 extra items if loading more
                 itemCount: products.length + (isLoadingMore ? 2 : 0),
                 itemBuilder: (context, index) {
-                  // ✅ Show Skeletons at the bottom if we ran out of products
                   if (index >= products.length) {
                     return const ProductCardSkeleton();
                   }
@@ -382,7 +416,11 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                     discount: product.discount,
                     freeShipping: product.freeShipping,
                     press: () {
-                      Navigator.pushNamed(context, '/product-details', arguments: product.id);
+                      Navigator.pushNamed(
+                          context,
+                          productDetailsScreenRoute,
+                          arguments: product.id
+                      );
                     },
                   );
                 },

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:shop/providers/cart_provider.dart';
 import '../../../components/skleton/product_details_skeleton.dart';
+import '../../../models/product_model.dart';
 import '../../../route/route_constants.dart';
 import '../../../constants.dart';
 
@@ -14,6 +15,7 @@ import '../../../components/common/drawer.dart';
 import '../../../components/common/CustomBottomNavigationBar.dart';
 import '../../../components/product/related_products.dart';
 import '../../../services/api_service.dart';
+import '../../../services/local_storage_service.dart';
 import 'components/expandable_section.dart';
 import 'components/product_images.dart';
 import 'components/product_info.dart';
@@ -63,6 +65,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         widget.productId,
         _currentLocale!,
       );
+
+      try {
+        ProductModel pModel = ProductModel.fromJson(result);
+        await LocalStorageService.addToRecentlyViewed(pModel);
+      } catch (e) {
+        print("Error saving recent view: $e");
+      }
+
       setState(() {
         product = result;
         isLoading = false;
