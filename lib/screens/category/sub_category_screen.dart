@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shop/components/skleton/skelton.dart';
 import 'package:shop/components/skleton/subcategory_card_skeleton.dart';
-import 'package:shop/screens/category/sub_category_products_screen.dart';
 import 'package:shop/services/api_service.dart';
 import '../../components/common/CustomBottomNavigationBar.dart';
 import 'package:shop/route/route_constants.dart';
@@ -53,7 +52,6 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
     }
   }
 
-  // ✅ FIXED NAVIGATION: Reset Stack completely (Same as Products Screen)
   void _onTabTapped(int index) {
     setState(() {
       _localCurrentIndex = index;
@@ -64,7 +62,6 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
       return;
     }
 
-    // PUSH AND REMOVE UNTIL -> Prevents Home Screen Flash
     Navigator.pushNamedAndRemoveUntil(
       context,
       entryPointScreenRoute,
@@ -117,18 +114,18 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
           final item = subcategories[index];
           return GestureDetector(
             onTap: () {
-              Navigator.push(
+              // ✅ FIXED: Use pushNamed to match Router logic
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => SubCategoryProductsScreen(
-                    categorySlug: item['slug'] ?? '',
-                    title: item['name'] ?? '',
-                    currentIndex: widget.currentIndex,
-                    user: widget.user,
-                    onTabChanged: widget.onTabChanged,
-                    onLocaleChange: widget.onLocaleChange,
-                  ),
-                ),
+                "sub_category_products_screen",
+                arguments: {
+                  'categorySlug': item['slug'] ?? '',
+                  'title': item['name'] ?? '',
+                  'currentIndex': widget.currentIndex,
+                  'user': widget.user,
+                  'onTabChanged': widget.onTabChanged,
+                  'onLocaleChange': widget.onLocaleChange,
+                },
               );
             },
             child: Container(
@@ -175,7 +172,6 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
           );
         },
       ),
-
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _localCurrentIndex,
         onTap: _onTabTapped,

@@ -9,6 +9,7 @@ import '../../components/common/CustomBottomNavigationBar.dart';
 import '../../components/skleton/product/product_card_skelton.dart';
 import 'package:shop/route/route_constants.dart';
 import '../../constants.dart';
+import '../../components/common/drawer.dart';
 
 class SubCategoryProductsScreen extends StatefulWidget {
   final String categorySlug;
@@ -23,6 +24,9 @@ class SubCategoryProductsScreen extends StatefulWidget {
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
 
+  // Flag to know if this is the Main "Shop" Tab
+  final bool isMainTab;
+
   const SubCategoryProductsScreen({
     super.key,
     required this.categorySlug,
@@ -34,6 +38,7 @@ class SubCategoryProductsScreen extends StatefulWidget {
     this.searchQuery,
     required this.onTabChanged,
     required this.onLocaleChange,
+    this.isMainTab = false,
   });
 
   @override
@@ -67,12 +72,10 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     _scrollController = ScrollController()..addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
 
-    // Initialize Base Filters
     if (widget.categorySlug.isNotEmpty) _selectedCategories.add(widget.categorySlug);
     if (widget.initialBrandSlug != null) _selectedBrands.add(widget.initialBrandSlug!);
     if (widget.initialManufacturerSlug != null) _selectedManufacturers.add(widget.initialManufacturerSlug!);
 
-    // Initialize Search Query
     if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
       _currentQuery = widget.searchQuery!;
       _searchController.text = widget.searchQuery!;
@@ -144,39 +147,22 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     _debounce = Timer(const Duration(milliseconds: 500), () {
       final query = _searchController.text.trim();
 
-      // ✅ CHECK: Only search if empty (to reset) OR if 3+ characters
       if (query.isNotEmpty && query.length < 3) return;
 
       if (query != _currentQuery) {
         setState(() {
           _currentQuery = query;
-
-          // 1. Clear Applied Attributes
           _selectedAttributes.clear();
-
-          // 2. Reset Brands (Restore initial only)
           _selectedBrands.clear();
-          if (widget.initialBrandSlug != null) {
-            _selectedBrands.add(widget.initialBrandSlug!);
-          }
-
-          // 3. Reset Manufacturers (Restore initial only)
+          if (widget.initialBrandSlug != null) _selectedBrands.add(widget.initialBrandSlug!);
           _selectedManufacturers.clear();
-          if (widget.initialManufacturerSlug != null) {
-            _selectedManufacturers.add(widget.initialManufacturerSlug!);
-          }
-
-          // 4. Reset Categories (Restore initial only)
+          if (widget.initialManufacturerSlug != null) _selectedManufacturers.add(widget.initialManufacturerSlug!);
           _selectedCategories.clear();
-          if (widget.categorySlug.isNotEmpty) {
-            _selectedCategories.add(widget.categorySlug);
-          }
+          if (widget.categorySlug.isNotEmpty) _selectedCategories.add(widget.categorySlug);
 
-          // 5. Clear Products & Reset Loading
           products.clear();
           isLoading = true;
         });
-
         _fetchData(refresh: true);
       }
     });
@@ -283,6 +269,9 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   void _onTabTapped(int index) {
+    // If it's the main tab, we let the MainScaffold handle navigation, so we do nothing here
+    if (widget.isMainTab) return;
+
     setState(() {
       _localCurrentIndex = index;
     });
@@ -318,12 +307,40 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   @override
   Widget build(BuildContext context) {
     String noProductsText = "No products found";
+
+    // ✅ 1. Determine Leading Icon (Menu vs Back)
+    Widget? leadingIcon;
+    if (widget.isMainTab) {
+      leadingIcon = Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.black),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      );
+    } else {
+      leadingIcon = IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : null,
+      );
+    }
+
     return Scaffold(
+      // ✅ 2. Show drawer only if this is the Main Tab
+      drawer: widget.isMainTab
+          ? CustomEndDrawer(
+        onLocaleChange: widget.onLocaleChange,
+        user: widget.user,
+        onTabChanged: widget.onTabChanged,
+      )
+          : null,
+
       appBar: AppBar(
         title: Text(widget.title),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
+        leading: leadingIcon, // Use logic from above
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Stack(
@@ -402,7 +419,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                   if (index >= products.length) {
                     return const ProductCardSkeleton();
                   }
-
                   final product = products[index];
                   return ProductCard(
                     id: product.id,
@@ -429,7 +445,11 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: CustomBottomNavigationBar(
+      // ✅ 3. HIDE Bottom Navigation Bar if this is the Main Tab
+      // because the MainScaffold already has one.
+      bottomNavigationBar: widget.isMainTab
+          ? null
+          : CustomBottomNavigationBar(
         currentIndex: _localCurrentIndex,
         onTap: _onTabTapped,
       ),

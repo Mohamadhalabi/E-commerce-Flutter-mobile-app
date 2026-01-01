@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
 import 'components/common/MainScaffold.dart';
+// ✅ Import the product screen
+import 'screens/category/sub_category_products_screen.dart';
 
 class EntryPoint extends StatefulWidget {
   final Function(String) onLocaleChange;
@@ -21,9 +23,6 @@ class EntryPoint extends StatefulWidget {
 }
 
 class _EntryPointState extends State<EntryPoint> {
-  // REMOVED: final List _pages = const [...]
-  // We will define pages inside build() now.
-
   late int _currentIndex;
   final List<int> _history = [];
   Map<String, dynamic>? user;
@@ -57,17 +56,33 @@ class _EntryPointState extends State<EntryPoint> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIX: Define pages here to pass dynamic data to HomeScreen
     final List<Widget> pages = [
+      // 0. Home
       HomeScreen(
         currentIndex: _currentIndex,
         user: user,
         onTabChanged: _onTabChanged,
         onLocaleChange: widget.onLocaleChange,
       ),
+
+      // 1. Search / Discover
       const DiscoverScreen(),
-      const BookmarkScreen(),
-      const CartScreen(isStandalone: false), // Assuming CartScreen supports this
+
+      // ✅ 2. Shop Tab (Replaces BookmarkScreen)
+      SubCategoryProductsScreen(
+        categorySlug: "", // Empty string = fetch ALL products
+        title: "Shop",
+        currentIndex: 2,
+        user: user,
+        onTabChanged: _onTabChanged, // Allows tab switching from nav bar
+        onLocaleChange: widget.onLocaleChange,
+        isMainTab: true, // Enables Menu Icon & Drawer
+      ),
+
+      // 3. Cart
+      const CartScreen(isStandalone: false),
+
+      // 4. Profile
       const ProfileScreen(),
     ];
 
@@ -94,7 +109,7 @@ class _EntryPointState extends State<EntryPoint> {
               child: child,
             );
           },
-          child: pages[_currentIndex], // Use the local list
+          child: pages[_currentIndex],
         ),
       ),
     );

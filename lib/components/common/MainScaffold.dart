@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'CustomBottomNavigationBar.dart';
-import 'app_bar.dart';
-import 'drawer.dart';
+import 'package:shop/components/common/CustomBottomNavigationBar.dart';
+import 'package:shop/components/common/drawer.dart';
+
+import 'app_bar.dart'; // Checked import path
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -22,13 +23,17 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      // ✅ FIX: Hide AppBar on Shop Tab (Index 2) to avoid double bars
+      appBar: currentIndex == 2 ? null : const CustomAppBar(),
+
       drawer: CustomEndDrawer(
         onLocaleChange: onLocaleChange,
         user: user,
         onTabChanged: onTabChanged!,
       ),
+
       body: child,
+
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: currentIndex,
         onTap: onTabChanged,
