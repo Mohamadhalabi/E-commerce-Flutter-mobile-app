@@ -193,8 +193,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (context) => const BookmarkScreen(),
       );
     case entryPointScreenRoute:
+      final args = settings.arguments;
+      int initialIndex = 0;
+      if (args is int) {
+        initialIndex = args;
+      }
+
       return MaterialPageRoute(
         builder: (context) => EntryPoint(
+          initialIndex: initialIndex, // Passing it here
           onLocaleChange: (locale) {
             LocaleController.updateLocale?.call(locale);
           },

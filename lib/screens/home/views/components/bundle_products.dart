@@ -86,7 +86,7 @@ class _BundleProductsState extends State<BundleProducts> {
             )
           else
             SizedBox(
-              height: 390,
+              height: 420,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,

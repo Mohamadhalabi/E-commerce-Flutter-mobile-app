@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shop/components/skleton/skelton.dart';
+import 'package:shop/components/skleton/subcategory_card_skeleton.dart';
 import 'package:shop/screens/category/sub_category_products_screen.dart';
 import 'package:shop/services/api_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../constants.dart';
+import '../../components/common/CustomBottomNavigationBar.dart';
+import 'package:shop/route/route_constants.dart';
 
 class SubCategoryScreen extends StatefulWidget {
   final int parentId;
@@ -32,10 +32,12 @@ class SubCategoryScreen extends StatefulWidget {
 class _SubCategoryScreenState extends State<SubCategoryScreen> {
   List<dynamic> subcategories = [];
   bool isLoading = true;
+  late int _localCurrentIndex;
 
   @override
   void initState() {
     super.initState();
+    _localCurrentIndex = widget.currentIndex;
     fetchSubcategories();
   }
 
@@ -51,11 +53,39 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
     }
   }
 
+  // ✅ FIXED NAVIGATION: Reset Stack completely (Same as Products Screen)
   void _onTabTapped(int index) {
-    widget.onTabChanged(index);
-    Navigator.pop(context); // or maybe Navigator.of(context).maybePop();
+    setState(() {
+      _localCurrentIndex = index;
+    });
+
+    if (index == widget.currentIndex) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+
+    // PUSH AND REMOVE UNTIL -> Prevents Home Screen Flash
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      entryPointScreenRoute,
+          (route) => false,
+      arguments: index,
+    );
   }
 
+  Widget _buildGrid({required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 15),
+      itemCount: itemCount,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.0,
+      ),
+      itemBuilder: itemBuilder,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,26 +97,22 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
         ),
         title: Text(
           widget.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.white,
       ),
       body: isLoading
-          ? const Padding(
-        padding: EdgeInsets.all(16),
-        child: Skeleton(height: 200, width: double.infinity),
+          ? _buildGrid(
+        itemCount: 8,
+        itemBuilder: (ctx, i) => const SubCategoryCardSkeleton(),
       )
-          : GridView.builder(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 15),
+          : subcategories.isEmpty
+          ? const Center(child: Text("No subcategories found"))
+          : _buildGrid(
         itemCount: subcategories.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 24,
-          mainAxisSpacing: 24,
-        ),
         itemBuilder: (context, index) {
           final item = subcategories[index];
           return GestureDetector(
@@ -95,7 +121,7 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => SubCategoryProductsScreen(
-                    subCategoryId: item['id'],
+                    categorySlug: item['slug'] ?? '',
                     title: item['name'] ?? '',
                     currentIndex: widget.currentIndex,
                     user: widget.user,
@@ -112,7 +138,7 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
                 border: Border.all(color: Colors.grey.shade200, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withAlpha(90),
+                    color: Colors.grey.withOpacity(0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -128,7 +154,7 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
                       fit: BoxFit.contain,
                       placeholder: (context, url) => const Skeleton(),
                       errorWidget: (context, url, error) =>
-                      const Icon(Icons.image_not_supported),
+                      const Icon(Icons.image_not_supported, color: Colors.grey),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -137,10 +163,10 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
-                      color: Colors.black54,
+                      color: Colors.black87,
                     ),
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -149,37 +175,10 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: widget.currentIndex,
+
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _localCurrentIndex,
         onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: primaryColor,
-        selectedFontSize: 12,
-        backgroundColor: Theme.of(context).brightness == Brightness.light
-            ? Colors.white
-            : const Color(0xFF101015),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: AppLocalizations.of(context)!.home,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.search),
-            label: AppLocalizations.of(context)!.search,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.store),
-            label: AppLocalizations.of(context)!.shop,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.shopping_cart),
-            label: AppLocalizations.of(context)!.cart,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: AppLocalizations.of(context)!.profile,
-          ),
-        ],
       ),
     );
   }

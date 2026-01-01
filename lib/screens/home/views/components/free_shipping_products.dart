@@ -89,7 +89,7 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
             )
           else
             SizedBox(
-              height: 390,
+              height: 420,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
-import 'package:shop/providers/theme_provider.dart'; // ✅ Import this
+import 'package:shop/providers/theme_provider.dart';
 import 'package:shop/services/api_initializer.dart';
 import 'package:shop/theme/app_theme.dart';
 import 'package:shop/route/route_constants.dart';

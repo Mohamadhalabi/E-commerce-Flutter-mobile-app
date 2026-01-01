@@ -9,7 +9,14 @@ import 'components/common/MainScaffold.dart';
 class EntryPoint extends StatefulWidget {
   final Function(String) onLocaleChange;
 
-  const EntryPoint({super.key, required this.onLocaleChange});
+  // ✅ 1. Add initialIndex parameter
+  final int initialIndex;
+
+  const EntryPoint({
+    super.key,
+    required this.onLocaleChange,
+    this.initialIndex = 0, // Default to Home
+  });
 
   @override
   State<EntryPoint> createState() => _EntryPointState();
@@ -24,15 +31,20 @@ class _EntryPointState extends State<EntryPoint> {
     ProfileScreen(),
   ];
 
-  int _currentIndex = 0;
-
-  final List<int> _history = [0];
+  late int _currentIndex; // Changed to late so we can init in initState
+  final List<int> _history = [];
 
   Map<String, dynamic>? user;
 
   @override
   void initState() {
     super.initState();
+    // ✅ 2. Initialize current index from widget parameter
+    _currentIndex = widget.initialIndex;
+
+    // Initialize history with the starting index
+    _history.add(_currentIndex);
+
     _loadUserData();
   }
 
@@ -49,15 +61,13 @@ class _EntryPointState extends State<EntryPoint> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // 2. LOGIC CHANGE:
-      // Only allow the app to close if we have 1 item left in history (which is the starting Home).
+      // Only allow app to close if history has 1 item or less
       canPop: _history.length <= 1,
 
       onPopInvoked: (didPop) {
         if (didPop) return;
 
-        // 3. GO BACK STEP:
-        // Remove the current tab from history and go back to the previous one.
+        // Go back logic
         setState(() {
           _history.removeLast();
           _currentIndex = _history.last;
@@ -69,11 +79,9 @@ class _EntryPointState extends State<EntryPoint> {
         onLocaleChange: widget.onLocaleChange,
         currentIndex: _currentIndex,
         onTabChanged: (index) {
-          // 4. NAVIGATION LOGIC:
           if (index != _currentIndex) {
             setState(() {
               _currentIndex = index;
-              // Add the new tab to our history list so we can go back to it later
               _history.add(index);
             });
           }
