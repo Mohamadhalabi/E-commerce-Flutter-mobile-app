@@ -20,6 +20,7 @@ const productDemoImg6 = "";
 const grandisExtendedFont = "Poppins";
 
 // On color 80, 60.... those means opacity
+const double defaultBorderRadius = 12.0; // Add this line
 
 const Color primaryColor = Color(0xFFDC2626);
 
