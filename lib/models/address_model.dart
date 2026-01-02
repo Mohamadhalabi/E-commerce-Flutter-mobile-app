@@ -8,7 +8,10 @@ class AddressModel {
   final String postalCode;
   final String phone;
   final bool isDefault;
-  final String state; // Kept as fallback
+  final String state;
+
+  // ✅ ADD THIS FIELD
+  final String? countryName;
 
   AddressModel({
     required this.id,
@@ -21,6 +24,8 @@ class AddressModel {
     required this.phone,
     required this.isDefault,
     this.state = '',
+    // ✅ ADD TO CONSTRUCTOR
+    this.countryName,
   });
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
@@ -30,14 +35,15 @@ class AddressModel {
       countryId: json['country_id'],
       city: json['city'] ?? '',
       address: json['address'] ?? '',
-      // Fix: Backend might return null for street, ensure empty string fallback
       street: json['street'] ?? '',
       postalCode: json['postal_code'] ?? '',
       phone: json['phone'] ?? '',
-      // Handle boolean or 0/1 integer
       isDefault: json['is_default'] == 1 || json['is_default'] == true,
-      // Handle missing state safely
       state: json['state'] ?? '',
+
+      // ✅ PARSE IT HERE
+      // The backend usually sends 'country_name' in the checkout quote addresses
+      countryName: json['country_name'],
     );
   }
 }

@@ -345,19 +345,62 @@ class _QuantityCounter extends StatelessWidget {
 class _CheckoutBar extends StatelessWidget {
   final CartProvider cart;
   const _CheckoutBar({required this.cart});
+
   @override
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(offset: const Offset(0, -4), blurRadius: 20, color: Colors.black.withOpacity(0.05))]),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+                offset: const Offset(0, -4),
+                blurRadius: 20,
+                color: Colors.black.withOpacity(0.05)
+            )
+          ]
+      ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(tr.total, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)), Text("\$${cart.totalPrice.toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor))]),
+            Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(tr.total, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey)),
+                  Text("\$${cart.totalPrice.toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor))
+                ]
+            ),
             const SizedBox(height: 20),
-            SizedBox(width: double.infinity, height: 54, child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: primaryColor, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: Text(tr.checkout, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)))),
+            SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                    onPressed: () {
+                      // ✅ CHECK AUTHENTICATION HERE
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      if (auth.isAuthenticated) {
+                        // Go to Checkout
+                        Navigator.pushNamed(context, checkoutScreenRoute);
+                      } else {
+                        // Go to Login
+                        Navigator.pushNamed(context, logInScreenRoute);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+                    ),
+                    child: Text(
+                        tr.checkout,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)
+                    )
+                )
+            ),
           ],
         ),
       ),

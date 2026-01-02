@@ -6,6 +6,7 @@ import '../screens/category/sub_category_screen.dart';
 // ✅ 1. IMPORT THE NEW SCREEN
 import '../screens/category/sub_category_products_screen.dart';
 
+import '../screens/checkout/views/checkout_screen.dart';
 import '../screens/profile/views/info_screens.dart';
 import 'screen_export.dart' hide UserInfoScreen;
 import "package:shop/controllers/locale_controller.dart";
@@ -178,7 +179,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => const TermsConditionScreen());
     case contactUsScreenRoute:
       return MaterialPageRoute(builder: (_) => const ContactUsScreen());
-
+    case checkoutScreenRoute:
+      return MaterialPageRoute(
+          builder: (context) => const CheckoutScreen(),
+      );
     default:
       return MaterialPageRoute(
         builder: (context) => EntryPoint(

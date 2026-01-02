@@ -231,5 +231,18 @@
  "selectCountryError": "Please select a country",
  "selectCityError": "Please select a city",
  "addressSaved": "Address saved",
- "failedToSaveAddress": "Failed to save address"
+ "failedToSaveAddress": "Failed to save address",
+ "paymentMethod": "Payment Method",
+ "couponCode": "Coupon Code",
+ "enterCouponCode": "Enter coupon code",
+ "apply": "Apply",
+ "placeOrder": "Place Order",
+ "iAgreeToTerms": "I agree to Terms & Conditions",
+ "couponDiscount": "Coupon Discount",
+ "shipping": "Shipping",
+ "orderPreferences": "Order Preferences",
+ "orderNote": "Order Note",
+ "shipmentValue": "Declared Shipment Value ($)",
+ "saveAddress": "Save Address",
+ "required": "Required"
 }

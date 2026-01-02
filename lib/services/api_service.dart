@@ -1141,4 +1141,66 @@ class ApiService {
       return [];
     }
   }
+
+  // ==================================================
+  // CHECKOUT ROUTES
+  // ==================================================
+
+  // 1. Fetch Quote
+  static Future<Map<String, dynamic>> fetchCheckoutQuote(
+      Map<String, dynamic> params, String locale, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // Convert params map to query string manually to ensure correct format
+    String queryString = Uri(queryParameters: params.map((key, value) => MapEntry(key, value.toString()))).query;
+    String url = '$apiBaseUrl/checkout/new-quote?$queryString';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+      );
+
+      print("Checkout Quote Body: ${response.body}"); // ✅ ADD THIS DEBUG PRINT
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("Failed to load quote");
+      }
+    } catch (e) {
+      throw Exception("Error fetching quote: $e");
+    }
+  }
+
+  // 2. Create Order
+  static Future<Map<String, dynamic>> createOrder(
+      Map<String, dynamic> body, String locale, String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/user/orders/create';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        body: jsonEncode(body),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'data': data};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Failed to create order'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network Error: $e'};
+    }
+  }
 }

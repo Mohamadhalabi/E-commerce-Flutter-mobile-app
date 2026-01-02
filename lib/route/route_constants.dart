@@ -54,6 +54,7 @@ const String emptyPaymentScreenRoute = "empty_payment";
 const String emptyWalletScreenRoute = "empty_wallet";
 const String walletScreenRoute = "wallet";
 const String cartScreenRoute = "cart";
+const String checkoutScreenRoute = "checkout_screen";
 const String paymentMethodScreenRoute = "payment_method";
 const String addNewCardScreenRoute = "add_new_card";
 const String thanksForOrderScreenRoute = "thanks_order";
