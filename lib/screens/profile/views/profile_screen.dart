@@ -22,7 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Removed local _loadTheme because Provider handles it now
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
     });
@@ -36,26 +35,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {});
   }
 
+  // --------------------------------------------------------------------------
+  // ✅ NEW: Theme Selection Logic (Bottom Sheet)
+  // --------------------------------------------------------------------------
+  void _showThemeSelection(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final tr = AppLocalizations.of(context)!; // Ensure localization is available
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                tr.darkMode, // Or "Select Theme" if you add it to arb
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              // Options
+              _buildThemeOption(context, themeProvider, "System Default", ThemeMode.system),
+              _buildThemeOption(context, themeProvider, "Light Mode", ThemeMode.light),
+              _buildThemeOption(context, themeProvider, "Dark Mode", ThemeMode.dark),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeOption(
+      BuildContext context, ThemeProvider provider, String title, ThemeMode mode) {
+    // Check if this mode is the one currently selected in settings
+    final isSelected = provider.themeMode == mode;
+    final color = isSelected ? brandingColor : Colors.grey;
+
+    IconData icon;
+    if (mode == ThemeMode.light) icon = Icons.wb_sunny_rounded;
+    else if (mode == ThemeMode.dark) icon = Icons.dark_mode_rounded;
+    else icon = Icons.settings_brightness_rounded;
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? brandingColor : null,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected ? Icon(Icons.check, color: brandingColor) : null,
+      onTap: () {
+        provider.setTheme(mode); // ✅ Calls the new method in ThemeProvider
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getThemeName(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return "Light";
+      case ThemeMode.dark:
+        return "Dark";
+      case ThemeMode.system:
+        return "System";
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // MAIN BUILD
+  // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context); // ✅ Listen to Provider
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     final isAuthenticated = authProvider.isAuthenticated;
     final user = authProvider.user;
-    final isDark = themeProvider.isDarkMode; // ✅ Check current mode
+
+    // ✅ UPDATED: Check actual brightness (handles System mode correctly)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final tr = AppLocalizations.of(context);
     if (tr == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    // ✅ Define Dynamic Colors based on Mode
-    // If Dark: Dark Background. If Light: Your Original 0xFFF4F5F7
+    // ✅ Define Dynamic Colors
     final Color scaffoldBg = isDark ? const Color(0xFF101015) : const Color(0xFFF4F5F7);
     final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final Color textColor = isDark ? Colors.white : Colors.black87;
     final Color subTextColor = isDark ? Colors.white70 : Colors.grey.shade600;
     final Color iconCircleBg = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
-    // For icons: In Dark mode, Navy is hard to see, so we make it White. In Light mode, we keep your Navy.
     final Color iconColor = isDark ? Colors.white : brandingColor;
 
     return Scaffold(
@@ -235,6 +312,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               textColor: textColor,
             ),
             _buildDivider(isDark),
+
+            // ✅ REPLACED SWITCH WITH SELECTION MENU
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               leading: Container(
@@ -249,12 +328,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 tr.darkMode,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
               ),
-              trailing: Switch.adaptive(
-                // ✅ Connect to Provider
-                value: themeProvider.isDarkMode,
-                onChanged: (value) => themeProvider.toggleTheme(value),
-                activeColor: brandingColor,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getThemeName(themeProvider.themeMode),
+                    style: TextStyle(color: subTextColor, fontSize: 13),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                ],
               ),
+              onTap: () => _showThemeSelection(context),
             ),
           ]),
 

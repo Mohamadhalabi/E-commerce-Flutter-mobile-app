@@ -189,6 +189,10 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   Widget _buildActiveFilters() {
+    // ✅ Dark Mode Colors for Filter Bar
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+
     List<Widget> chips = [];
     void removeFilter(VoidCallback action) {
       setState(() {
@@ -219,10 +223,11 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       }
     });
     if (chips.isEmpty) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.white,
+      color: containerBg, // Dynamic Background
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: chips.map((c) => Padding(padding: const EdgeInsets.only(right: 8), child: c)).toList()),
@@ -231,12 +236,17 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   Widget _buildChip(String label, VoidCallback onDeleted) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipBg = isDark ? const Color(0xFF2A2A35) : Colors.grey[100];
+    final textColor = isDark ? Colors.white : Colors.black;
+    final iconColor = isDark ? Colors.white70 : Colors.black54;
+
     return Chip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: Colors.grey[100],
+      label: Text(label, style: TextStyle(fontSize: 12, color: textColor)),
+      backgroundColor: chipBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       side: BorderSide.none,
-      deleteIcon: const Icon(Icons.close, size: 16, color: Colors.black54),
+      deleteIcon: Icon(Icons.close, size: 16, color: iconColor),
       onDeleted: onDeleted,
       visualDensity: VisualDensity.compact,
     );
@@ -269,7 +279,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   void _onTabTapped(int index) {
-    // If it's the main tab, we let the MainScaffold handle navigation, so we do nothing here
     if (widget.isMainTab) return;
 
     setState(() {
@@ -306,26 +315,35 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Detection & Variables
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[200]!;
+    final Color hintColor = isDark ? Colors.white38 : Colors.grey[600]!;
+    final Color loadingBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+
     String noProductsText = "No products found";
 
-    // ✅ 1. Determine Leading Icon (Menu vs Back)
+    // ✅ Determine Leading Icon
     Widget? leadingIcon;
     if (widget.isMainTab) {
       leadingIcon = Builder(
         builder: (context) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Colors.black),
+          icon: Icon(Icons.menu_rounded, color: textColor),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
       );
     } else {
       leadingIcon = IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        icon: Icon(Icons.arrow_back_ios_new, color: textColor),
         onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : null,
       );
     }
 
     return Scaffold(
-      // ✅ 2. Show drawer only if this is the Main Tab
+      backgroundColor: scaffoldBg,
       drawer: widget.isMainTab
           ? CustomEndDrawer(
         onLocaleChange: widget.onLocaleChange,
@@ -335,17 +353,17 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
           : null,
 
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title, style: TextStyle(color: textColor)),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        backgroundColor: Colors.white,
-        leading: leadingIcon, // Use logic from above
+        backgroundColor: appBarBg,
+        leading: leadingIcon,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Stack(
               children: [
-                const Icon(Icons.filter_list),
+                Icon(Icons.filter_list, color: textColor),
                 if (_selectedBrands.isNotEmpty || _selectedManufacturers.isNotEmpty || _selectedCategories.isNotEmpty || _selectedAttributes.isNotEmpty)
                   Positioned(
                     right: 0, top: 0,
@@ -367,12 +385,14 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: TextField(
               controller: _searchController,
+              style: TextStyle(color: textColor), // Input Text Color
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.search_for_title(widget.title),
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: TextStyle(color: hintColor),
+                prefixIcon: Icon(Icons.search, color: hintColor),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: Icon(Icons.clear, color: hintColor),
                     onPressed: () {
                       _searchController.clear();
                       _currentQuery = "";
@@ -382,11 +402,9 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                       _fetchData(refresh: true);
                     })
                     : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.grey[200],
+                fillColor: inputFill,
               ),
             ),
           ),
@@ -395,7 +413,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
             child: RefreshIndicator(
               onRefresh: () => _fetchData(refresh: true),
               color: primaryColor,
-              backgroundColor: Colors.white,
+              backgroundColor: loadingBg,
               child: isLoading && products.isEmpty
                   ? _buildGridDelegate(
                 itemCount: 6,
@@ -409,7 +427,9 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
                     ),
-                    child: Center(child: Text(noProductsText)),
+                    child: Center(
+                      child: Text(noProductsText, style: TextStyle(color: textColor)),
+                    ),
                   ),
                 ),
               )
@@ -445,8 +465,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
           ),
         ],
       ),
-      // ✅ 3. HIDE Bottom Navigation Bar if this is the Main Tab
-      // because the MainScaffold already has one.
       bottomNavigationBar: widget.isMainTab
           ? null
           : CustomBottomNavigationBar(

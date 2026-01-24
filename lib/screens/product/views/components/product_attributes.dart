@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ProductAttributes extends StatelessWidget {
-  // ✅ FIX: Accept dynamic input (can be List or Map)
   final dynamic attributes;
 
   const ProductAttributes({
@@ -12,6 +11,9 @@ class ProductAttributes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (attributes == null) return const SizedBox();
+
+    // ✅ Detect Theme
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // 1. Handle New API Format (List of Groups)
     if (attributes is List) {
@@ -24,10 +26,9 @@ class ProductAttributes extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: items.map<Widget>((item) {
-              // Use group name as label unless item has specific label logic
               String label = groupName;
               String value = item['value'] ?? '';
-              return _buildAttributeRow(label, value);
+              return _buildAttributeRow(label, value, isDark);
             }).toList(),
           );
         }).toList(),
@@ -39,7 +40,7 @@ class ProductAttributes extends StatelessWidget {
       if (attributes.isEmpty) return const SizedBox();
       return Column(
         children: attributes.entries.map<Widget>((entry) {
-          return _buildAttributeRow(entry.key, entry.value.toString());
+          return _buildAttributeRow(entry.key, entry.value.toString(), isDark);
         }).toList(),
       );
     }
@@ -47,7 +48,11 @@ class ProductAttributes extends StatelessWidget {
     return const SizedBox();
   }
 
-  Widget _buildAttributeRow(String label, String value) {
+  Widget _buildAttributeRow(String label, String value, bool isDark) {
+    // ✅ Dynamic Colors
+    final Color labelColor = isDark ? Colors.white60 : Colors.grey;
+    final Color valueColor = isDark ? Colors.white : Colors.black87;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -57,7 +62,7 @@ class ProductAttributes extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500),
+              style: TextStyle(color: labelColor, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
           const SizedBox(width: 16),
@@ -65,7 +70,7 @@ class ProductAttributes extends StatelessWidget {
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(color: valueColor, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],

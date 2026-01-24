@@ -85,16 +85,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   // Navigation Logic
   void _onBottomNavTap(int index) {
     if (index == 3) {
-      // 1. If Cart, push the Cart Screen on top
       Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      // 2. For Home (0), Search (1), Shop (2), Profile (4)
-      // We navigate to EntryPoint and pass the index as an argument
       Navigator.pushNamedAndRemoveUntil(
         context,
         entryPointScreenRoute,
-            (route) => false, // This removes all previous routes (clears stack)
-        arguments: index, // <--- We pass the selected index here
+            (route) => false,
+        arguments: index,
       );
     }
   }
@@ -133,6 +130,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ 1. Theme Detection
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color borderColor = isDark ? Colors.white12 : const Color(0xFFF0F0F0);
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFF0F0F0);
+
     if (isLoading) return const ProductDetailsSkeleton();
 
     if (product == null) {
@@ -145,45 +149,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     double currentUnitPrice = _calculateUnitPrice(_quantity);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent, // Keeps header white on scroll
+        backgroundColor: backgroundColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: textColor),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : null,
         ),
         title: Text(
           product?['title'] ?? "",
-          style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
+            icon: Icon(Icons.shopping_bag_outlined, color: textColor),
             onPressed: () => Navigator.pushNamed(context, cartScreenRoute),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
+          preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            // ERROR WAS HERE: "color: Colors.white," -> REMOVED
             height: 1.0,
             width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white, // Color must be inside decoration
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  offset: const Offset(0, 2),
-                  blurRadius: 4.0,
-                ),
-              ],
-            ),
+            color: isDark ? Colors.white10 : Colors.grey.shade200,
           ),
         ),
       ),
@@ -192,56 +185,61 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         user: user,
         onTabChanged: (int _) {},
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          BottomCartAction(
-            unitPrice: currentUnitPrice,
-            quantity: _quantity,
-            onQtyChanged: (val) => setState(() => _quantity = val),
-            onAddToCart: () {
-              final cart = Provider.of<CartProvider>(context, listen: false);
+      bottomNavigationBar: Container(
+        // Ensure bottom area matches theme
+        color: isDark ? const Color(0xFF1C1C23) : Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            BottomCartAction(
+              unitPrice: currentUnitPrice,
+              quantity: _quantity,
+              onQtyChanged: (val) => setState(() => _quantity = val),
+              onAddToCart: () {
+                final cart = Provider.of<CartProvider>(context, listen: false);
 
-              String imgUrl = "";
-              if (product!['image'] != null) {
-                imgUrl = product!['image'];
-              } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
-                imgUrl = product!['gallery'][0];
-              }
+                String imgUrl = "";
+                if (product!['image'] != null) {
+                  imgUrl = product!['image'];
+                } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
+                  imgUrl = product!['gallery'][0];
+                }
 
-              String sku = product!['sku'] ?? 'N/A';
-              int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
+                String sku = product!['sku'] ?? 'N/A';
+                int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
 
-              cart.addToCart(
-                productId: widget.productId,
-                title: product!['title'] ?? 'Unknown',
-                sku: sku,
-                image: imgUrl,
-                price: currentUnitPrice,
-                quantity: _quantity,
-                stock: stock,
-                context: context,
-              );
-            },
-          ),
-          CustomBottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: _onBottomNavTap,
-          ),
-        ],
+                cart.addToCart(
+                  productId: widget.productId,
+                  title: product!['title'] ?? 'Unknown',
+                  sku: sku,
+                  image: imgUrl,
+                  price: currentUnitPrice,
+                  quantity: _quantity,
+                  stock: stock,
+                  context: context,
+                );
+              },
+            ),
+            CustomBottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: _onBottomNavTap,
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: fetchProductDetails,
           color: primaryColor,
+          backgroundColor: isDark ? const Color(0xFF1C1C23) : Colors.white,
           child: CustomScrollView(
             slivers: [
-              // 1. PRODUCT IMAGES (With Bottom Border)
+              // 1. PRODUCT IMAGES
               SliverToBoxAdapter(
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: Color(0xFFF0F0F0), width: 1),
+                      bottom: BorderSide(color: borderColor, width: 1),
                     ),
                   ),
                   child: Stack(
@@ -277,7 +275,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     : product!['num_of_reviews'] ?? 0,
               ),
 
-              const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
+              SliverToBoxAdapter(child: Divider(thickness: 1, color: dividerColor)),
 
               // 3. BULK SAVINGS TABLE
               if (product!['table_price'] is List && (product!['table_price'] as List).isNotEmpty)
@@ -303,7 +301,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: ProductAttributes(attributes: product!['attributes']),
                 ),
 
-              const SliverToBoxAdapter(child: Divider(thickness: 1, color: Color(0xFFF0F0F0))),
+              SliverToBoxAdapter(child: Divider(thickness: 1, color: dividerColor)),
 
               // 6. DESCRIPTION
               ExpandableSection(
@@ -314,7 +312,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   style: {
                     "body": Style(
                       fontSize: FontSize(14.0),
-                      color: Colors.black87,
+                      // ✅ Dynamic Text Color
+                      color: isDark ? Colors.white70 : Colors.black87,
                       lineHeight: LineHeight(1.5),
                     ),
                   },
@@ -326,16 +325,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               // 7. RELATED PRODUCTS
               SliverToBoxAdapter(
                 child: Container(
-                  color: const Color(0xFFF9F9F9),
+                  // ✅ Dynamic Background for "You might like"
+                  color: isDark ? const Color(0xFF101015) : const Color(0xFFF9F9F9),
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           "You might also like",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor, // Dynamic Text
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -371,12 +375,20 @@ class BottomCartAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Logic
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final qtyBoxColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
+    final borderColor = isDark ? Colors.white12 : Colors.grey.shade300;
+    final iconColor = isDark ? Colors.white70 : Colors.black54;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     double total = unitPrice * quantity;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -390,21 +402,22 @@ class BottomCartAction extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                color: qtyBoxColor,
+                border: Border.all(color: borderColor),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => quantity > 1 ? onQtyChanged(quantity - 1) : null,
-                    icon: const Icon(Icons.remove, size: 20, color: Colors.black54),
+                    icon: Icon(Icons.remove, size: 20, color: iconColor),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                   ),
-                  Text("$quantity", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text("$quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
                   IconButton(
                     onPressed: () => onQtyChanged(quantity + 1),
-                    icon: const Icon(Icons.add, size: 20, color: Colors.black54),
+                    icon: Icon(Icons.add, size: 20, color: iconColor),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                   ),
@@ -503,6 +516,7 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
   Widget build(BuildContext context) {
     final value = widget.discount['value'];
     final type = widget.discount['type'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (widget.isBadge) {
       return Container(
@@ -521,19 +535,27 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
       );
     }
 
+    // ✅ Dark Mode Colors for Banner
+    final Color bannerBg = isDark ? const Color(0xFF2A1010) : const Color(0xFFFFF0F0);
+    final Color bannerBorder = isDark ? const Color(0xFF4A1010) : Colors.red.shade100;
+    final Color textColor = isDark ? Colors.red.shade200 : Colors.red.shade700;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F0),
+        color: bannerBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.shade100, width: 1),
+        border: Border.all(color: bannerBorder, width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.white,
+                shape: BoxShape.circle
+            ),
             child: const Icon(Icons.local_fire_department, color: Colors.red, size: 20),
           ),
           const SizedBox(width: 12),
@@ -541,7 +563,7 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Hurry up! Offer ends in:", style: TextStyle(color: Colors.red.shade700, fontSize: 11, fontWeight: FontWeight.w500)),
+                Text("Hurry up! Offer ends in:", style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 2),
                 Text(_formatDuration(_timeLeft), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'monospace')),
               ],
@@ -564,14 +586,19 @@ class ModernTablePriceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color cardBorder = isDark ? Colors.white12 : Colors.grey.shade300;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.inventory_2_outlined, size: 18, color: Colors.black87),
-            SizedBox(width: 8),
-            Text("Bulk Savings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Icon(Icons.inventory_2_outlined, size: 18, color: textColor),
+            const SizedBox(width: 8),
+            Text("Bulk Savings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
           ],
         ),
         const SizedBox(height: 12),
@@ -587,15 +614,15 @@ class ModernTablePriceList extends StatelessWidget {
                 margin: const EdgeInsets.only(right: 10),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
+                  color: cardBg,
+                  border: Border.all(color: cardBorder),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
                   children: [
                     Text(max != null ? "$min-$max" : "$min+", style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 6),
-                    Text("\$${(price as num).toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                    Text("\$${(price as num).toStringAsFixed(2)}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
                     const SizedBox(height: 4),
                     const Text("per unit", style: TextStyle(fontSize: 10, color: Colors.grey)),
                   ],

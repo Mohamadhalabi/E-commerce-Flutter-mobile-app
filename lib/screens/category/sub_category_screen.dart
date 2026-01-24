@@ -86,20 +86,30 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ 1. Dark Mode Detection & Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color borderColor = isDark ? Colors.white12 : Colors.grey.shade200;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
+
     return Scaffold(
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: textColor), // Dynamic Icon Color
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
         ),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg, // Dynamic AppBar BG
       ),
       body: isLoading
           ? _buildGrid(
@@ -107,14 +117,13 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
         itemBuilder: (ctx, i) => const SubCategoryCardSkeleton(),
       )
           : subcategories.isEmpty
-          ? const Center(child: Text("No subcategories found"))
+          ? Center(child: Text("No subcategories found", style: TextStyle(color: textColor)))
           : _buildGrid(
         itemCount: subcategories.length,
         itemBuilder: (context, index) {
           final item = subcategories[index];
           return GestureDetector(
             onTap: () {
-              // ✅ FIXED: Use pushNamed to match Router logic
               Navigator.pushNamed(
                 context,
                 "sub_category_products_screen",
@@ -130,15 +139,16 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
             },
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg, // Dynamic Card BG
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200, width: 1),
+                border: Border.all(color: borderColor, width: 1),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+                  if (!isDark) // Only show shadow in Light Mode
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
                 ],
               ),
               padding: const EdgeInsets.all(12),
@@ -157,10 +167,10 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
                   const SizedBox(height: 8),
                   Text(
                     item['name'] ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
-                      color: Colors.black87,
+                      color: subTextColor, // Dynamic Text Color
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,

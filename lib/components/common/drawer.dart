@@ -33,9 +33,6 @@ class CustomEndDrawer extends StatefulWidget {
 }
 
 class _CustomEndDrawerState extends State<CustomEndDrawer> {
-  // Branding Colors
-  final Color brandingColor = const Color(0xFF0C1E4E);
-  final Color activeHighlight = Colors.white;
 
   List<CategoryModel> categories = [];
   List<BrandModel> brands = [];
@@ -98,8 +95,15 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
+    // ✅ 1. Detect Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ 2. Define Colors
+    final Color drawerBg = isDark ? const Color(0xFF101015) : Colors.white;
+    final Color dividerColor = isDark ? Colors.white10 : Colors.grey.shade100;
+
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: drawerBg, // Dynamic BG
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(topRight: Radius.circular(0), bottomRight: Radius.circular(0)),
       ),
@@ -113,13 +117,15 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
               padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
               alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                border: Border(bottom: BorderSide(color: dividerColor)),
               ),
-              child: Image.asset(
-                'assets/logo/techno-lock-mobile-logo.webp',
-                fit: BoxFit.contain,
-                alignment: Alignment.centerLeft,
-              ),
+              child: isDark
+              // ✅ FIXED: Used ColorFiltered (Widget) instead of ColorFilter (Object)
+                  ? ColorFiltered(
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  child: Image.asset('assets/logo/techno-lock-mobile-logo.webp', fit: BoxFit.contain, alignment: Alignment.centerLeft)
+              )
+                  : Image.asset('assets/logo/techno-lock-mobile-logo.webp', fit: BoxFit.contain, alignment: Alignment.centerLeft),
             ),
 
             // 2. MENU LIST
@@ -128,79 +134,79 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                 padding: const EdgeInsets.only(top: 10, bottom: 20),
                 children: [
                   _buildMenuSection(
-                    context,
+                    context, isDark,
                     icon: Icons.category_outlined,
                     activeIcon: Icons.category_rounded,
                     title: localizations.categoriesSectionTitle,
                     children: isLoadingCategories
-                        ? [_buildLoadingIndicator()]
-                        : [_buildGrid(categories.map((cat) => {
-                      'type': 'category', // ✅ Identify Type
+                        ? [_buildLoadingIndicator(isDark)]
+                        : [_buildGrid(isDark, categories.map((cat) => {
+                      'type': 'category',
                       'id': cat.id,
                       'title': cat.name,
                       'image': cat.image,
                     }).toList())],
                   ),
 
-                  _buildDivider(),
+                  _buildDivider(isDark),
 
                   _buildMenuSection(
-                    context,
+                    context, isDark,
                     icon: Icons.precision_manufacturing_outlined,
                     activeIcon: Icons.precision_manufacturing_rounded,
                     title: localizations.manufacturers,
                     children: isLoadingManufacturers
-                        ? [_buildLoadingIndicator()]
-                        : [_buildGrid(manufacturers.map((man) => {
-                      'type': 'manufacturer', // ✅ Identify Type
-                      'slug': man.slug,       // ✅ Pass slug
+                        ? [_buildLoadingIndicator(isDark)]
+                        : [_buildGrid(isDark, manufacturers.map((man) => {
+                      'type': 'manufacturer',
+                      'slug': man.slug,
                       'title': man.title,
                       'image': man.image,
                     }).toList())],
                   ),
 
-                  _buildDivider(),
+                  _buildDivider(isDark),
 
                   _buildMenuSection(
-                    context,
+                    context, isDark,
                     icon: Icons.branding_watermark_outlined,
                     activeIcon: Icons.branding_watermark_rounded,
                     title: localizations.brands,
                     children: isLoadingBrands
-                        ? [_buildLoadingIndicator()]
-                        : [_buildGrid(brands.map((brand) => {
-                      'type': 'brand',    // ✅ Identify Type
-                      'slug': brand.slug, // ✅ Pass slug
+                        ? [_buildLoadingIndicator(isDark)]
+                        : [_buildGrid(isDark, brands.map((brand) => {
+                      'type': 'brand',
+                      'slug': brand.slug,
                       'title': brand.title,
                       'image': brand.image,
                     }).toList())],
                   ),
 
-                  _buildDivider(),
+                  _buildDivider(isDark),
 
                   _buildMenuSection(
-                    context,
+                    context, isDark,
                     icon: Icons.language_outlined,
                     activeIcon: Icons.language_rounded,
                     title: localizations.language,
                     children: [
-                      _buildLanguageOption(context, flagAsset: '🇬🇧', label: localizations.english, localeCode: 'en'),
-                      _buildLanguageOption(context, flagAsset: '🇸🇦', label: localizations.arabic, localeCode: 'ar'),
-                      _buildLanguageOption(context, flagAsset: '🇪🇸', label: localizations.spanish, localeCode: 'es'),
+                      _buildLanguageOption(context, isDark, flagAsset: '🇬🇧', label: localizations.english, localeCode: 'en'),
+                      _buildLanguageOption(context, isDark, flagAsset: '🇸🇦', label: localizations.arabic, localeCode: 'ar'),
+                      _buildLanguageOption(context, isDark, flagAsset: '🇪🇸', label: localizations.spanish, localeCode: 'es'),
                     ],
                   ),
 
-                  _buildDivider(),
+                  _buildDivider(isDark),
 
                   _buildMenuSection(
-                    context,
+                    context, isDark,
                     icon: Icons.attach_money_outlined,
                     activeIcon: Icons.attach_money_rounded,
                     title: 'Currency',
                     children: [
-                      _buildSimpleOption(localizations.usd),
-                      _buildSimpleOption(localizations.eur),
-                      _buildSimpleOption(localizations.turkishLira),
+                      _buildSimpleOption(isDark, localizations.usd),
+                      _buildSimpleOption(isDark, localizations.eur),
+                      _buildSimpleOption(isDark, localizations.turkishLira),
                     ],
                   ),
                 ],
@@ -212,8 +218,15 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     );
   }
 
-  Widget _buildMenuSection(BuildContext context,
+  Widget _buildMenuSection(BuildContext context, bool isDark,
       {required IconData icon, required IconData activeIcon, required String title, required List<Widget> children}) {
+
+    // Dynamic Colors
+    final Color iconColor = isDark ? Colors.white70 : Colors.grey.shade700;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color activeColor = isDark ? Colors.white : const Color(0xFF0C1E4E);
+    final Color tileBg = isDark ? const Color(0xFF101015) : Colors.white;
+
     return Theme(
       data: Theme.of(context).copyWith(
         dividerColor: Colors.transparent,
@@ -221,30 +234,35 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
         highlightColor: Colors.transparent,
       ),
       child: ExpansionTile(
-        backgroundColor: Colors.white,
-        collapsedBackgroundColor: Colors.white,
+        backgroundColor: tileBg,
+        collapsedBackgroundColor: tileBg,
         shape: const Border(),
         collapsedShape: const Border(),
         tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         childrenPadding: const EdgeInsets.only(bottom: 16),
-        leading: Icon(icon, color: Colors.grey.shade700, size: 24),
+        leading: Icon(icon, color: iconColor, size: 24),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 15,
-            color: Colors.black87,
+            color: textColor,
           ),
         ),
-        iconColor: brandingColor,
-        textColor: brandingColor,
+        iconColor: activeColor,
+        textColor: activeColor,
         children: children,
       ),
     );
   }
 
-  Widget _buildGrid(List<Map<String, dynamic>> items) {
+  Widget _buildGrid(bool isDark, List<Map<String, dynamic>> items) {
     final double gridHeight = (items.length / 2).ceil() * 140.0;
+
+    // Grid Item Colors
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color borderColor = isDark ? Colors.transparent : Colors.grey.shade100;
+    final Color textColor = isDark ? Colors.white70 : Colors.black87;
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: gridHeight),
@@ -261,11 +279,9 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
           children: items.map((item) {
             return GestureDetector(
               onTap: () {
-                Navigator.pop(context); // Close the drawer first
-
+                Navigator.pop(context);
                 final String type = item['type'] ?? 'category';
 
-                // 1. CATEGORY CLICKED -> Go to SubCategory Screen
                 if (type == 'category' && item['id'] != null) {
                   Navigator.pushNamed(
                     context,
@@ -280,15 +296,12 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     },
                   );
                 }
-                // 2. BRAND CLICKED -> Go to Products Screen (Filtered by Brand)
                 else if (type == 'brand') {
-                  // Make sure 'subCategoryProductsScreenRoute' is defined in your constants
                   Navigator.pushNamed(
                       context,
-                      // Use the route constant for "SubCategoryProductsScreen"
                       "sub_category_products_screen",
                       arguments: {
-                        'categorySlug': '', // Empty because we are filtering by brand
+                        'categorySlug': '',
                         'initialBrandSlug': item['slug'],
                         'title': item['title'],
                         'currentIndex': 0,
@@ -298,13 +311,12 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                       }
                   );
                 }
-                // 3. MANUFACTURER CLICKED -> Go to Products Screen (Filtered by Manufacturer)
                 else if (type == 'manufacturer') {
                   Navigator.pushNamed(
                       context,
                       "sub_category_products_screen",
                       arguments: {
-                        'categorySlug': '', // Empty because we are filtering by manufacturer
+                        'categorySlug': '',
                         'initialManufacturerSlug': item['slug'],
                         'title': item['title'],
                         'currentIndex': 0,
@@ -317,15 +329,16 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg, // Dynamic Card BG
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade100, width: 1.5),
+                  border: Border.all(color: borderColor, width: 1.5),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
+                    if (!isDark) // Only show shadow in light mode
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
                   ],
                 ),
                 child: Column(
@@ -346,10 +359,10 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
                       child: Text(
                         item['title'] ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: textColor, // Dynamic Text
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -366,13 +379,13 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     );
   }
 
-  Widget _buildLanguageOption(BuildContext context,
+  Widget _buildLanguageOption(BuildContext context, bool isDark,
       {required String flagAsset, required String label, required String localeCode}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 40),
       dense: true,
       leading: Text(flagAsset, style: const TextStyle(fontSize: 20)),
-      title: Text(label, style: const TextStyle(fontSize: 14)),
+      title: Text(label, style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
       onTap: () {
         widget.onLocaleChange(localeCode);
         Navigator.pop(context);
@@ -380,23 +393,23 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     );
   }
 
-  Widget _buildSimpleOption(String label) {
+  Widget _buildSimpleOption(bool isDark, String label) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 40),
       dense: true,
-      title: Text(label, style: const TextStyle(fontSize: 14)),
+      title: Text(label, style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
       onTap: () {},
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(height: 1, color: Colors.grey.shade100, indent: 24, endIndent: 24);
+  Widget _buildDivider(bool isDark) {
+    return Divider(height: 1, color: isDark ? Colors.white10 : Colors.grey.shade100, indent: 24, endIndent: 24);
   }
 
-  Widget _buildLoadingIndicator() {
+  Widget _buildLoadingIndicator(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(child: CircularProgressIndicator(color: brandingColor)),
+      child: Center(child: CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF0C1E4E))),
     );
   }
 }

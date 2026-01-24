@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ✅ Import Localization
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shop/constants.dart';
 
 // -----------------------------------------------------------------------------
-// 1. REUSABLE PROFESSIONAL LAYOUT
+// 1. REUSABLE PROFESSIONAL LAYOUT (Dark Mode Ready)
 // -----------------------------------------------------------------------------
 class InfoPageLayout extends StatelessWidget {
   final String title;
@@ -22,18 +22,27 @@ class InfoPageLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Detection
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color iconColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: true,
+        surfaceTintColor: Colors.transparent,
         title: Text(
           title,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: iconColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -41,7 +50,7 @@ class InfoPageLayout extends StatelessWidget {
           ? Container(
         padding: const EdgeInsets.all(defaultPadding),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg, // Dynamic BG
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -78,14 +87,15 @@ class InfoPageLayout extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg, // Dynamic Card BG
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
+                  if (!isDark) // Only show shadow in light mode
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
                 ],
               ),
               child: Column(
@@ -101,7 +111,7 @@ class InfoPageLayout extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
-// 2. HELPER WIDGETS
+// 2. HELPER WIDGETS (Dark Mode Ready)
 // -----------------------------------------------------------------------------
 class InfoSectionTitle extends StatelessWidget {
   final String title;
@@ -109,14 +119,18 @@ class InfoSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dynamic Text Color
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color color = isDark ? Colors.white : Colors.black87;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 8),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: color,
         ),
       ),
     );
@@ -129,6 +143,10 @@ class InfoText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dynamic Text Color
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color color = isDark ? Colors.white70 : Colors.grey.shade700;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -136,7 +154,7 @@ class InfoText extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           height: 1.6,
-          color: Colors.grey.shade700,
+          color: color,
         ),
       ),
     );
@@ -154,7 +172,7 @@ class AboutUsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
     return InfoPageLayout(
-      title: tr.aboutUsTitle, // "About Us"
+      title: tr.aboutUsTitle,
       children: [
         InfoSectionTitle(tr.whoWeAreTitle),
         InfoText(tr.whoWeAreText),
@@ -172,7 +190,7 @@ class DeliveryInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
     return InfoPageLayout(
-      title: tr.deliveryInfoTitle, // "Delivery Information"
+      title: tr.deliveryInfoTitle,
       children: [
         InfoSectionTitle(tr.shippingPolicyTitle),
         InfoText(tr.shippingPolicyText),
@@ -192,7 +210,7 @@ class TermsConditionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
     return InfoPageLayout(
-      title: tr.termsConditionsTitle, // "Terms & Conditions"
+      title: tr.termsConditionsTitle,
       children: [
         InfoSectionTitle(tr.termsIntroTitle),
         InfoText(tr.termsIntroText),
@@ -212,8 +230,14 @@ class ContactUsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
 
+    // ✅ Colors for ListTiles
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color iconBg = isDark ? const Color(0xFF2A2A35) : Colors.grey.shade100;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subTextColor = isDark ? Colors.white60 : Colors.grey.shade600;
+
     return InfoPageLayout(
-      title: tr.contactUsTitle, // "Contact Us"
+      title: tr.contactUsTitle,
       bottomAction: ElevatedButton(
         onPressed: () {
           // Add logic to open email or phone dialer
@@ -238,33 +262,33 @@ class ContactUsScreen extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           leading: Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
             child: const Icon(Icons.email_outlined, color: primaryColor),
           ),
-          title: Text(tr.emailUs),
-          subtitle: const Text("support@tlkeys.com"), // Keeps email standard
+          title: Text(tr.emailUs, style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+          subtitle: Text("support@tlkeys.com", style: TextStyle(color: subTextColor)),
         ),
         const Divider(),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
             child: const Icon(Icons.phone_outlined, color: primaryColor),
           ),
-          title: Text(tr.callUs),
-          subtitle: const Text("+971504429045"), // Keeps phone standard
+          title: Text(tr.callUs, style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+          subtitle: Text("+971504429045", style: TextStyle(color: subTextColor)),
         ),
         const Divider(),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
             child: const Icon(Icons.location_on_outlined, color: primaryColor),
           ),
-          title: Text(tr.visitUs),
-          subtitle: Text(tr.addressFull), // Address is translated
+          title: Text(tr.visitUs, style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+          subtitle: Text(tr.addressFull, style: TextStyle(color: subTextColor)),
         ),
       ],
     );

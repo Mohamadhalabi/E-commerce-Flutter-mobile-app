@@ -116,10 +116,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Detection
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color headerBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color inputBg = isDark ? const Color(0xFF2A2A35) : const Color(0xFFF5F5F5);
+    final Color inputBorder = isDark ? Colors.white12 : Colors.transparent;
+    final Color iconColor = isDark ? Colors.white70 : Colors.black;
+    final Color hintColor = isDark ? Colors.white38 : Colors.grey[500]!;
+
     bool isTyping = _searchCtrl.text.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -127,17 +136,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                color: headerBg, // Dynamic Header BG
+                border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade100)),
               ),
               child: Row(
                 children: [
                   InkWell(
                     onTap: () => Navigator.pop(context),
                     borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.arrow_back, color: Colors.black),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Icon(Icons.arrow_back, color: iconColor),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -150,29 +159,30 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         textInputAction: TextInputAction.search,
                         onChanged: _onSearchChanged,
                         onSubmitted: _onSubmitSearch,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black), // Input Text Color
                         decoration: InputDecoration(
                           hintText: "Search products (min 3 chars)...",
-                          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                          hintStyle: TextStyle(color: hintColor, fontSize: 14),
                           filled: true,
-                          fillColor: const Color(0xFFF5F5F5),
+                          fillColor: inputBg, // Dynamic Input BG
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                           prefixIcon: null,
                           suffixIcon: _searchCtrl.text.isNotEmpty
                               ? IconButton(
-                            icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                            icon: Icon(Icons.close, size: 20, color: hintColor),
                             onPressed: () {
                               _searchCtrl.clear();
                               _onSearchChanged("");
                             },
                           )
-                              : const Icon(Icons.search, color: Colors.grey),
+                              : Icon(Icons.search, color: hintColor),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(color: inputBorder),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -189,8 +199,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             // --- BODY ---
             Expanded(
               child: isTyping
-                  ? _buildSearchResults()
-                  : _buildHistoryAndRecents(),
+                  ? _buildSearchResults(isDark)
+                  : _buildHistoryAndRecents(isDark),
             ),
           ],
         ),
@@ -199,25 +209,31 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   // --- WIDGET: SEARCH RESULTS ---
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(bool isDark) {
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
+    final Color skuColor = isDark ? Colors.greenAccent : Colors.green;
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
+    final Color imgBg = isDark ? Colors.white : Colors.white; // Keep image bg white for transparent PNGs
+
     // ✅ 4. SKELETON LOADER
     if (_isSearching) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 6,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, __) => Divider(height: 1, color: dividerColor),
         itemBuilder: (_, __) => const SearchResultSkeleton(),
       );
     }
 
     if (_suggestions.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text("No results found", style: TextStyle(color: Colors.grey)),
+            Icon(Icons.search_off, size: 64, color: isDark ? Colors.white38 : Colors.grey),
+            const SizedBox(height: 16),
+            Text("No results found", style: TextStyle(color: isDark ? Colors.white38 : Colors.grey)),
           ],
         ),
       );
@@ -245,7 +261,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   height: 60,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
+                    color: imgBg,
                     border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: ClipRRect(
@@ -258,22 +274,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
                 title: Text(
-                  _cleanTitle(product.title), // ✅ Clean Title
+                  _cleanTitle(product.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, height: 1.2),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, height: 1.2, color: textColor),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ✅ 3. SKU IN GREEN
+                      // ✅ 3. SKU IN GREEN (Light Green in Dark Mode)
                       if (product.sku.isNotEmpty)
                         Text(
                           "SKU: ${product.sku}",
-                          style: const TextStyle(
-                              color: Colors.green,
+                          style: TextStyle(
+                              color: skuColor,
                               fontSize: 12,
                               fontWeight: FontWeight.bold
                           ),
@@ -283,7 +299,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       Text(
                         "\$${displayPrice.toStringAsFixed(2)}",
                         style: const TextStyle(
-                          color: Color(0xFFFF3B30), // Red Color
+                          color: Color(0xFFFF3B30),
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -295,7 +311,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   Navigator.pushNamed(context, productDetailsScreenRoute, arguments: product.id);
                 },
               ),
-              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+              Divider(height: 1, color: dividerColor),
             ],
           );
         }),
@@ -321,7 +337,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
+                  backgroundColor: isDark ? const Color(0xFF2A2A35) : Colors.white,
                   foregroundColor: const Color(0xFFF37A20),
                   elevation: 0,
                   side: const BorderSide(color: Color(0xFFF37A20)),
@@ -340,7 +356,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   // --- WIDGET: HISTORY & RECENTLY VIEWED ---
-  Widget _buildHistoryAndRecents() {
+  Widget _buildHistoryAndRecents(bool isDark) {
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
+    final Color iconColor = isDark ? Colors.white38 : Colors.grey;
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFF9F9F9);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
@@ -352,7 +373,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Recent Searches", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text("Recent Searches", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
                   TextButton(
                     onPressed: () async {
                       await LocalStorageService.clearSearchHistory();
@@ -371,10 +392,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 final item = _history[index];
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                  leading: const Icon(Icons.history, size: 22, color: Colors.grey),
-                  title: Text(item, style: const TextStyle(fontSize: 14)),
+                  leading: Icon(Icons.history, size: 22, color: iconColor),
+                  title: Text(item, style: TextStyle(fontSize: 14, color: subTextColor)),
                   trailing: IconButton(
-                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    icon: Icon(Icons.close, size: 18, color: iconColor),
                     onPressed: () async {
                       await LocalStorageService.removeFromHistory(item);
                       _loadLocalData();
@@ -387,13 +408,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 );
               },
             ),
-            const Divider(thickness: 6, color: Color(0xFFF9F9F9)),
+            Divider(thickness: 6, color: dividerColor),
           ],
 
           if (_recentProducts.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Text("Recently Viewed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Text("Recently Viewed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
             ),
             SizedBox(
               height: 410, // Matches ProductCard Height
@@ -441,7 +462,6 @@ class SearchResultSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ FIX: Use ClipRRect for radius instead of passing it to Skeleton
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: const Skeleton(width: 60, height: 60),

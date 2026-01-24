@@ -78,12 +78,27 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Removed fixed width so it adapts to the GridView column size
+    // 1. Detect Dark Mode
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Define Dynamic Colors
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color borderColor = isDark ? Colors.white10 : const Color(0xFFF0F0F0);
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    // Light Green for Dark Mode visibility, Dark Green for Light Mode
+    final Color skuColor = isDark ? Colors.greenAccent.shade100 : Colors.green.shade900;
+
+    // Inputs
+    final Color inputBg = isDark ? const Color(0xFF2A2A35) : const Color(0xFFFAFAFA);
+    final Color inputBorder = isDark ? Colors.white12 : Colors.grey.shade200;
+    final Color btnBg = isDark ? const Color(0xFF2A2A35) : Colors.white;
+    final Color btnIconColor = isDark ? Colors.white70 : Colors.black54;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
-        borderRadius: BorderRadius.circular(8), // Slightly sharper corners for modern look
+        color: cardBg,
+        border: Border.all(color: borderColor, width: 1),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -102,13 +117,13 @@ class _ProductCardState extends State<ProductCard> {
             onTap: widget.press,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(8), // Reduced padding
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white, // Keep image bg white for consistency
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: AspectRatio(
-                aspectRatio: 1.0, // Square image saves vertical space
+                aspectRatio: 1.0,
                 child: Image.network(
                   widget.image,
                   fit: BoxFit.contain,
@@ -124,7 +139,7 @@ class _ProductCardState extends State<ProductCard> {
           // ------------------------------------------
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 0, 6, 6), // Tighter padding
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -132,8 +147,8 @@ class _ProductCardState extends State<ProductCard> {
                   Text(
                     "SKU: ${widget.sku}",
                     style: TextStyle(
-                      color: Colors.green.shade900,
-                      fontSize: 11, // Smaller font
+                      color: skuColor, // Dynamic SKU Color
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -143,13 +158,13 @@ class _ProductCardState extends State<ProductCard> {
                   // TITLE
                   Text(
                     widget.title,
-                    maxLines: 3, // Limit lines to save space
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 11, // Smaller title for 3-col layout
+                    style: TextStyle(
+                      color: textColor, // Dynamic Title Color
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      height: 1.8,
+                      height: 1.5,
                     ),
                   ),
 
@@ -161,7 +176,7 @@ class _ProductCardState extends State<ProductCard> {
                     "\$${widget.price.toStringAsFixed(2)}",
                     style: const TextStyle(
                       color: primaryColor,
-                      fontSize: 14, // Adjusted price size
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -173,18 +188,18 @@ class _ProductCardState extends State<ProductCard> {
                   // ------------------------------------------
                   // Quantity Row
                   SizedBox(
-                    height: 26, // Constrain height
+                    height: 26,
                     child: Row(
                       children: [
-                        _buildQtyBtn(Icons.remove, _decrementQuantity),
-                        const SizedBox(width: 4), // Tighter spacing
+                        _buildQtyBtn(Icons.remove, _decrementQuantity, btnBg, inputBorder, btnIconColor),
+                        const SizedBox(width: 4),
                         Expanded(
                           child: Container(
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade200),
+                              border: Border.all(color: inputBorder),
                               borderRadius: BorderRadius.circular(4),
-                              color: const Color(0xFFFAFAFA),
+                              color: inputBg,
                             ),
                             child: TextField(
                               controller: _qtyController,
@@ -196,20 +211,20 @@ class _ProductCardState extends State<ProductCard> {
                                 FilteringTextInputFormatter.digitsOnly,
                                 LengthLimitingTextInputFormatter(3),
                               ],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 11,
-                                color: Colors.black87,
+                                color: textColor, // Dynamic Input Text
                               ),
                               decoration: const InputDecoration(
-                                isCollapsed: true, // Removes default padding
+                                isCollapsed: true,
                                 border: InputBorder.none,
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 4),
-                        _buildQtyBtn(Icons.add, _incrementQuantity),
+                        _buildQtyBtn(Icons.add, _incrementQuantity, btnBg, inputBorder, btnIconColor),
                       ],
                     ),
                   ),
@@ -219,7 +234,7 @@ class _ProductCardState extends State<ProductCard> {
                   // Add to Cart Button
                   SizedBox(
                     width: double.infinity,
-                    height: 30, // Compact button height
+                    height: 30,
                     child: Consumer<CartProvider>(
                       builder: (context, cartProvider, child) {
                         return ElevatedButton(
@@ -246,7 +261,6 @@ class _ProductCardState extends State<ProductCard> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            // Make touch target slightly smaller but usable
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: cartProvider.isLoading
@@ -259,7 +273,7 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                           )
                               : const Text(
-                            "Add", // Shorter text for small button
+                            "Add",
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -278,22 +292,22 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Widget _buildQtyBtn(IconData icon, VoidCallback onTap) {
+  Widget _buildQtyBtn(IconData icon, VoidCallback onTap, Color bg, Color border, Color iconColor) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        width: 24, // Smaller button
+        width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade300),
+          color: bg,
+          border: Border.all(color: border),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Icon(
           icon,
-          size: 14, // Smaller icon
-          color: Colors.black54,
+          size: 14,
+          color: iconColor,
         ),
       ),
     );

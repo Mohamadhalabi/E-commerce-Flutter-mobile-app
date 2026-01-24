@@ -33,25 +33,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
     _scrollController.addListener(_onScroll);
   }
 
-  // ✅ 2. Handle Bottom Nav Taps
   void _onBottomNavTap(int index) {
     if (_currentIndex == index) return;
     setState(() => _currentIndex = index);
 
     switch (index) {
-      case 0: // Home
+      case 0:
         Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
         break;
-      case 1: // Search
+      case 1:
         Navigator.pushNamed(context, searchScreenRoute);
         break;
-      case 2: // Shop (Optional: Add route if needed)
-      // Navigator.pushNamed(context, shopScreenRoute);
-        break;
-      case 3: // Cart
+      case 3:
         Navigator.pushNamed(context, cartScreenRoute);
         break;
-      case 4: // Profile (We are already in a sub-page of profile)
+      case 4:
         Navigator.popUntil(context, ModalRoute.withName(entryPointScreenRoute));
         break;
     }
@@ -101,17 +97,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context);
 
+    // ✅ Dark Mode Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color iconColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         title: Text(tr?.myOrders ?? "My Orders"),
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0.5,
         centerTitle: true,
-        titleTextStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
-        iconTheme: const IconThemeData(color: Colors.black87),
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
+        iconTheme: IconThemeData(color: iconColor),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: iconColor),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      // ✅ 3. Add the Bottom Navigation Bar
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onBottomNavTap,
@@ -123,8 +130,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
           setState(() => _hasMore = true);
           await _fetchOrders(page: 1);
         },
+        backgroundColor: appBarBg,
+        color: primaryColor,
         child: _orders.isEmpty
-            ? _buildEmptyState(tr)
+            ? _buildEmptyState(tr, isDark)
             : ListView.separated(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -134,38 +143,46 @@ class _OrdersScreenState extends State<OrdersScreen> {
             if (index == _orders.length) {
               return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
             }
-            return _buildOrderCard(context, _orders[index], tr);
+            return _buildOrderCard(context, _orders[index], tr, isDark);
           },
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations? tr) {
+  Widget _buildEmptyState(AppLocalizations? tr, bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[300]),
+          Icon(Icons.receipt_long_outlined, size: 80, color: isDark ? Colors.white30 : Colors.grey[300]),
           const SizedBox(height: 16),
-          Text(tr?.noOrdersFound ?? "No orders found",
-              style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+          Text(
+            tr?.noOrdersFound ?? "No orders found",
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey[600], fontSize: 16),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderCard(BuildContext context, OrderModel order, AppLocalizations? tr) {
+  Widget _buildOrderCard(BuildContext context, OrderModel order, AppLocalizations? tr, bool isDark) {
+    // Dynamic Colors
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+          if (!isDark) // Remove shadow in dark mode for cleaner look
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Material(
@@ -185,20 +202,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "${tr?.orderNumber ?? 'Order'} #${order.uuid.isNotEmpty ? (order.uuid.length > 8 ? order.uuid.substring(0, 8) : order.uuid) : order.id}",                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      "${tr?.orderNumber ?? 'Order'} #${order.uuid.isNotEmpty ? (order.uuid.length > 8 ? order.uuid.substring(0, 8) : order.uuid) : order.id}",
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: textColor),
                     ),
                     _buildStatusBadge(order.status),
                   ],
                 ),
-                const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)),
-                _buildInfoRow(Icons.calendar_today_outlined, tr?.orderDate ?? "Date", order.createdAt),
+                Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: dividerColor)),
+                _buildInfoRow(Icons.calendar_today_outlined, tr?.orderDate ?? "Date", order.createdAt, isDark),
                 const SizedBox(height: 8),
-                _buildInfoRow(Icons.local_shipping_outlined, tr?.shippingMethod ?? "Shipping", order.shippingMethod),
+                _buildInfoRow(Icons.local_shipping_outlined, tr?.shippingMethod ?? "Shipping", order.shippingMethod, isDark),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(tr?.totalAmount ?? "Total Amount", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                    Text(tr?.totalAmount ?? "Total Amount", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey, fontSize: 14)),
                     Text("\$${order.total}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: primaryColor)),
                   ],
                 ),
@@ -210,14 +228,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, bool isDark) {
+    final Color iconColor = isDark ? Colors.white38 : Colors.grey[400]!;
+    final Color labelColor = isDark ? Colors.white60 : Colors.grey[600]!;
+    final Color valueColor = isDark ? Colors.white : Colors.black87;
+
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[400]),
+        Icon(icon, size: 16, color: iconColor),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        Text(label, style: TextStyle(color: labelColor, fontSize: 13)),
         const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: valueColor)),
       ],
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/route/route_constants.dart';
-import 'package:showcaseview/showcaseview.dart'; // ✅ Import Showcase
-import 'package:shop/components/tutorial_tooltip.dart'; // ✅ Import Custom Tooltip
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shop/components/tutorial_tooltip.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey? menuKey;
@@ -16,14 +16,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color brandingColor = Color(0xFF0C1E4E);
+    // 1. Detect Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Define Dynamic Colors
+    // Background: White vs Dark Background
+    final Color backgroundColor = isDark ? const Color(0xFF101015) : Colors.white;
+    // Icon Color: Navy vs White
+    final Color iconColor = isDark ? Colors.white : const Color(0xFF0C1E4E);
+    // Button/Search Backgrounds: Light Grey vs Dark Surface
+    final Color elementBgColor = isDark ? const Color(0xFF1C1C23) : const Color(0xFFF5F5F5);
+    // Text Color: Grey vs White70
+    final Color textColor = isDark ? Colors.white70 : Colors.grey[500]!;
 
     return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 3,
-      shadowColor: Colors.black.withOpacity(0.1),
-      surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: 3,
+      backgroundColor: backgroundColor,
+      elevation: 0, // Removed elevation for cleaner look in dark mode
+      scrolledUnderElevation: 0,
       centerTitle: true,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
@@ -32,10 +41,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: CircleAvatar(
-          backgroundColor: const Color(0xFFF5F5F5),
+          backgroundColor: elementBgColor, // Dynamic BG
           radius: 20,
           child: menuKey != null
-          // ✅ STEP 1: Custom Tooltip
               ? Showcase.withWidget(
             key: menuKey!,
             height: 200,
@@ -47,14 +55,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               totalSteps: 6,
             ),
             child: IconButton(
-              icon: const Icon(Icons.menu_rounded, color: brandingColor),
+              icon: Icon(Icons.menu_rounded, color: iconColor), // Dynamic Icon Color
               onPressed: () => Scaffold.of(context).openDrawer(),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
           )
               : IconButton(
-            icon: const Icon(Icons.menu_rounded, color: brandingColor),
+            icon: Icon(Icons.menu_rounded, color: iconColor), // Dynamic Icon Color
             onPressed: () => Scaffold.of(context).openDrawer(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -73,18 +81,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           margin: const EdgeInsets.symmetric(horizontal: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: elementBgColor, // Dynamic Search BG
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.transparent),
           ),
           child: Row(
             children: [
-              Icon(Icons.search_rounded, color: Colors.grey[500], size: 22),
+              Icon(Icons.search_rounded, color: textColor, size: 22),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Search...',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  style: TextStyle(color: textColor, fontSize: 14),
                 ),
               ),
             ],
@@ -97,11 +104,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: CircleAvatar(
-            backgroundColor: const Color(0xFFF5F5F5),
+            backgroundColor: elementBgColor, // Dynamic BG
             radius: 20,
             child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded,
-                  color: brandingColor),
+              icon: Icon(Icons.notifications_none_rounded, color: iconColor), // Dynamic Icon
               onPressed: () {},
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

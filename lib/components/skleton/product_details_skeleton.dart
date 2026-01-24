@@ -7,16 +7,23 @@ class ProductDetailsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color iconColor = isDark ? Colors.white70 : Colors.grey;
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFF0F0F0);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBg,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back_ios_new, color: Colors.grey),
-        actions: const [
+        leading: Icon(Icons.arrow_back_ios_new, color: iconColor),
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+            padding: const EdgeInsets.only(right: 16),
+            child: Icon(Icons.shopping_bag_outlined, color: iconColor),
           )
         ],
       ),
@@ -72,7 +79,7 @@ class ProductDetailsSkeleton extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-            const Divider(color: Color(0xFFF0F0F0), thickness: 1),
+            Divider(color: dividerColor, thickness: 1),
             const SizedBox(height: 16),
 
             // 3. TABLE PRICE SKELETON
@@ -137,8 +144,11 @@ class ProductDetailsSkeleton extends StatelessWidget {
         height: 80,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          color: cardBg,
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+          ],
         ),
         child: const Row(
           children: [

@@ -25,11 +25,18 @@ class CustomBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    const Color activeColor = Color(0xFF0C1E4E);
+
+    // ✅ FIX 1: Change Active Color based on Theme
+    // Navy is invisible in Dark Mode, so we use White.
+    final Color activeColor = isDarkMode ? Colors.white : const Color(0xFF0C1E4E);
+
+    // ✅ FIX 2: Background Color
+    // Use a slightly lighter dark grey (Surface color) for the bar in Dark Mode
+    final Color barBackgroundColor = isDarkMode ? const Color(0xFF1C1C23) : Colors.white;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF101015) : Colors.white,
+        color: barBackgroundColor,
         borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         boxShadow: [
@@ -48,9 +55,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
           currentIndex: currentIndex,
           onTap: onTap,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: isDarkMode ? const Color(0xFF101015) : Colors.white,
+          backgroundColor: barBackgroundColor,
+
+          // ✅ Applied the Dynamic Active Color
           selectedItemColor: activeColor,
-          unselectedItemColor: Colors.grey.shade400,
+
+          // Good visibility for unselected items in both modes
+          unselectedItemColor: isDarkMode ? Colors.white38 : Colors.grey.shade400,
+
           selectedFontSize: 12,
           unselectedFontSize: 12,
           elevation: 0,

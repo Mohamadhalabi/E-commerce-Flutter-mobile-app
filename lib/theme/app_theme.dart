@@ -64,9 +64,11 @@ class AppTheme {
       ),
 
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkGreyColor,
+        backgroundColor: Color(0xFF101015), // Match scaffold background or slightly lighter
         elevation: 0,
+        centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }

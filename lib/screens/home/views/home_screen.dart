@@ -22,7 +22,6 @@ class HomeScreen extends StatefulWidget {
     required this.user,
     required this.onTabChanged,
     required this.onLocaleChange,
-    // ✅ ADDED
     this.categoryKey,
   });
 
@@ -42,13 +41,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ FIX: Get the correct background color from the Theme
+    // This will be White in Light Mode and Dark (0xFF101015) in Dark Mode
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: ColoredBox(
-        color: Colors.white,
+        color: backgroundColor, // ✅ Changed from Colors.white
         child: RefreshIndicator(
           onRefresh: _onRefresh,
           color: const Color(0xFF7B61FF),
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1C1C23) : Colors.white, // ✅ Dynamic loading bg
           child: CustomScrollView(
             key: _refreshKey,
             slivers: [

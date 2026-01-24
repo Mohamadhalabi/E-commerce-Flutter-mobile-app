@@ -32,31 +32,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onBottomNavTap(int index) {
     if (index == 3) {
-      // 1. If Cart, push the Cart Screen on top
       Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      // 2. For Home (0), Search (1), Shop (2), Profile (4)
-      // We navigate to EntryPoint and pass the index as an argument
       Navigator.pushNamedAndRemoveUntil(
         context,
         entryPointScreenRoute,
-            (route) => false, // This removes all previous routes (clears stack)
-        arguments: index, // <--- We pass the selected index here
+            (route) => false,
+        arguments: index,
       );
     }
   }
 
-  // ✅ CUSTOM NOTIFICATION
+  // ✅ CUSTOM NOTIFICATION (Dark Mode Aware)
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
     final tr = AppLocalizations.of(context)!;
     final topMargin = MediaQuery.of(context).size.height - 230;
+
+    // Check Theme for SnackBar
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color bgColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: bgColor,
             borderRadius: BorderRadius.circular(12),
             border: Border(
               left: BorderSide(color: isSuccess ? Colors.green : Colors.red, width: 6),
@@ -93,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
                     Text(
                       message,
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      style: TextStyle(fontSize: 13, color: subTextColor),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -144,15 +147,24 @@ class _LoginScreenState extends State<LoginScreen> {
     final tr = AppLocalizations.of(context)!;
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
 
+    // ✅ Dark Mode Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
+    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.white; // Or Colors.grey[100]
+    final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: true,
-        title: Text(tr.login, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(tr.login, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -163,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
+            icon: Icon(Icons.shopping_bag_outlined, color: textColor),
             onPressed: () => Navigator.pushNamed(context, cartScreenRoute),
           ),
         ],
@@ -182,38 +194,50 @@ class _LoginScreenState extends State<LoginScreen> {
                   tr.welcome,
                   style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                Text(tr.signInPrompt, style: const TextStyle(color: Colors.grey)), // ✅ Translated
+                Text(tr.signInPrompt, style: TextStyle(color: subTextColor)),
 
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) => (value == null || value.isEmpty) ? tr.validEmail : null, // ✅ Translated
+                  style: TextStyle(color: textColor), // Input Text Color
+                  validator: (value) => (value == null || value.isEmpty) ? tr.validEmail : null,
                   decoration: InputDecoration(
                     labelText: tr.email,
-                    hintText: tr.enterEmail, // ✅ Translated "Enter your email"
+                    labelStyle: TextStyle(color: subTextColor),
+                    hintText: tr.enterEmail,
+                    hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
-                    suffixIcon: const Padding(padding: EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined)),
+                    filled: true,
+                    fillColor: inputFill,
+                    suffixIcon: Padding(padding: const EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined, color: inputIconColor)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), // Modern border
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscureText,
-                  validator: (value) => (value == null || value.isEmpty) ? tr.minPassword : null, // ✅ Translated
+                  style: TextStyle(color: textColor),
+                  validator: (value) => (value == null || value.isEmpty) ? tr.minPassword : null,
                   decoration: InputDecoration(
                     labelText: tr.password,
-                    hintText: tr.enterPassword, // ✅ Translated "Enter your password"
+                    labelStyle: TextStyle(color: subTextColor),
+                    hintText: tr.enterPassword,
+                    hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
+                    filled: true,
+                    fillColor: inputFill,
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                      icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
                     ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -235,7 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(tr.noAccount, style: const TextStyle(color: Colors.grey)), // ✅ Translated
+                    Text(tr.noAccount, style: TextStyle(color: subTextColor)),
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, signUpScreenRoute),
                       child: Text(tr.signUp, style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),

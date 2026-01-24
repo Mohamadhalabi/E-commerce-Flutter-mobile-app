@@ -8,7 +8,6 @@ import 'package:shop/services/notification_service.dart';
 import 'package:shop/components/common/CustomBottomNavigationBar.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// Import Localizations
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'add_address_screen.dart';
@@ -43,8 +42,6 @@ class _AddressesScreenState extends State<AddressesScreen> {
   }
 
   Future<void> _fetchAddresses() async {
-    // Only show full skeleton loader on initial load or manual refresh,
-    // but here we set it true to trigger the skeleton.
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final data = await ApiService.fetchAddresses(auth.token ?? '');
@@ -64,16 +61,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
       if(mounted) {
         NotificationService.show(
             context: context,
-            title: AppLocalizations.of(context)!.success, // "Success"
-            message: AppLocalizations.of(context)!.addressDeleted // "Address deleted"
+            title: AppLocalizations.of(context)!.success,
+            message: AppLocalizations.of(context)!.addressDeleted
         );
       }
     } else {
       if(mounted) {
         NotificationService.show(
             context: context,
-            title: AppLocalizations.of(context)!.error, // "Error"
-            message: AppLocalizations.of(context)!.failedToDeleteAddress, // "Failed to delete address"
+            title: AppLocalizations.of(context)!.error,
+            message: AppLocalizations.of(context)!.failedToDeleteAddress,
             isError: true
         );
       }
@@ -88,17 +85,24 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dark Mode Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color iconColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.myAddresses), // "My Addresses"
-        backgroundColor: Colors.white,
+        title: Text(AppLocalizations.of(context)!.myAddresses),
+        backgroundColor: appBarBg,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        titleTextStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
-        iconTheme: const IconThemeData(color: Colors.black87),
+        titleTextStyle: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
+        iconTheme: IconThemeData(color: iconColor),
         actions: [
-          // Don't show Add button while loading to prevent errors
           if (!_isLoading)
             IconButton(
               icon: const Icon(Icons.add, color: primaryColor),
@@ -110,28 +114,31 @@ class _AddressesScreenState extends State<AddressesScreen> {
         currentIndex: _currentIndex,
         onTap: _onBottomNavTap,
       ),
-      // ✅ Refresh Indicator added here
       body: RefreshIndicator(
         onRefresh: _fetchAddresses,
         color: primaryColor,
+        backgroundColor: appBarBg,
         child: _isLoading
-            ? _buildSkeletonLoader() // ✅ Skeleton Loader
+            ? _buildSkeletonLoader(isDark)
             : _addresses.isEmpty
-            ? _buildEmptyState()
+            ? _buildEmptyState(isDark)
             : ListView.separated(
           padding: const EdgeInsets.all(16),
-          // Physics required for RefreshIndicator to work on small lists
           physics: const AlwaysScrollableScrollPhysics(),
           itemCount: _addresses.length,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemBuilder: (context, index) => _buildAddressCard(_addresses[index]),
+          itemBuilder: (context, index) => _buildAddressCard(_addresses[index], isDark),
         ),
       ),
     );
   }
 
   // ✅ Skeleton Loader Implementation
-  Widget _buildSkeletonLoader() {
+  Widget _buildSkeletonLoader(bool isDark) {
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color shimmerBase = isDark ? Colors.white10 : Colors.grey[300]!;
+    final Color shimmerHighlight = isDark ? Colors.white12 : Colors.grey[200]!;
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 5,
@@ -139,15 +146,11 @@ class _AddressesScreenState extends State<AddressesScreen> {
       itemBuilder: (context, index) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(16),
-            // ✅ Added same Shadow here for consistency
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
+              if (!isDark)
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           padding: const EdgeInsets.all(16),
@@ -156,31 +159,31 @@ class _AddressesScreenState extends State<AddressesScreen> {
             children: [
               Row(
                 children: [
-                  Container(width: 24, height: 24, color: Colors.grey[300]),
+                  Container(width: 24, height: 24, color: shimmerBase),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(width: 100, height: 16, color: Colors.grey[300]),
+                        Container(width: 100, height: 16, color: shimmerBase),
                         const SizedBox(height: 8),
-                        Container(width: double.infinity, height: 12, color: Colors.grey[200]),
+                        Container(width: double.infinity, height: 12, color: shimmerHighlight),
                         const SizedBox(height: 4),
-                        Container(width: 150, height: 12, color: Colors.grey[200]),
+                        Container(width: 150, height: 12, color: shimmerHighlight),
                       ],
                     ),
                   )
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(height: 1),
+              Divider(height: 1, color: isDark ? Colors.white12 : Colors.grey[300]),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(width: 60, height: 20, color: Colors.grey[200]),
-                  Container(width: 60, height: 20, color: Colors.grey[200]),
-                  Container(width: 60, height: 20, color: Colors.grey[200]),
+                  Container(width: 60, height: 20, color: shimmerHighlight),
+                  Container(width: 60, height: 20, color: shimmerHighlight),
+                  Container(width: 60, height: 20, color: shimmerHighlight),
                 ],
               )
             ],
@@ -198,8 +201,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
     if (result == true) _fetchAddresses();
   }
 
-  Widget _buildEmptyState() {
-    // Wrapped in SingleChildScrollView + SizedBox to ensure RefreshIndicator works
+  Widget _buildEmptyState(bool isDark) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
@@ -210,14 +212,18 @@ class _AddressesScreenState extends State<AddressesScreen> {
             children: [
               Container(
                 width: 100, height: 100,
-                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]),
+                decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1C1C23) : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]
+                ),
                 padding: const EdgeInsets.all(20),
                 child: SvgPicture.asset("assets/icons/Location.svg", colorFilter: const ColorFilter.mode(primaryColor, BlendMode.srcIn)),
               ),
               const SizedBox(height: 24),
               Text(
-                AppLocalizations.of(context)!.noAddressesYet, // "No Addresses Yet"
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                AppLocalizations.of(context)!.noAddressesYet,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -226,7 +232,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   onPressed: () => _navigateToAddAddress(),
                   style: ElevatedButton.styleFrom(backgroundColor: primaryColor, shape: const StadiumBorder()),
                   child: Text(
-                    AppLocalizations.of(context)!.addAddress, // "Add Address"
+                    AppLocalizations.of(context)!.addAddress,
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
@@ -238,22 +244,29 @@ class _AddressesScreenState extends State<AddressesScreen> {
     );
   }
 
-  Widget _buildAddressCard(AddressModel address) {
+  Widget _buildAddressCard(AddressModel address, bool isDark) {
+    // Dynamic Colors
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.grey[600]!;
+    final Color phoneColor = isDark ? Colors.white70 : Colors.grey[800]!;
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        // ✅ Added Shadow Here
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4), // Shifts shadow down slightly
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
         ],
         border: address.isDefault
             ? Border.all(color: primaryColor, width: 1.5)
-            : Border.all(color: Colors.transparent),
+            : Border.all(color: isDark ? Colors.white10 : Colors.transparent),
       ),
       child: Column(
         children: [
@@ -262,7 +275,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on_outlined, color: Colors.black87),
+                Icon(Icons.location_on_outlined, color: textColor),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -271,8 +284,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       Row(
                         children: [
                           Text(address.city,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
                           const Spacer(),
                           if (address.isDefault)
                             Container(
@@ -282,8 +295,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   color: primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4)),
                               child: Text(
-                                AppLocalizations.of(context)!
-                                    .defaultLabel, // "DEFAULT"
+                                AppLocalizations.of(context)!.defaultLabel,
                                 style: const TextStyle(
                                     color: primaryColor,
                                     fontSize: 10,
@@ -295,12 +307,11 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       const SizedBox(height: 4),
                       Text(
                           "${address.address}\n${address.city} - ${address.postalCode}",
-                          style: TextStyle(
-                              color: Colors.grey[600], fontSize: 13)),
+                          style: TextStyle(color: subTextColor, fontSize: 13)),
                       const SizedBox(height: 8),
                       Text(address.phone,
                           style: TextStyle(
-                              color: Colors.grey[800],
+                              color: phoneColor,
                               fontSize: 13,
                               fontWeight: FontWeight.w500)),
                     ],
@@ -309,7 +320,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: dividerColor),
           Row(
             children: [
               if (!address.isDefault)
@@ -317,18 +328,17 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     child: TextButton(
                         onPressed: () => _setDefault(address.id),
                         child: Text(
-                            AppLocalizations.of(context)!
-                                .setDefault, // "Set Default"
-                            style: const TextStyle(color: Colors.grey)))),
+                            AppLocalizations.of(context)!.setDefault,
+                            style: TextStyle(color: subTextColor)))),
               Expanded(
                   child: TextButton(
                       onPressed: () => _navigateToAddAddress(address),
-                      child: Text(AppLocalizations.of(context)!.edit, // "Edit"
-                          style: const TextStyle(color: Colors.black87)))),
+                      child: Text(AppLocalizations.of(context)!.edit,
+                          style: TextStyle(color: textColor)))),
               Expanded(
                   child: TextButton(
                       onPressed: () => _deleteAddress(address.id),
-                      child: Text(AppLocalizations.of(context)!.delete, // "Delete"
+                      child: Text(AppLocalizations.of(context)!.delete,
                           style: const TextStyle(color: Colors.red)))),
             ],
           )

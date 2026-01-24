@@ -31,10 +31,19 @@ class _ExpandableSectionState extends State<ExpandableSection> {
 
   @override
   Widget build(BuildContext context) {
-    // 🎨 White block design separates it from the grey background
+    // ✅ 1. Theme Detection
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ 2. Dynamic Colors
+    final Color backgroundColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color titleColor = isDark ? Colors.white : Colors.black87;
+    final Color iconColor = isDark ? Colors.white70 : Colors.black87;
+    final Color arrowColor = isDark ? Colors.white54 : Colors.grey;
+    final Color contentTextColor = isDark ? Colors.white70 : Colors.black54;
+
     return SliverToBoxAdapter(
       child: Container(
-        color: Colors.white,
+        color: backgroundColor, // Dynamic Background
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,17 +58,17 @@ class _ExpandableSectionState extends State<ExpandableSection> {
                       Icon(
                         widget.leadingIcon,
                         size: 22,
-                        color: Colors.black87, // Darker, cleaner icon color
+                        color: iconColor, // Dynamic Icon
                       ),
                       const SizedBox(width: 12),
                     ],
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600, // Semi-bold title
-                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          color: titleColor, // Dynamic Title
                         ),
                       ),
                     ),
@@ -67,9 +76,9 @@ class _ExpandableSectionState extends State<ExpandableSection> {
                     AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0.0,
                       duration: const Duration(milliseconds: 200),
-                      child: const Icon(
-                        Icons.keyboard_arrow_down_rounded, // Sleeker chevron
-                        color: Colors.grey,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: arrowColor, // Dynamic Arrow
                       ),
                     ),
                   ],
@@ -85,7 +94,7 @@ class _ExpandableSectionState extends State<ExpandableSection> {
                 child: widget.child ??
                     Text(
                       widget.text ?? '',
-                      style: const TextStyle(height: 1.5, color: Colors.black54),
+                      style: TextStyle(height: 1.5, color: contentTextColor), // Dynamic Text
                     ),
               ),
               crossFadeState: isExpanded

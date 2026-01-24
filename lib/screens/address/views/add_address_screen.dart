@@ -89,16 +89,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   void _onBottomNavTap(int index) {
     if (index == 3) {
-      // 1. If Cart, push the Cart Screen on top
       Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      // 2. For Home (0), Search (1), Shop (2), Profile (4)
-      // We navigate to EntryPoint and pass the index as an argument
       Navigator.pushNamedAndRemoveUntil(
         context,
         entryPointScreenRoute,
-            (route) => false, // This removes all previous routes (clears stack)
-        arguments: index, // <--- We pass the selected index here
+            (route) => false,
+        arguments: index,
       );
     }
   }
@@ -164,52 +161,47 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     }
   }
 
-  // ✅ Helper: Input Decoration
-  // Defaults to a Grey Fill to stand out inside the white card
-  InputDecoration _buildInputDecoration(String hint, {Color? fillColor}) {
-    // Default to Light Grey if no color provided
-    final color = fillColor ?? const Color(0xFFF9F9F9);
+  // ✅ Helper: Input Decoration (Dark Mode Ready)
+  InputDecoration _buildInputDecoration(BuildContext context, String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? const Color(0xFF2A2A35) : const Color(0xFFF9F9F9);
+    final hintColor = isDark ? Colors.white38 : Colors.grey[400];
 
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+      hintStyle: TextStyle(color: hintColor, fontSize: 14),
       filled: true,
-      fillColor: color,
+      fillColor: fillColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: primaryColor, width: 1),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: primaryColor, width: 1)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // 1. Grey Background
+    // ✅ Dark Mode Colors
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color popupBg = isDark ? const Color(0xFF2A2A35) : Colors.white;
 
+    return Scaffold(
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         title: Text(widget.address == null
             ? AppLocalizations.of(context)!.addAddress
-            : AppLocalizations.of(context)!.editAddress
+            : AppLocalizations.of(context)!.editAddress,
+            style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: textColor),
       ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _currentIndex,
@@ -221,50 +213,50 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // 2. The White Card Container
+              // 2. The Form Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20), // Circular borders
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                    if (!isDark)
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // --- Country Dropdown ---
-                    _buildLabel(AppLocalizations.of(context)!.country),
+                    _buildLabel(context, AppLocalizations.of(context)!.country),
                     DropdownSearch<CountryModel>(
                       items: (filter, loadProps) => _countries,
                       compareFn: (i1, i2) => i1.id == i2.id,
                       itemAsString: (CountryModel u) => u.name,
                       selectedItem: _selectedCountry,
 
-                      // Closed State: Grey Box
+                      // Decoration for Dropdown Button
                       decoratorProps: DropDownDecoratorProps(
-                        decoration: _buildInputDecoration(AppLocalizations.of(context)!.selectCountry),
+                        decoration: _buildInputDecoration(context, AppLocalizations.of(context)!.selectCountry),
+                        baseStyle: TextStyle(color: textColor), // Selected Text Color
                       ),
 
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
                         menuProps: MenuProps(
-                          backgroundColor: Colors.white,
+                          backgroundColor: popupBg,
                           borderRadius: BorderRadius.circular(12),
                           elevation: 4,
                         ),
-                        // Search Box inside popup
                         searchFieldProps: TextFieldProps(
                           padding: const EdgeInsets.all(12),
-                          decoration: _buildInputDecoration(
-                            AppLocalizations.of(context)!.searchCountry,
-                          ),
+                          style: TextStyle(color: textColor),
+                          decoration: _buildInputDecoration(context, AppLocalizations.of(context)!.searchCountry),
                         ),
                         itemBuilder: (context, item, isDisabled, isSelected) {
                           return Padding(
@@ -273,7 +265,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               item.name,
                               style: TextStyle(
                                   fontSize: 14,
-                                  color: isSelected ? primaryColor : Colors.black87,
+                                  color: isSelected ? primaryColor : textColor,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
                               ),
                             ),
@@ -294,33 +286,32 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     const SizedBox(height: 16),
 
                     // --- City Dropdown ---
-                    _buildLabel(AppLocalizations.of(context)!.city),
+                    _buildLabel(context, AppLocalizations.of(context)!.city),
                     DropdownSearch<String>(
                       items: (filter, loadProps) => _cities,
                       selectedItem: _selectedCity,
                       enabled: _selectedCountry != null,
 
-                      // Closed State: Grey Box
                       decoratorProps: DropDownDecoratorProps(
-                        decoration: _buildInputDecoration(
+                        decoration: _buildInputDecoration(context,
                             _selectedCountry == null
                                 ? AppLocalizations.of(context)!.selectCountryFirst
                                 : AppLocalizations.of(context)!.selectCity
                         ),
+                        baseStyle: TextStyle(color: textColor),
                       ),
 
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
                         menuProps: MenuProps(
-                          backgroundColor: Colors.white,
+                          backgroundColor: popupBg,
                           borderRadius: BorderRadius.circular(12),
                           elevation: 4,
                         ),
                         searchFieldProps: TextFieldProps(
                           padding: const EdgeInsets.all(12),
-                          decoration: _buildInputDecoration(
-                            AppLocalizations.of(context)!.searchCity,
-                          ),
+                          style: TextStyle(color: textColor),
+                          decoration: _buildInputDecoration(context, AppLocalizations.of(context)!.searchCity),
                         ),
                         itemBuilder: (context, item, isDisabled, isSelected) {
                           return Padding(
@@ -329,7 +320,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               item,
                               style: TextStyle(
                                   fontSize: 14,
-                                  color: isSelected ? primaryColor : Colors.black87,
+                                  color: isSelected ? primaryColor : textColor,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
                               ),
                             ),
@@ -340,13 +331,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // --- Text Fields (Grey Boxes) ---
-                    _buildLabel(AppLocalizations.of(context)!.street),
-                    _buildTextField(null, _streetController),
+                    // --- Text Fields ---
+                    _buildLabel(context, AppLocalizations.of(context)!.street),
+                    _buildTextField(context, null, _streetController),
                     const SizedBox(height: 16),
 
-                    _buildLabel(AppLocalizations.of(context)!.address),
-                    _buildTextField(null, _addressController),
+                    _buildLabel(context, AppLocalizations.of(context)!.address),
+                    _buildTextField(context, null, _addressController),
                     const SizedBox(height: 16),
 
                     Row(
@@ -355,8 +346,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildLabel(AppLocalizations.of(context)!.postalCode),
-                              _buildTextField(null, _postalController, isNumber: true),
+                              _buildLabel(context, AppLocalizations.of(context)!.postalCode),
+                              _buildTextField(context, null, _postalController, isNumber: true),
                             ],
                           ),
                         ),
@@ -365,8 +356,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildLabel(AppLocalizations.of(context)!.phone),
-                              _buildTextField(null, _phoneController, isNumber: true),
+                              _buildLabel(context, AppLocalizations.of(context)!.phone),
+                              _buildTextField(context, null, _phoneController, isNumber: true),
                             ],
                           ),
                         ),
@@ -382,7 +373,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           height: 24, width: 24,
                           child: Checkbox(
                             value: _isDefault,
-                            activeColor: const Color(0xFFE84C0F),
+                            activeColor: primaryColor,
+                            checkColor: Colors.white,
+                            side: BorderSide(color: isDark ? Colors.white54 : Colors.grey),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                             onChanged: (val) => setState(() => _isDefault = val!),
                           ),
@@ -390,7 +383,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         const SizedBox(width: 8),
                         Text(
                           AppLocalizations.of(context)!.setAsDefault,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textColor),
                         ),
                       ],
                     ),
@@ -400,16 +393,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
               const SizedBox(height: 30),
 
-              // 3. Save Button (Kept outside to pop against the grey background)
+              // 3. Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE84C0F),
+                    backgroundColor: primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 2,
-                    shadowColor: const Color(0xFFE84C0F).withOpacity(0.4),
+                    shadowColor: primaryColor.withOpacity(0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading
@@ -427,21 +420,24 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(text, style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600)),
+      child: Text(text, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14, fontWeight: FontWeight.w600)),
     );
   }
 
-  Widget _buildTextField(String? hint, TextEditingController controller, {bool isNumber = false}) {
+  Widget _buildTextField(BuildContext context, String? hint, TextEditingController controller, {bool isNumber = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black), // Input Text Color
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       validator: (val) => val == null || val.isEmpty
           ? AppLocalizations.of(context)!.requiredField
           : null,
-      decoration: _buildInputDecoration(hint ?? ""),
+      decoration: _buildInputDecoration(context, hint ?? ""),
     );
   }
 }
