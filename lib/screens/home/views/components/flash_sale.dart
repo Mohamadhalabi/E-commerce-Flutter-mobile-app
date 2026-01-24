@@ -27,7 +27,6 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
     fetchProducts();
   }
 
-
   Future<void> fetchProducts() async {
     final locale = Localizations.localeOf(context).languageCode;
 
@@ -47,6 +46,9 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Calculate width to fit 2.5 items
+    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -57,13 +59,12 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                AppLocalizations.of(context)!.specialOffer, // Example localization key
+                AppLocalizations.of(context)!.specialOffer,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate or perform desired action
-                  Navigator.pushNamed(context, '/discount'); // Change to your route
+                  Navigator.pushNamed(context, '/discount');
                 },
                 child: Text(AppLocalizations.of(context)!.viewAll),
               ),
@@ -79,12 +80,10 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
           )
         else
           VisibilityDetector(
-            key: Key('flash-sale-products'), // Unique key for visibility detection
-            onVisibilityChanged: (VisibilityInfo visibilityInfo) {
-              // double visiblePercentage = visibilityInfo.visibleFraction * 100;
-            },
+            key: const Key('flash-sale-products'),
+            onVisibilityChanged: (VisibilityInfo visibilityInfo) {},
             child: SizedBox(
-              height: 420,
+              height: 330, // 2. Adjusted height
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
@@ -95,24 +94,28 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
                       left: defaultPadding,
                       right: index == products.length - 1 ? defaultPadding : 0,
                     ),
-                    child: ProductCard(
-                      id: product.id,
-                      image: product.image,
-                      category: product.category,
-                      title: product.title,
-                      price: product.price,
-                      salePrice: product.salePrice,
-                      sku: product.sku,
-                      rating: product.rating,
-                      discount: product.discount,
-                      freeShipping: product.freeShipping,
-                      press: () {
-                        Navigator.pushNamed(
-                          context,
-                          productDetailsScreenRoute,
-                          arguments: product.id,
-                        );
-                      },
+                    // 3. Wrap in SizedBox with calculated width
+                    child: SizedBox(
+                      width: cardWidth,
+                      child: ProductCard(
+                        id: product.id,
+                        image: product.image,
+                        category: product.category,
+                        title: product.title,
+                        price: product.price,
+                        salePrice: product.salePrice,
+                        sku: product.sku,
+                        rating: product.rating,
+                        discount: product.discount,
+                        freeShipping: product.freeShipping,
+                        press: () {
+                          Navigator.pushNamed(
+                            context,
+                            productDetailsScreenRoute,
+                            arguments: product.id,
+                          );
+                        },
+                      ),
                     ),
                   );
                 },

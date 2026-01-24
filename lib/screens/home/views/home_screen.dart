@@ -13,12 +13,17 @@ class HomeScreen extends StatefulWidget {
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
 
+  // ✅ ADDED: Accept the key from EntryPoint
+  final GlobalKey? categoryKey;
+
   const HomeScreen({
     super.key,
     required this.currentIndex,
     required this.user,
     required this.onTabChanged,
     required this.onLocaleChange,
+    // ✅ ADDED
+    this.categoryKey,
   });
 
   @override
@@ -26,15 +31,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // This key controls the lifecycle of the ScrollView.
-  // When we change this key, everything inside destroys and rebuilds (reloading data).
   Key _refreshKey = UniqueKey();
 
   Future<void> _onRefresh() async {
-    // 1. Simulate a small network delay so the user sees the spinner
     await Future.delayed(const Duration(milliseconds: 1500));
-
-    // 2. Change the key to force a complete rebuild of the scroll view content
     setState(() {
       _refreshKey = UniqueKey();
     });
@@ -46,13 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ColoredBox(
         color: Colors.white,
         child: RefreshIndicator(
-          // Triggered when user pulls down
           onRefresh: _onRefresh,
-          color: const Color(0xFF7B61FF), // Use your primary color here
+          color: const Color(0xFF7B61FF),
           backgroundColor: Colors.white,
           child: CustomScrollView(
-            // The Key ensures that when _onRefresh is called,
-            // this entire widget tree is reset.
             key: _refreshKey,
             slivers: [
               SliverToBoxAdapter(
@@ -61,6 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   user: widget.user,
                   onTabChanged: widget.onTabChanged,
                   onLocaleChange: widget.onLocaleChange,
+                  // ✅ ADDED: Pass the key down to the next widget
+                  categoryKey: widget.categoryKey,
                 ),
               ),
               const SliverToBoxAdapter(child: NewArrivalProducts()),

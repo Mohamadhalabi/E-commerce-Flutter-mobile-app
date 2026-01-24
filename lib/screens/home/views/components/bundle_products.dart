@@ -45,8 +45,11 @@ class _BundleProductsState extends State<BundleProducts> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Calculate width to fit 2.5 items
+    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+
     return VisibilityDetector(
-      key: Key('bundle-products-section'),
+      key: const Key('bundle-products-section'),
       onVisibilityChanged: (visibilityInfo) {
         if (visibilityInfo.visibleFraction > 0.5 && !isSectionVisible) {
           setState(() {
@@ -70,7 +73,7 @@ class _BundleProductsState extends State<BundleProducts> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/bundle-products'); // Change to your route
+                    Navigator.pushNamed(context, '/bundle-products');
                   },
                   child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
@@ -86,7 +89,7 @@ class _BundleProductsState extends State<BundleProducts> {
             )
           else
             SizedBox(
-              height: 420,
+              height: 330, // 2. Adjusted height
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
@@ -97,24 +100,28 @@ class _BundleProductsState extends State<BundleProducts> {
                       left: defaultPadding,
                       right: index == products.length - 1 ? defaultPadding : 0,
                     ),
-                    child: ProductCard(
-                      id: product.id,
-                      image: product.image,
-                      category: product.category,
-                      title: product.title,
-                      price: product.price,
-                      salePrice: product.salePrice,
-                      sku: product.sku,
-                      rating: product.rating,
-                      discount: product.discount,
-                      freeShipping: product.freeShipping,
-                      press: () {
-                        Navigator.pushNamed(
-                          context,
-                          productDetailsScreenRoute,
-                          arguments: product.id,
-                        );
-                      },
+                    // 3. Wrap in SizedBox with calculated width
+                    child: SizedBox(
+                      width: cardWidth,
+                      child: ProductCard(
+                        id: product.id,
+                        image: product.image,
+                        category: product.category,
+                        title: product.title,
+                        price: product.price,
+                        salePrice: product.salePrice,
+                        sku: product.sku,
+                        rating: product.rating,
+                        discount: product.discount,
+                        freeShipping: product.freeShipping,
+                        press: () {
+                          Navigator.pushNamed(
+                            context,
+                            productDetailsScreenRoute,
+                            arguments: product.id,
+                          );
+                        },
+                      ),
                     ),
                   );
                 },

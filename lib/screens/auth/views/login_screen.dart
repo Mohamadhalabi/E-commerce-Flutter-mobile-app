@@ -31,17 +31,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onBottomNavTap(int index) {
-    if (index == 4) return;
-    if (index == 0) {
-      Navigator.popUntil(context, (route) => route.isFirst);
+    if (index == 3) {
+      // 1. If Cart, push the Cart Screen on top
+      Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      String? routeName;
-      switch (index) {
-        case 1: routeName = searchScreenRoute; break;
-        case 2: routeName = discoverScreenRoute; break;
-        case 3: routeName = cartScreenRoute; break;
-      }
-      if (routeName != null) Navigator.pushNamed(context, routeName);
+      // 2. For Home (0), Search (1), Shop (2), Profile (4)
+      // We navigate to EntryPoint and pass the index as an argument
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+            (route) => false, // This removes all previous routes (clears stack)
+        arguments: index, // <--- We pass the selected index here
+      );
     }
   }
 

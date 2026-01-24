@@ -56,6 +56,9 @@ class _RelatedProductsState extends State<RelatedProducts> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Calculate width to fit 2.5 items per row (Consistent with other sections)
+    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -66,7 +69,7 @@ class _RelatedProductsState extends State<RelatedProducts> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                AppLocalizations.of(context)!.relatedProducts, // Example localization key
+                AppLocalizations.of(context)!.relatedProducts,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
             ],
@@ -81,7 +84,8 @@ class _RelatedProductsState extends State<RelatedProducts> {
           )
         else
           SizedBox(
-            height: 410,
+            // 2. Reduce height to match the new compact card size (330 instead of 410)
+            height: 330,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: products.length,
@@ -92,24 +96,28 @@ class _RelatedProductsState extends State<RelatedProducts> {
                     left: defaultPadding,
                     right: index == products.length - 1 ? defaultPadding : 0,
                   ),
-                  child: ProductCard(
-                    id: product.id,
-                    image: product.image,
-                    category: product.category,
-                    title: product.title,
-                    price: product.price,
-                    salePrice: product.salePrice,
-                    sku: product.sku,
-                    rating: product.rating,
-                    discount: product.discount,
-                    freeShipping: product.freeShipping,
-                    press: () {
-                      Navigator.pushNamed(
-                        context,
-                        productDetailsScreenRoute,
-                        arguments: product.id,
-                      );
-                    },
+                  // 3. Wrap ProductCard in SizedBox with calculated width
+                  child: SizedBox(
+                    width: cardWidth,
+                    child: ProductCard(
+                      id: product.id,
+                      image: product.image,
+                      category: product.category,
+                      title: product.title,
+                      price: product.price,
+                      salePrice: product.salePrice,
+                      sku: product.sku,
+                      rating: product.rating,
+                      discount: product.discount,
+                      freeShipping: product.freeShipping,
+                      press: () {
+                        Navigator.pushNamed(
+                          context,
+                          productDetailsScreenRoute,
+                          arguments: product.id,
+                        );
+                      },
+                    ),
                   ),
                 );
               },

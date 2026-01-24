@@ -12,9 +12,13 @@ import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/router.dart' as router;
 import 'package:flutter/services.dart';
 import "controllers/locale_controller.dart";
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+// ✅ Import ShowcaseView
+import 'package:showcaseview/showcaseview.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await dotenv.load();
   await initApiClient();
@@ -27,13 +31,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        // ✅ 1. Theme Provider added here
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-
-        // 2. Auth Provider
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-
-        // 3. Cart Provider
         ChangeNotifierProxyProvider<AuthProvider, CartProvider>(
           create: (_) => CartProvider(),
           update: (context, auth, cart) {
@@ -75,6 +74,7 @@ class _MyAppState extends State<MyApp> {
         _locale = Locale(langCode);
       });
     }
+    FlutterNativeSplash.remove();
   }
 
   Future<void> _setLocale(String langCode) async {
@@ -87,7 +87,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Listen to Theme Provider
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
@@ -97,13 +96,22 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'Techno Lock Keys Trading mobile app',
 
-      // ✅ Theme Configuration
       theme: AppTheme.lightTheme(context),
-      darkTheme: AppTheme.darkTheme(context), // Uses the new dark theme
-      themeMode: themeProvider.themeMode,     // Switches dynamically
+      darkTheme: AppTheme.darkTheme(context),
 
+      themeMode: themeProvider.themeMode,
       onGenerateRoute: router.generateRoute,
       initialRoute: entryPointScreenRoute,
+      builder: (context, child) {
+        return ShowCaseWidget(
+          builder: (context) => child!,
+          // ✅ Add this: clearer duration and auto-play options if you want
+          autoPlay: false,
+          blurValue: 1,
+          // You can't easily add a global "Skip" button here without a custom builder,
+          // so the best "quick fix" is to change the Tooltip text to instruct the user.
+        );
+      },
     );
   }
 }

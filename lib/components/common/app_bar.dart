@@ -1,9 +1,15 @@
-// ... imports ...
 import 'package:flutter/material.dart';
-import 'package:shop/route/route_constants.dart'; // Ensure discoverScreenRoute is here
+import 'package:shop/route/route_constants.dart';
+import 'package:showcaseview/showcaseview.dart'; // ✅ Import Showcase
+import 'package:shop/components/tutorial_tooltip.dart'; // ✅ Import Custom Tooltip
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  final GlobalKey? menuKey;
+
+  const CustomAppBar({
+    super.key,
+    this.menuKey,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
@@ -15,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 3,
-      shadowColor: Colors.black.withOpacity(0.1), // Fixed opacity for cleaner look
+      shadowColor: Colors.black.withOpacity(0.1),
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 3,
       centerTitle: true,
@@ -28,7 +34,26 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: CircleAvatar(
           backgroundColor: const Color(0xFFF5F5F5),
           radius: 20,
-          child: IconButton(
+          child: menuKey != null
+          // ✅ STEP 1: Custom Tooltip
+              ? Showcase.withWidget(
+            key: menuKey!,
+            height: 200,
+            width: 280,
+            container: const TutorialTooltip(
+              title: "Menu",
+              description: "Open the side menu to access categories, language settings, and currency.",
+              currentStep: 1,
+              totalSteps: 6,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.menu_rounded, color: brandingColor),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          )
+              : IconButton(
             icon: const Icon(Icons.menu_rounded, color: brandingColor),
             onPressed: () => Scaffold.of(context).openDrawer(),
             padding: EdgeInsets.zero,
@@ -38,9 +63,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       leadingWidth: 60,
 
-      // Search Bar (Clickable Container)
+      // Search Bar
       title: GestureDetector(
-        // ✅ Navigate to DiscoverScreen on tap
         onTap: () {
           Navigator.pushNamed(context, discoverScreenRoute);
         },
@@ -51,7 +75,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.transparent), // Border placeholder
+            border: Border.all(color: Colors.transparent),
           ),
           child: Row(
             children: [
@@ -76,7 +100,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             backgroundColor: const Color(0xFFF5F5F5),
             radius: 20,
             child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: brandingColor),
+              icon: const Icon(Icons.notifications_none_rounded,
+                  color: brandingColor),
               onPressed: () {},
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

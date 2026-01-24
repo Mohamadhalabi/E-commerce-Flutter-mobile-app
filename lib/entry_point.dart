@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:showcaseview/showcaseview.dart'; // ✅ Import
 import 'components/common/MainScaffold.dart';
-// ✅ Import the product screen
 import 'screens/category/sub_category_products_screen.dart';
 
 class EntryPoint extends StatefulWidget {
@@ -27,12 +27,51 @@ class _EntryPointState extends State<EntryPoint> {
   final List<int> _history = [];
   Map<String, dynamic>? user;
 
+  // ✅ 1. Define ALL Keys for the Tutorial Steps
+  final GlobalKey _appBarMenuKey = GlobalKey(); // Menu in AppBar
+  final GlobalKey _categoriesKey = GlobalKey(); // Home Categories
+  final GlobalKey _searchTabKey = GlobalKey();  // Search in BottomNav
+  final GlobalKey _shopTabKey = GlobalKey();    // Shop in BottomNav
+  final GlobalKey _cartTabKey = GlobalKey();    // Cart in BottomNav
+  final GlobalKey _profileTabKey = GlobalKey(); // Profile in BottomNav
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _history.add(_currentIndex);
     _loadUserData();
+
+    // ✅ 2. Trigger Tutorial Check
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstTime());
+  }
+
+  Future<void> _checkFirstTime() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // ---------------------------------------------------------
+    // 👇 DEVELOPMENT MODE (Use this while you are building/testing)
+    // await prefs.setBool('first_time_tutorial', true);
+    // ---------------------------------------------------------
+
+    bool? isFirstTime = prefs.getBool('first_time_tutorial');
+
+    if (isFirstTime == null || isFirstTime == true) {
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        // ✅ 3. Start the FULL Sequence
+        ShowCaseWidget.of(context).startShowCase([
+          _appBarMenuKey,  // 1. Menu
+          _categoriesKey,  // 2. Categories
+          _searchTabKey,   // 3. Search
+          _shopTabKey,     // 4. Shop
+          _cartTabKey,     // 5. Cart
+          _profileTabKey   // 6. Profile
+        ]);
+      }
+      await prefs.setBool('first_time_tutorial', false);
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -57,32 +96,24 @@ class _EntryPointState extends State<EntryPoint> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      // 0. Home
       HomeScreen(
         currentIndex: _currentIndex,
         user: user,
         onTabChanged: _onTabChanged,
         onLocaleChange: widget.onLocaleChange,
+        categoryKey: _categoriesKey, // Pass Key
       ),
-
-      // 1. Search / Discover
       const DiscoverScreen(),
-
-      // ✅ 2. Shop Tab (Replaces BookmarkScreen)
       SubCategoryProductsScreen(
-        categorySlug: "", // Empty string = fetch ALL products
+        categorySlug: "",
         title: "Shop",
         currentIndex: 2,
         user: user,
-        onTabChanged: _onTabChanged, // Allows tab switching from nav bar
+        onTabChanged: _onTabChanged,
         onLocaleChange: widget.onLocaleChange,
-        isMainTab: true, // Enables Menu Icon & Drawer
+        isMainTab: true,
       ),
-
-      // 3. Cart
       const CartScreen(isStandalone: false),
-
-      // 4. Profile
       const ProfileScreen(),
     ];
 
@@ -100,6 +131,14 @@ class _EntryPointState extends State<EntryPoint> {
         onLocaleChange: widget.onLocaleChange,
         currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
+
+        // ✅ Pass ALL Keys down to MainScaffold
+        appBarMenuKey: _appBarMenuKey,
+        searchTabKey: _searchTabKey,
+        shopTabKey: _shopTabKey,
+        cartTabKey: _cartTabKey,
+        profileTabKey: _profileTabKey,
+
         child: PageTransitionSwitcher(
           duration: defaultDuration,
           transitionBuilder: (child, animation, secondAnimation) {

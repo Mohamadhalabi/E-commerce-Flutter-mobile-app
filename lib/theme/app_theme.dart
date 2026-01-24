@@ -1,90 +1,72 @@
 import 'package:flutter/material.dart';
-import 'package:shop/theme/button_theme.dart';
-import 'package:shop/theme/input_decoration_theme.dart';
-
+import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts here
 import '../constants.dart';
-import 'checkbox_themedata.dart';
-import 'theme_data.dart';
 
 class AppTheme {
+  // --------------------------------------
+  // LIGHT THEME
+  // --------------------------------------
   static ThemeData lightTheme(BuildContext context) {
     return ThemeData(
-      brightness: Brightness.light,
-      fontFamily: "Poppins",
-      primarySwatch: primaryMaterialColor,
-      primaryColor: primaryColor,
       scaffoldBackgroundColor: Colors.white,
-      iconTheme: const IconThemeData(color: blackColor),
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: blackColor40),
-      ),
-      elevatedButtonTheme: elevatedButtonThemeData,
-      textButtonTheme: textButtonThemeData,
-      outlinedButtonTheme: outlinedButtonTheme(),
-      inputDecorationTheme: lightInputDecorationTheme,
-      checkboxTheme: checkboxThemeData.copyWith(
-        side: const BorderSide(color: blackColor40),
-      ),
-      appBarTheme: appBarLightTheme,
-      scrollbarTheme: scrollbarThemeData,
-      dataTableTheme: dataTableLightThemeData,
-    );
-  }
-
-  // ✅ DARK THEME Implementation
-  static ThemeData darkTheme(BuildContext context) {
-    return ThemeData(
-      brightness: Brightness.dark,
-      fontFamily: "Poppins",
-      primarySwatch: primaryMaterialColor,
       primaryColor: primaryColor,
+      primarySwatch: primaryMaterialColor,
 
-      // Main Dark Backgrounds
-      scaffoldBackgroundColor: const Color(0xFF101015), // Very Dark Grey
-      cardColor: const Color(0xFF1C1C23), // Slightly lighter for cards/drawers
-
-      iconTheme: const IconThemeData(color: Colors.white),
-
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: Colors.white70),
-        titleMedium: TextStyle(color: Colors.white),
-        titleSmall: TextStyle(color: Colors.white54),
+      // ✅ APPLY POPPINS FONT HERE
+      textTheme: GoogleFonts.poppinsTextTheme(
+        Theme.of(context).textTheme,
       ),
 
+      // Setup AppBar Theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF101015),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        iconTheme: IconThemeData(color: Colors.black),
+        titleTextStyle: TextStyle(color: Colors.black, fontSize: 18),
       ),
 
-      // Update Inputs for Dark Mode
-      inputDecorationTheme: lightInputDecorationTheme.copyWith(
-        fillColor: const Color(0xFF1C1C23),
-        hintStyle: const TextStyle(color: Colors.white38),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-          borderRadius: BorderRadius.circular(12),
+      // Setup Input Decoration (TextFields)
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: lightGreyColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(defaultBorderRadius),
+          borderSide: BorderSide.none,
         ),
+        hintStyle: const TextStyle(color: greyColor, fontSize: 14),
       ),
 
-      // Checkbox for Dark Mode
-      checkboxTheme: checkboxThemeData.copyWith(
-        side: const BorderSide(color: Colors.white70),
-        fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return primaryColor;
-          }
-          return null;
-        }),
-      ),
-
-      // Button for Dark Mode
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(defaultBorderRadius),
+          ),
         ),
+      ),
+    );
+  }
+
+  // --------------------------------------
+  // DARK THEME
+  // --------------------------------------
+  static ThemeData darkTheme(BuildContext context) {
+    return ThemeData(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: darkGreyColor,
+      primaryColor: primaryColor,
+      primarySwatch: primaryMaterialColor,
+
+      // ✅ APPLY POPPINS FONT HERE TOO
+      textTheme: GoogleFonts.poppinsTextTheme(
+        Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+      ),
+
+      appBarTheme: const AppBarTheme(
+        backgroundColor: darkGreyColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
     );
   }

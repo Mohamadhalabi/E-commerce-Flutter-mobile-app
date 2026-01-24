@@ -84,12 +84,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   // Navigation Logic
   void _onBottomNavTap(int index) {
-    if (index == 0) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } else if (index == 3) {
+    if (index == 3) {
+      // 1. If Cart, push the Cart Screen on top
       Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      setState(() => _currentIndex = index);
+      // 2. For Home (0), Search (1), Shop (2), Profile (4)
+      // We navigate to EntryPoint and pass the index as an argument
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+            (route) => false, // This removes all previous routes (clears stack)
+        arguments: index, // <--- We pass the selected index here
+      );
     }
   }
 

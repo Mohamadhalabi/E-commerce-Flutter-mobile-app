@@ -7,20 +7,25 @@ class ProductsSkelton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate width to match the real product card (2.5 items per row)
+    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+
     return SizedBox(
-      // FIXED: Increased height to 420 to match your real Product Card height.
-      // 250 was too small, causing the "RenderFlex overflowed" error.
-      height: 420,
+      // FIXED: Height reduced to 330 to match the new compact design
+      height: 330,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 5,
-        physics: const NeverScrollableScrollPhysics(), // Optional: disable scrolling while loading
+        physics: const NeverScrollableScrollPhysics(),
         itemBuilder: (context, index) => Padding(
           padding: EdgeInsets.only(
             left: defaultPadding,
             right: index == 4 ? defaultPadding : 0,
           ),
-          child: const ProductCardSkeleton(),
+          child: SizedBox(
+            width: cardWidth, // Force the skeleton to the correct width
+            child: const ProductCardSkeleton(),
+          ),
         ),
       ),
     );

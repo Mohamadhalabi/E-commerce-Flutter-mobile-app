@@ -88,13 +88,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   void _onBottomNavTap(int index) {
-    if (_currentIndex == index) return;
-    setState(() => _currentIndex = index);
-    switch (index) {
-      case 0: Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (r) => false); break;
-      case 1: Navigator.pushNamed(context, searchScreenRoute); break;
-      case 3: Navigator.pushNamed(context, cartScreenRoute); break;
-      case 4: Navigator.popUntil(context, ModalRoute.withName(entryPointScreenRoute)); break;
+    if (index == 3) {
+      // 1. If Cart, push the Cart Screen on top
+      Navigator.pushNamed(context, cartScreenRoute);
+    } else {
+      // 2. For Home (0), Search (1), Shop (2), Profile (4)
+      // We navigate to EntryPoint and pass the index as an argument
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+            (route) => false, // This removes all previous routes (clears stack)
+        arguments: index, // <--- We pass the selected index here
+      );
     }
   }
 

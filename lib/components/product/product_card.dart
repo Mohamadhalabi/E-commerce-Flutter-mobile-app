@@ -17,7 +17,7 @@ class ProductCard extends StatefulWidget {
     this.salePrice,
     this.discount,
     this.freeShipping,
-    this.stock = 9999, // ✅ Added stock parameter (default to high if unknown)
+    this.stock = 9999,
     required this.press,
   });
 
@@ -27,7 +27,7 @@ class ProductCard extends StatefulWidget {
   final Map<String, dynamic>? discount;
   final int? id;
   final bool? freeShipping;
-  final int stock; // ✅ Field for stock
+  final int stock;
   final VoidCallback press;
 
   @override
@@ -78,17 +78,17 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Removed fixed width so it adapts to the GridView column size
     return Container(
-      width: 200,
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
+        borderRadius: BorderRadius.circular(8), // Slightly sharper corners for modern look
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 3),
-            blurRadius: 6,
+            color: Colors.black.withOpacity(0.03),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
           ),
         ],
       ),
@@ -102,18 +102,18 @@ class _ProductCardState extends State<ProductCard> {
             onTap: widget.press,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8), // Reduced padding
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: AspectRatio(
-                aspectRatio: 1.1,
+                aspectRatio: 1.0, // Square image saves vertical space
                 child: Image.network(
                   widget.image,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.image_not_supported, color: Colors.grey),
+                  const Icon(Icons.image_not_supported, color: Colors.grey, size: 30),
                 ),
               ),
             ),
@@ -124,7 +124,7 @@ class _ProductCardState extends State<ProductCard> {
           // ------------------------------------------
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(6, 0, 6, 6), // Tighter padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -132,92 +132,94 @@ class _ProductCardState extends State<ProductCard> {
                   Text(
                     "SKU: ${widget.sku}",
                     style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 10,
+                      color: Colors.green.shade900,
+                      fontSize: 11, // Smaller font
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
                     ),
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
 
                   // TITLE
                   Text(
                     widget.title,
-                    maxLines: 4,
+                    maxLines: 3, // Limit lines to save space
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.black87,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
+                      fontSize: 11, // Smaller title for 3-col layout
+                      fontWeight: FontWeight.w900,
+                      height: 1.8,
                     ),
                   ),
 
                   const Spacer(),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
 
                   // PRICE
                   Text(
                     "\$${widget.price.toStringAsFixed(2)}",
                     style: const TextStyle(
                       color: primaryColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 14, // Adjusted price size
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
 
                   // ------------------------------------------
-                  // 3. BOTTOM ACTIONS
+                  // 3. COMPACT BOTTOM ACTIONS
                   // ------------------------------------------
-                  Row(
-                    children: [
-                      _buildQtyBtn(Icons.remove, _decrementQuantity),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          height: 32,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade200),
-                            borderRadius: BorderRadius.circular(4),
-                            color: const Color(0xFFF9F9F9),
-                          ),
-                          child: TextField(
-                            controller: _qtyController,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            onChanged: _handleManualInput,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(3),
-                            ],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Colors.black87,
+                  // Quantity Row
+                  SizedBox(
+                    height: 26, // Constrain height
+                    child: Row(
+                      children: [
+                        _buildQtyBtn(Icons.remove, _decrementQuantity),
+                        const SizedBox(width: 4), // Tighter spacing
+                        Expanded(
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFFAFAFA),
                             ),
-                            decoration: const InputDecoration(
-                              contentPadding: EdgeInsets.only(bottom: 14),
-                              border: InputBorder.none,
-                              isDense: true,
+                            child: TextField(
+                              controller: _qtyController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              textAlignVertical: TextAlignVertical.center,
+                              onChanged: _handleManualInput,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(3),
+                              ],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: Colors.black87,
+                              ),
+                              decoration: const InputDecoration(
+                                isCollapsed: true, // Removes default padding
+                                border: InputBorder.none,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildQtyBtn(Icons.add, _incrementQuantity),
-                    ],
+                        const SizedBox(width: 4),
+                        _buildQtyBtn(Icons.add, _incrementQuantity),
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
 
                   // Add to Cart Button
                   SizedBox(
                     width: double.infinity,
-                    height: 38,
+                    height: 30, // Compact button height
                     child: Consumer<CartProvider>(
                       builder: (context, cartProvider, child) {
                         return ElevatedButton(
@@ -231,7 +233,7 @@ class _ProductCardState extends State<ProductCard> {
                                 sku: widget.sku,
                                 price: widget.salePrice ?? widget.price,
                                 quantity: qty,
-                                stock: widget.stock, // ✅ Pass Stock Here
+                                stock: widget.stock,
                                 context: context,
                               );
                             }
@@ -242,22 +244,24 @@ class _ProductCardState extends State<ProductCard> {
                             elevation: 0,
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(4),
                             ),
+                            // Make touch target slightly smaller but usable
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: cartProvider.isLoading
                               ? const SizedBox(
-                            height: 18,
-                            width: 18,
+                            height: 14,
+                            width: 14,
                             child: CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2,
                             ),
                           )
                               : const Text(
-                            "Add to Cart",
+                            "Add", // Shorter text for small button
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -279,8 +283,8 @@ class _ProductCardState extends State<ProductCard> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        width: 32,
-        height: 32,
+        width: 24, // Smaller button
+        height: 24,
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade300),
@@ -288,7 +292,7 @@ class _ProductCardState extends State<ProductCard> {
         ),
         child: Icon(
           icon,
-          size: 16,
+          size: 14, // Smaller icon
           color: Colors.black54,
         ),
       ),

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
-import 'package:shop/providers/theme_provider.dart'; // ✅ Import ThemeProvider
+import 'package:shop/providers/theme_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';

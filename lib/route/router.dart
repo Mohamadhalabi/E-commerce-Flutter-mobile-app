@@ -3,7 +3,6 @@ import 'package:shop/entry_point.dart';
 import 'package:shop/screens/auth/views/password_recovery_screen.dart';
 import '../screens/auth/views/sign_up_screen.dart';
 import '../screens/category/sub_category_screen.dart';
-// ✅ 1. IMPORT THE NEW SCREEN
 import '../screens/category/sub_category_products_screen.dart';
 
 import '../screens/checkout/views/checkout_screen.dart';
