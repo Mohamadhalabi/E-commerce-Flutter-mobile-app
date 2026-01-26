@@ -6,8 +6,11 @@ import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-// ✅ Import Custom Bottom Bar
+// ✅ IMPORTS FOR APPBAR AND DRAWER
 import '../../../../components/common/CustomBottomNavigationBar.dart';
+import '../../../../components/common/drawer.dart';
+import '../../../../components/common/app_bar.dart';
+import 'package:shop/controllers/locale_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,15 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ✅ CUSTOM NOTIFICATION (Dark Mode Aware)
+  // ✅ HANDLER FOR DRAWER LOCALE CHANGE
+  void _onLocaleChange(String locale) {
+    LocaleController.updateLocale?.call(locale);
+    setState(() {}); // Refresh UI
+  }
+
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
     final tr = AppLocalizations.of(context)!;
     final topMargin = MediaQuery.of(context).size.height - 230;
 
-    // Check Theme for SnackBar
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bgColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
-    final Color textColor = isDark ? Colors.white : Colors.black87;
     final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -120,7 +126,6 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusScope.of(context).unfocus();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
     final tr = AppLocalizations.of(context)!;
 
     bool success = await authProvider.login(
@@ -129,16 +134,29 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (!mounted) return;
+    _handleAuthResult(success, tr.loginSuccess, tr.loginFailed);
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    bool success = await authProvider.signInWithGoogle();
+    if (!mounted) return;
+    _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
+  }
+
+  Future<void> _handleAuthResult(bool success, String successMsg, String failMsg) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     if (success) {
       if (authProvider.token != null) {
         cartProvider.setAuthToken(authProvider.token);
         await cartProvider.mergeLocalCartToAccount(authProvider.token!);
       }
-      _showCustomNotification(context, tr.loginSuccess, true);
+      _showCustomNotification(context, successMsg, true);
       Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
     } else {
-      _showCustomNotification(context, tr.loginFailed, false);
+      _showCustomNotification(context, failMsg, false);
     }
   }
 
@@ -147,39 +165,35 @@ class _LoginScreenState extends State<LoginScreen> {
     final tr = AppLocalizations.of(context)!;
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
 
-    // ✅ Dark Mode Colors
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
-    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
-    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.white; // Or Colors.grey[100]
+
+    // ✅ Modified Input Fill Color (Darker for Light Mode)
+    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[100]!;
     final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: appBarBg,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(tr.login, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, entryPointScreenRoute);
-            }
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_bag_outlined, color: textColor),
-            onPressed: () => Navigator.pushNamed(context, cartScreenRoute),
-          ),
-        ],
+
+      // ✅ 1. APP BAR
+      appBar: const CustomAppBar(),
+
+      // ✅ 2. DRAWER
+      drawer: CustomEndDrawer(
+        onLocaleChange: _onLocaleChange,
+        user: null,
+        onTabChanged: (index) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            entryPointScreenRoute,
+                (route) => false,
+            arguments: index,
+          );
+        },
       ),
+
       bottomNavigationBar: CustomBottomNavigationBar(currentIndex: 4, onTap: _onBottomNavTap),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -205,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: textColor), // Input Text Color
+                  style: TextStyle(color: textColor),
                   validator: (value) => (value == null || value.isEmpty) ? tr.validEmail : null,
                   decoration: InputDecoration(
                     labelText: tr.email,
@@ -214,9 +228,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Uses darker fill
                     suffixIcon: Padding(padding: const EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined, color: inputIconColor)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), // Modern border
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -232,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Uses darker fill
                     suffixIcon: IconButton(
                       icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
@@ -254,6 +268,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : Text(tr.login, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
+                ),
+                const SizedBox(height: 30),
+
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(tr.orContinueWith ?? "Or continue with", style: TextStyle(color: subTextColor)),
+                    ),
+                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // ✅ SOCIAL BUTTONS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: isLoading ? null : _handleGoogleLogin,
+                      borderRadius: BorderRadius.circular(50),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: isDark ? const Color(0xFF353545) : Colors.grey[200], // Slightly darker circle bg
+                        child: const Icon(Icons.g_mobiledata, size: 35, color: Colors.red),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 Row(

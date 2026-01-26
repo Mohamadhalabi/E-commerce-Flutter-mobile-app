@@ -5,7 +5,12 @@ import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+// ✅ IMPORTS FOR APPBAR AND DRAWER
 import '../../../../components/common/CustomBottomNavigationBar.dart';
+import '../../../../components/common/drawer.dart';
+import '../../../../components/common/app_bar.dart';
+import 'package:shop/controllers/locale_controller.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -35,7 +40,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _onBottomNavTap(int index) {
     if (index == 4) return;
-
     if (index == 0) {
       Navigator.popUntil(context, (route) => route.isFirst);
     } else {
@@ -51,12 +55,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // ✅ CUSTOM TOP NOTIFICATION
+  // ✅ HANDLER FOR DRAWER LOCALE CHANGE
+  void _onLocaleChange(String locale) {
+    LocaleController.updateLocale?.call(locale);
+    setState(() {}); // Refresh UI
+  }
+
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
     final tr = AppLocalizations.of(context)!;
     final topMargin = MediaQuery.of(context).size.height - 230;
 
-    // Dark Mode check
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bgColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
     final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
@@ -69,10 +77,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             color: bgColor,
             borderRadius: BorderRadius.circular(12),
             border: Border(
-              left: BorderSide(
-                color: isSuccess ? Colors.green : Colors.red,
-                width: 6,
-              ),
+              left: BorderSide(color: isSuccess ? Colors.green : Colors.red, width: 6),
             ),
             boxShadow: [
               BoxShadow(
@@ -127,7 +132,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _submit() async {
     final tr = AppLocalizations.of(context)!;
-
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
@@ -142,16 +146,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     if (!mounted) return;
+    _handleAuthResult(success, tr.registerSuccess, tr.registerFailed);
+  }
+
+  // ✅ Google Login Logic (Same as Login Screen)
+  Future<void> _handleGoogleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    bool success = await authProvider.signInWithGoogle();
+    if (!mounted) return;
+    _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
+  }
+
+  Future<void> _handleAuthResult(bool success, String successMsg, String failMsg) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     if (success) {
       if (authProvider.token != null) {
         cartProvider.setAuthToken(authProvider.token);
         await cartProvider.mergeLocalCartToAccount(authProvider.token!);
       }
-      _showCustomNotification(context, tr.registerSuccess, true);
+      _showCustomNotification(context, successMsg, true);
       Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
     } else {
-      _showCustomNotification(context, tr.registerFailed, false);
+      _showCustomNotification(context, failMsg, false);
     }
   }
 
@@ -160,35 +178,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
     final tr = AppLocalizations.of(context)!;
 
-    // ✅ Dark Mode Colors
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
-    final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
-    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.white; // Or Colors.grey[100]
+
+    // ✅ Modified Input Fill Color (Darker for Light Mode)
+    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[100]!;
     final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: appBarBg,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          tr.signUp,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_bag_outlined, color: textColor),
-            onPressed: () => Navigator.pushNamed(context, cartScreenRoute),
-          ),
-        ],
+
+      // ✅ 1. APP BAR
+      appBar: const CustomAppBar(),
+
+      // ✅ 2. DRAWER
+      drawer: CustomEndDrawer(
+        onLocaleChange: _onLocaleChange,
+        user: null,
+        onTabChanged: (index) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            entryPointScreenRoute,
+                (route) => false,
+            arguments: index,
+          );
+        },
       ),
 
       bottomNavigationBar: CustomBottomNavigationBar(
@@ -230,7 +246,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Darker
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.person_outline, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
@@ -250,7 +266,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Darker
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.email_outlined, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
@@ -270,7 +286,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Darker
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.phone_android_outlined, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
@@ -290,7 +306,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill,
+                    fillColor: inputFill, // ✅ Darker
                     suffixIcon: IconButton(
                       icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
@@ -301,6 +317,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 const SizedBox(height: 40),
 
+                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -316,7 +333,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 30),
+
+                // ✅ 3. ADDED SOCIAL LOGIN SECTION TO SIGN UP
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(tr.orContinueWith ?? "Or continue with", style: TextStyle(color: subTextColor)),
+                    ),
+                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
+                  ],
+                ),
                 const SizedBox(height: 20),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: isLoading ? null : _handleGoogleLogin,
+                      borderRadius: BorderRadius.circular(50),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: isDark ? const Color(0xFF353545) : Colors.grey[200],
+                        child: const Icon(Icons.g_mobiledata, size: 35, color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -41,8 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIX: Get the correct background color from the Theme
-    // This will be White in Light Mode and Dark (0xFF101015) in Dark Mode
     final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

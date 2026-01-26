@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "12288032407",
+    "project_id": "auth-842ea",
+    "storage_bucket": "auth-842ea.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12288032407:android:3b60861d5e663317ed33d2",
+        "android_client_info": {
+          "package_name": "com.technolockkeys.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "12288032407-3ocshefr39h4ekq0kpu9u6ah9eb2ku21.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsac0MPuYrWmVKlpqVMqjf82hW3DETx-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "12288032407-3ocshefr39h4ekq0kpu9u6ah9eb2ku21.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "12288032407-0189qbpkoqi3t3194bo7ae2vcnu6s9lm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.anadolu.anahtar"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

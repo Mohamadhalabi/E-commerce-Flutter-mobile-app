@@ -508,6 +508,50 @@ class ApiService {
     }
   }
 
+  // Add this inside your ApiService class
+
+  static Future<Map<String, dynamic>> socialLogin({
+    required String provider, // 'google' or 'facebook'
+    required String providerId,
+    required String email,
+    String? name,
+    String? avatar,
+  }) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // Ensure this route exists in your Laravel routes/api.php
+    // Route::post('/auth/social-login', [AuthController::class, 'socialLogin']);
+    String url = '$apiBaseUrl/auth/social-login';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey),
+        body: jsonEncode({
+          'provider': provider,
+          'provider_id': providerId,
+          'email': email,
+          'name': name,
+          'avatar': avatar,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...responseData};
+      } else {
+        String message = responseData['message'] ?? 'Social login failed';
+        return {'success': false, 'message': message};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
 // In lib/services/api_service.dart
 
 // API to fetch logged-in user profile

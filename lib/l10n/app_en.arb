@@ -47,6 +47,7 @@
  "email": "Email",
  "password": "Password",
  "login": "Login",
+ "orContinueWith": "Or continue with",
  "myCart": "Cart",
  "yourCartIsEmpty": "Your Cart is Empty",
  "emptyCartSubtitle": "Looks like you haven't added anything yet.",
