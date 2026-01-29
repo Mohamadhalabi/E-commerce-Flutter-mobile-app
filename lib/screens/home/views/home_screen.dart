@@ -4,7 +4,7 @@ import 'components/new_arrival_products.dart';
 import 'components/slider_carousel.dart';
 import 'components/flash_sale.dart';
 import 'components/free_shipping_products.dart';
-import 'components/banners.dart';
+// import 'components/banners.dart';
 import 'components/bundle_products.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SliverToBoxAdapter(child: SliderCarousel()),
               const SliverToBoxAdapter(child: FlashSaleProducts()),
               const SliverToBoxAdapter(child: FreeShippingProducts()),
-              const SliverToBoxAdapter(child: BannerFetcher()),
+              // const SliverToBoxAdapter(child: BannerFetcher()),
               const SliverToBoxAdapter(child: BundleProducts()),
             ],
           ),

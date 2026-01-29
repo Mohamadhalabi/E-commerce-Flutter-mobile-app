@@ -7,24 +7,22 @@ class ProductCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // No fixed width here (parent controls it)
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
-        borderRadius: BorderRadius.circular(8), // Match new radius
+        borderRadius: BorderRadius.circular(12),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. IMAGE SECTION (Square 1.0)
+          // 1. IMAGE SECTION
           Padding(
-            padding: EdgeInsets.all(8), // Reduced padding
+            padding: EdgeInsets.all(12),
             child: AspectRatio(
               aspectRatio: 1.0,
               child: Skeleton(
                 width: double.infinity,
                 height: double.infinity,
-                layer: 1,
               ),
             ),
           ),
@@ -32,46 +30,43 @@ class ProductCardSkeleton extends StatelessWidget {
           // 2. CONTENT SECTION
           Expanded(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(6, 0, 6, 6), // Tighter padding
+              padding: EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // SKU (Small)
-                  Skeleton(width: 60, height: 8),
+                  // SKU
+                  Skeleton(width: 50, height: 8),
                   SizedBox(height: 6),
 
-                  // Title (Simulate 3 lines for the 4-line limit)
+                  // Title
                   Skeleton(width: double.infinity, height: 10),
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
                   Skeleton(width: double.infinity, height: 10),
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
                   Skeleton(width: 80, height: 10),
 
                   Spacer(),
 
                   // Price
-                  Skeleton(width: 70, height: 14),
-                  SizedBox(height: 8),
+                  Skeleton(width: 60, height: 16),
+                  SizedBox(height: 10),
 
                   // 3. BOTTOM ACTIONS
-                  // Quantity Row (Height 26px to match real card)
-                  SizedBox(
-                    height: 26,
-                    child: Row(
-                      children: [
-                        Skeleton(width: 24, height: 24), // Small btn
-                        SizedBox(width: 4),
-                        Expanded(child: Skeleton(width: double.infinity, height: 26)),
-                        SizedBox(width: 4),
-                        Skeleton(width: 24, height: 24), // Small btn
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      // Quantity Box
+                      Skeleton(width: 80, height: 28),
+                      SizedBox(width: 8),
+
+                      // Add Button (The Error was here)
+                      Expanded(
+                        child: Skeleton(
+                          width: double.infinity, // [FIX] Added required width
+                          height: 28,
+                        ),
+                      ),
+                    ],
                   ),
-
-                  SizedBox(height: 6),
-
-                  // Add to Cart Button (Height 30px to match real card)
-                  Skeleton(width: double.infinity, height: 30),
                 ],
               ),
             ),

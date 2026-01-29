@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../components/Banner/M/banner_m_style_1.dart';
 import '../../../../components/skleton/others/offers_skelton.dart';
-import '../../../../components/skleton/skeleton.dart';
 import '../../../../constants.dart';
 import '../../../../services/api_initializer.dart';
+import '../../../../route/route_constants.dart';
 
 class OffersCarousel extends StatefulWidget {
   const OffersCarousel({super.key});
@@ -40,7 +42,8 @@ class _OffersCarouselState extends State<OffersCarousel> {
             offers = data.map<Map<String, String>>((item) {
               return {
                 'image': item['image'].toString(),
-                'link': item['link'].toString(),
+                'link': (item['link'] ?? '').toString(),
+                'keyword': (item['keyword'] ?? '').toString(),
               };
             }).toList();
             isLoading = false;
@@ -49,6 +52,78 @@ class _OffersCarouselState extends State<OffersCarousel> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // [FIXED] Navigate Directly to Results Screen
+  // ---------------------------------------------------------------------------
+  void _onBannerTapped(Map<String, String> bannerData) {
+
+    // 1. Check for KEYWORD -> Go to SubCategoryProductsScreen (Results)
+    final String keyword = bannerData['keyword'] ?? '';
+
+    if (keyword.isNotEmpty && keyword != "null") {
+      print("DEBUG: Keyword found ($keyword). Navigating to results...");
+
+      Navigator.pushNamed(
+          context,
+          "sub_category_products_screen", // [CORRECT ROUTE NAME]
+          arguments: {
+            'searchQuery': keyword,       // Pass keyword here
+            'title': keyword,             // Title of the screen
+            'categorySlug': '',           // Empty because it's a search
+            'currentIndex': 0,
+            'user': null,
+            'onTabChanged': (int i) {},   // Dummy callback
+            'onLocaleChange': (String s) {}, // Dummy callback
+          }
+      );
+      return;
+    }
+
+    // 2. Fallback: Parse LINK (Product Details)
+    final String linkRaw = bannerData['link'] ?? '';
+    if (linkRaw.isEmpty || linkRaw == "null") return;
+
+    String url = "";
+    if (linkRaw.trim().startsWith('{')) {
+      try {
+        final Map<String, dynamic> links = jsonDecode(linkRaw);
+        final String currentLang = Localizations.localeOf(context).languageCode;
+        url = links[currentLang] ?? links['en'] ?? "";
+      } catch (e) {
+        return;
+      }
+    } else {
+      url = linkRaw;
+    }
+
+    if (url.isEmpty || url == "null") return;
+
+    // Extract ID logic
+    int? productId;
+    if (int.tryParse(url) != null) {
+      productId = int.parse(url);
+    }
+    else if (url.contains('/products/') || url.contains('product')) {
+      try {
+        final RegExp idRegex = RegExp(r'(\d+)$');
+        final Match? match = idRegex.firstMatch(url);
+        if (match != null) {
+          productId = int.parse(match.group(0)!);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (productId != null) {
+      Navigator.pushNamed(
+        context,
+        productDetailsScreenRoute,
+        arguments: productId,
+      );
     }
   }
 
@@ -101,18 +176,16 @@ class _OffersCarouselState extends State<OffersCarousel> {
               onPageChanged: (index) => setState(() => _selectedIndex = index),
               itemBuilder: (context, index) => BannerMStyle1(
                 image: offers[index]['image']!,
-                press: () {},
+                press: () => _onBannerTapped(offers[index]),
                 onLoaded: index == 0 ? _onImageLoaded : null,
               ),
             ),
-
-            // --- UPDATED DOTS ---
             Positioned(
               bottom: 8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2), // Slightly darker background for contrast
+                  color: Colors.black.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -122,13 +195,13 @@ class _OffersCarouselState extends State<OffersCarousel> {
                         (index) => AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 6, // Small size
-                      width: 6,  // Small size (Circle)
+                      height: 6,
+                      width: 6,
                       decoration: BoxDecoration(
                         color: index == _selectedIndex
-                            ? primaryColor // Active color
-                            : Colors.white.withOpacity(0.5), // Inactive color
-                        shape: BoxShape.circle, // Ensures it is rounded
+                            ? primaryColor
+                            : Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle,
                       ),
                     ),
                   ),
@@ -136,79 +209,6 @@ class _OffersCarouselState extends State<OffersCarousel> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class BannerMStyle1 extends StatelessWidget {
-  const BannerMStyle1({
-    super.key,
-    required this.image,
-    required this.press,
-    this.onLoaded,
-  });
-
-  final String image;
-  final VoidCallback press;
-  final VoidCallback? onLoaded;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: press,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(defaultBorderRadius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(defaultBorderRadius),
-          child: Image.network(
-            image,
-            fit: BoxFit.cover,
-            width: double.infinity,
-
-            // --- HERE IS THE FIX ---
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-
-              // PREVIOUSLY: return Container(color: Colors.grey[100]);
-              // NOW: returns the animated Skeleton
-              return const Skeleton(
-                width: double.infinity,
-                height: double.infinity,
-                layer: 1, // Optional: makes it slightly darker if needed
-              );
-            },
-            // -----------------------
-
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame != null) {
-                if (onLoaded != null) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) => onLoaded!());
-                }
-                return child;
-              }
-              // While waiting for the first frame, also show Skeleton
-              return const Skeleton(width: double.infinity, height: double.infinity);
-            },
-
-            errorBuilder: (context, error, stackTrace) =>
-                Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image, color: Colors.grey)
-                ),
-          ),
         ),
       ),
     );

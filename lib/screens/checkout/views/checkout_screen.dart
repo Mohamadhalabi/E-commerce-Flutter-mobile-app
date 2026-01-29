@@ -18,32 +18,25 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  // State
   Quote? _quote;
   bool _isLoading = true;
   bool _isCreatingOrder = false;
   String? _errorMessage;
 
-  // Selection State
   int? _selectedAddressId;
   String? _selectedShippingKey;
   String? _paymentMethod;
   bool _acceptTerms = false;
 
-  // Inputs
   final TextEditingController _couponCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
   final TextEditingController _shipmentValueCtrl = TextEditingController();
   String _selectedPromo = 'none';
 
-  // Address Form
   bool _showAddressForm = false;
   final _addressFormKey = GlobalKey<FormState>();
   final Map<String, dynamic> _addressFormData = {};
   List<CountryModel> _countries = [];
-
-  // Constants
-  static const int UAE_COUNTRY_ID = 231;
 
   @override
   void initState() {
@@ -76,7 +69,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // Core Quote Fetch Logic
   Future<void> _fetchQuote({bool initialLoad = false}) async {
     final token = Provider.of<AuthProvider>(context, listen: false).token;
     if (token == null) return;
@@ -124,8 +116,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
-  // --- ACTIONS ---
 
   void _onAddressSelected(int? id) {
     if (id == null) return;
@@ -218,8 +208,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // --- UI WIDGETS ---
-
   @override
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context);
@@ -244,7 +232,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Blocked Warning
             if (_quote?.checkoutBlock?.isBlocked == true)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -259,7 +246,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
 
-            // Coupon Section
             _buildSectionCard(
               title: tr?.couponCode ?? "Coupon",
               child: Row(
@@ -279,7 +265,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     onPressed: () => _fetchQuote(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
-                      // ✅ FIX: Constrain width to fix layout crash
                       minimumSize: const Size(80, 48),
                     ),
                     child: Text(tr?.apply ?? "Apply", style: const TextStyle(color: Colors.white)),
@@ -292,7 +277,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _buildShippingSection(tr),
             _buildPaymentSection(tr),
 
-            // ✅ NEW: Order Items Section
             _buildOrderItemsSection(),
 
             _buildSectionCard(
@@ -347,7 +331,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // ✅ NEW WIDGET: Display Product List (Image, Title, SKU, Price)
   Widget _buildOrderItemsSection() {
     final products = _quote?.products ?? [];
     if (products.isEmpty) return const SizedBox();
@@ -364,7 +347,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image
               Container(
                 width: 60,
                 height: 60,
@@ -385,8 +367,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     : const Icon(Icons.image_not_supported, color: Colors.grey, size: 30),
               ),
               const SizedBox(width: 12),
-
-              // Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,14 +378,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4),
-                    // SKU (Green)
                     if (item.sku.isNotEmpty)
                       Text(
                         "SKU: ${item.sku}",
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
                     const SizedBox(height: 4),
-                    // Quantity & Price
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

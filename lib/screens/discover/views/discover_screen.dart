@@ -26,6 +26,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   List<ProductModel> _suggestions = [];
   bool _isSearching = false;
   Timer? _debounce;
+  bool _isInit = true;
 
   @override
   void initState() {
@@ -34,6 +35,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is String && args.isNotEmpty) {
+        _searchCtrl.text = args;
+        _onSearchChanged(args);
+      }
+      _isInit = false;
+    }
   }
 
   @override
@@ -53,7 +67,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     });
   }
 
-  // ✅ HELPER: Clean the Title (Remove {"en": ...})
   String _cleanTitle(String rawTitle) {
     try {
       if (rawTitle.trim().startsWith('{') && rawTitle.contains('"en"')) {
@@ -69,7 +82,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    // ✅ 1. CHECK: Only search if length >= 3
     if (query.trim().length < 3) {
       setState(() {
         _suggestions = [];
@@ -97,7 +109,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   void _onSubmitSearch(String query) {
-    if (query.trim().length < 3) return; // Enforce limit on submit too
+    if (query.trim().length < 3) return;
     LocalStorageService.addToSearchHistory(query);
     _loadLocalData();
     Navigator.pushNamed(
@@ -116,7 +128,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Dark Mode Detection
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
     final Color headerBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
@@ -132,11 +143,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- SEARCH HEADER ---
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: headerBg, // Dynamic Header BG
+                color: headerBg,
                 border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade100)),
               ),
               child: Row(
@@ -159,12 +169,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         textInputAction: TextInputAction.search,
                         onChanged: _onSearchChanged,
                         onSubmitted: _onSubmitSearch,
-                        style: TextStyle(color: isDark ? Colors.white : Colors.black), // Input Text Color
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           hintText: "Search products (min 3 chars)...",
                           hintStyle: TextStyle(color: hintColor, fontSize: 14),
                           filled: true,
-                          fillColor: inputBg, // Dynamic Input BG
+                          fillColor: inputBg,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                           prefixIcon: null,
                           suffixIcon: _searchCtrl.text.isNotEmpty
@@ -195,8 +205,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ],
               ),
             ),
-
-            // --- BODY ---
             Expanded(
               child: isTyping
                   ? _buildSearchResults(isDark)
@@ -208,15 +216,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // --- WIDGET: SEARCH RESULTS ---
   Widget _buildSearchResults(bool isDark) {
     final Color textColor = isDark ? Colors.white : Colors.black;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
     final Color skuColor = isDark ? Colors.greenAccent : Colors.green;
     final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
-    final Color imgBg = isDark ? Colors.white : Colors.white; // Keep image bg white for transparent PNGs
+    final Color imgBg = isDark ? Colors.white : Colors.white;
 
-    // ✅ 4. SKELETON LOADER
     if (_isSearching) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -247,8 +252,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       children: [
         ...List.generate(displayCount, (index) {
           final product = _suggestions[index];
-
-          // Logic for Price (Red if sale)
           final bool hasSale = product.salePrice != null && product.salePrice! > 0;
           final double displayPrice = hasSale ? product.salePrice! : product.price;
 
@@ -284,7 +287,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ✅ 3. SKU IN GREEN (Light Green in Dark Mode)
                       if (product.sku.isNotEmpty)
                         Text(
                           "SKU: ${product.sku}",
@@ -295,7 +297,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           ),
                         ),
                       const SizedBox(height: 4),
-                      // ✅ 2. PRICE IN RED
                       Text(
                         "\$${displayPrice.toStringAsFixed(2)}",
                         style: const TextStyle(
@@ -355,7 +356,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // --- WIDGET: HISTORY & RECENTLY VIEWED ---
   Widget _buildHistoryAndRecents(bool isDark) {
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
@@ -417,7 +417,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Text("Recently Viewed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
             ),
             SizedBox(
-              height: 410, // Matches ProductCard Height
+              height: 410,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
@@ -425,18 +425,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
                   final product = _recentProducts[index];
-                  // Use _cleanTitle here too if Recent Products are saved with raw JSON
+                  // [UPDATED PRODUCT CARD CALL]
                   return ProductCard(
-                    id: product.id,
-                    image: product.image,
-                    category: "Recent",
-                    title: _cleanTitle(product.title), // Applied clean here too
-                    price: product.price,
-                    salePrice: product.salePrice ?? 0.0,
-                    sku: product.sku,
-                    rating: product.rating,
-                    discount: product.discount,
-                    freeShipping: product.freeShipping,
+                    product: product,
                     press: () {
                       Navigator.pushNamed(context, productDetailsScreenRoute, arguments: product.id);
                     },
@@ -451,7 +442,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 }
 
-// --- LOCAL SKELETON WIDGET ---
 class SearchResultSkeleton extends StatelessWidget {
   const SearchResultSkeleton({super.key});
 
@@ -475,9 +465,9 @@ class SearchResultSkeleton extends StatelessWidget {
                 SizedBox(height: 6),
                 Skeleton(width: 150, height: 14),
                 SizedBox(height: 8),
-                Skeleton(width: 80, height: 12), // SKU
+                Skeleton(width: 80, height: 12),
                 SizedBox(height: 6),
-                Skeleton(width: 60, height: 14), // Price
+                Skeleton(width: 60, height: 14),
               ],
             ),
           )

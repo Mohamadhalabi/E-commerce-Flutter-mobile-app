@@ -9,6 +9,8 @@ import 'package:shop/services/api_service.dart';
 import '../../../../constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../../discover/views/view_all_products_screen.dart';
+
 class FlashSaleProducts extends StatefulWidget {
   const FlashSaleProducts({super.key});
 
@@ -29,7 +31,6 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
 
   Future<void> fetchProducts() async {
     final locale = Localizations.localeOf(context).languageCode;
-
     try {
       final response = await ApiService.fetchFlashSaleProducts(locale);
       setState(() {
@@ -46,8 +47,23 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Calculate width to fit 2.5 items
-    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+    Size size = MediaQuery.of(context).size;
+
+    // ---------------------------------------------------------
+    // 📱 RESPONSIVE CALCULATIONS (Same logic as NewArrivals)
+    // ---------------------------------------------------------
+    // 1. Detect Tablet
+    bool isTablet = size.width > 600;
+
+    // 2. Card Width
+    // Mobile: Shows ~2.3 cards
+    // Tablet: Shows ~4.5 cards
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+
+    // 3. List Height
+    // Image is square (height = width) + Content (~190px)
+    double listHeight = cardWidth + 190;
+    // ---------------------------------------------------------
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,7 +80,15 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/discount');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ViewAllProductsScreen(
+                        title: AppLocalizations.of(context)!.specialOffer,
+                        type: ProductListType.flashSale, // <--- Passes the type
+                      ),
+                    ),
+                  );
                 },
                 child: Text(AppLocalizations.of(context)!.viewAll),
               ),
@@ -83,7 +107,7 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
             key: const Key('flash-sale-products'),
             onVisibilityChanged: (VisibilityInfo visibilityInfo) {},
             child: SizedBox(
-              height: 330, // 2. Adjusted height
+              height: listHeight, // Dynamic Height Applied Here
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
@@ -91,23 +115,13 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
                   final product = products[index];
                   return Padding(
                     padding: EdgeInsets.only(
-                      left: defaultPadding,
+                      left: index == 0 ? defaultPadding : defaultPadding / 2,
                       right: index == products.length - 1 ? defaultPadding : 0,
                     ),
-                    // 3. Wrap in SizedBox with calculated width
                     child: SizedBox(
-                      width: cardWidth,
+                      width: cardWidth, // Dynamic Width Applied Here
                       child: ProductCard(
-                        id: product.id,
-                        image: product.image,
-                        category: product.category,
-                        title: product.title,
-                        price: product.price,
-                        salePrice: product.salePrice,
-                        sku: product.sku,
-                        rating: product.rating,
-                        discount: product.discount,
-                        freeShipping: product.freeShipping,
+                        product: product,
                         press: () {
                           Navigator.pushNamed(
                             context,

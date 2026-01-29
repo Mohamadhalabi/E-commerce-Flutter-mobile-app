@@ -26,7 +26,6 @@ class _RelatedProductsState extends State<RelatedProducts> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     final newLocale = Localizations.localeOf(context).languageCode;
     if (_currentLocale != newLocale) {
       _currentLocale = newLocale;
@@ -39,7 +38,6 @@ class _RelatedProductsState extends State<RelatedProducts> {
       isLoading = true;
       errorMessage = '';
     });
-
     try {
       final response = await ApiService.fetchRelatedProducts(locale, widget.productId);
       setState(() {
@@ -56,7 +54,6 @@ class _RelatedProductsState extends State<RelatedProducts> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Calculate width to fit 2.5 items per row (Consistent with other sections)
     double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
 
     return Column(
@@ -84,7 +81,6 @@ class _RelatedProductsState extends State<RelatedProducts> {
           )
         else
           SizedBox(
-            // 2. Reduce height to match the new compact card size (330 instead of 410)
             height: 330,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -96,20 +92,11 @@ class _RelatedProductsState extends State<RelatedProducts> {
                     left: defaultPadding,
                     right: index == products.length - 1 ? defaultPadding : 0,
                   ),
-                  // 3. Wrap ProductCard in SizedBox with calculated width
+                  // START FIX: Update ProductCard signature
                   child: SizedBox(
                     width: cardWidth,
                     child: ProductCard(
-                      id: product.id,
-                      image: product.image,
-                      category: product.category,
-                      title: product.title,
-                      price: product.price,
-                      salePrice: product.salePrice,
-                      sku: product.sku,
-                      rating: product.rating,
-                      discount: product.discount,
-                      freeShipping: product.freeShipping,
+                      product: product, // Pass the whole model object
                       press: () {
                         Navigator.pushNamed(
                           context,
@@ -119,6 +106,7 @@ class _RelatedProductsState extends State<RelatedProducts> {
                       },
                     ),
                   ),
+                  // END FIX
                 );
               },
             ),

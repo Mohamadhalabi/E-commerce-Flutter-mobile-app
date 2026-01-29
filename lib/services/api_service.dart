@@ -1062,13 +1062,12 @@ class ApiService {
     }
   }
 
-  // ==================================================
-  // NEW CATALOG METHOD (Replaces subcategory/search)
+// ==================================================
+  // NEW CATALOG METHOD (Updated to support View All flags)
   // ==================================================
   static Future<Map<String, dynamic>> fetchCatalog({
     String? categorySlug,
     String? searchQuery,
-    // ✅ ADDED THESE NEW PARAMETERS
     List<String>? selectedBrands,
     List<String>? selectedManufacturers,
     List<String>? selectedCategories,
@@ -1076,6 +1075,11 @@ class ApiService {
     int page = 1,
     String locale = 'en',
     String sort = 'price_desc',
+    // ✅ NEW FLAGS
+    bool isNewArrival = false,
+    bool isFlashSale = false, // Maps to 'offers' in backend
+    bool isFreeShipping = false,
+    bool isBundle = false,
   }) async {
     await dotenv.load();
     String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -1089,37 +1093,38 @@ class ApiService {
       'per_page': '20',
       'sort': sort,
       'include': 'categories,brands',
-      'attr_facets': '1', // Request attributes from backend
+      'attr_facets': '1',
     };
 
+    // ✅ APPLY FLAGS
+    if (isNewArrival) queryParams['new-arrival'] = 'true';
+    if (isFlashSale) queryParams['offers'] = 'true';
+    if (isFreeShipping) queryParams['free-shipping'] = 'true';
+    if (isBundle) queryParams['bundled'] = 'true';
+
+    // Existing Filters...
     if (categorySlug != null && categorySlug.isNotEmpty) {
       queryParams['categories'] = categorySlug;
     }
     if (searchQuery != null && searchQuery.isNotEmpty) {
       queryParams['q'] = searchQuery;
     }
-
-    // --- 1. Handle Lists (Brands, Manufs, Categories) ---
     if (selectedBrands != null && selectedBrands.isNotEmpty) {
       queryParams['brands'] = selectedBrands.join(',');
     }
     if (selectedManufacturers != null && selectedManufacturers.isNotEmpty) {
       queryParams['manufacturers'] = selectedManufacturers.join(',');
     }
-    // Append to existing category filter if needed
     if (selectedCategories != null && selectedCategories.isNotEmpty) {
       String current = queryParams['categories'] ?? '';
       String newCats = selectedCategories.join(',');
       queryParams['categories'] = current.isEmpty ? newCats : '$current,$newCats';
     }
 
-    // --- 2. Handle Attributes (Complex Map -> JSON String) ---
-    // Example: ?attributes={"color":["red","blue"], "size":["m"]}
     if (selectedAttributes != null && selectedAttributes.isNotEmpty) {
       try {
         final cleanMap = Map<String, List<String>>.from(selectedAttributes)
           ..removeWhere((key, value) => value.isEmpty);
-
         if (cleanMap.isNotEmpty) {
           queryParams['attributes'] = jsonEncode(cleanMap);
         }
@@ -1137,7 +1142,7 @@ class ApiService {
         final jsonBody = jsonDecode(response.body);
         return {
           'products': (jsonBody['data'] as List).map((item) => ProductModel.fromJson(item)).toList(),
-          'facets': jsonBody['facets'] ?? {}, // Contains all filter data
+          'facets': jsonBody['facets'] ?? {},
           'current_page': jsonBody['meta']['current_page'],
           'last_page': jsonBody['meta']['last_page'],
           'total': jsonBody['meta']['total'],

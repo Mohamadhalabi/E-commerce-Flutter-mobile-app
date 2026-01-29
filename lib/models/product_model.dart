@@ -1,73 +1,109 @@
 class ProductModel {
   final int id;
-  final String image;
-  final String brandName;
   final String title;
-  final String category;
   final String sku;
-  final double price;
-  final double? salePrice;
-  final double rating;
-  final bool freeShipping;
-  final Map<String, dynamic>? discount;
-  final List<List<String>> faq;
+  final String image;
+  final String category;
+  final String brandName;
 
-  // 1. ADD FIELD HERE
-  final int quantity;
+  // Pricing
+  final double regularPrice;
+  final double? salePrice;
+  final double effectivePrice;
+
+  // Logic
+  final int stock;
+  final Map<String, dynamic>? discount;
+  final List<TablePriceItem> tablePrices;
+  final bool freeShipping;
+  final double rating;
 
   ProductModel({
     required this.id,
-    required this.image,
-    required this.brandName,
     required this.title,
-    required this.price,
-    required this.category,
     required this.sku,
-    required this.rating,
-    this.freeShipping = false,
+    required this.image,
+    this.category = "General",
+    this.brandName = "",
+    required this.regularPrice,
     this.salePrice,
+    required this.effectivePrice,
+    required this.stock,
     this.discount,
-    required this.faq,
-    // 2. ADD TO CONSTRUCTOR (Default to 0 or 1)
-    this.quantity = 0,
+    required this.tablePrices,
+    this.freeShipping = false,
+    this.rating = 0.0,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
+  // =========================================================
+  // BACKWARD COMPATIBILITY
+  // =========================================================
+  double get price => effectivePrice;
+  int get quantity => stock;
 
-    // ... (Your existing parseDouble logic) ...
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // --- HELPER: Safe Double Parser ---
     double parseDouble(dynamic value) {
       if (value == null) return 0.0;
-      if (value is Map && value.containsKey('value')) {
-        return parseDouble(value['value']);
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        String clean = value.replaceAll(RegExp(r'[^0-9.]'), '');
+        return double.tryParse(clean) ?? 0.0;
       }
-      if (value is int) return value.toDouble();
-      if (value is double) return value;
-      if (value is String) return double.tryParse(value) ?? 0.0;
       return 0.0;
     }
 
-    // ... (Your existing brand/category logic) ...
-    String extractBrand(Map<String, dynamic> data) {
-      if (data['brands'] != null && (data['brands'] as List).isNotEmpty) {
-        return data['brands'][0]['name'] ?? "Unknown Brand";
-      }
-      return data['brand_name'] ?? "Unknown Brand";
-    }
-
-    String extractCategory(Map<String, dynamic> data) {
-      if (data['categories'] != null && (data['categories'] as List).isNotEmpty) {
-        return data['categories'][0]['name'] ?? "General";
-      }
-      return data['category'] ?? "General";
-    }
-
-    // 3. HELPER FOR QUANTITY (Optional but recommended for safety)
+    // --- HELPER: Safe Int Parser ---
     int parseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
-      if (value is String) return int.tryParse(value) ?? 0;
-      if (value is double) return value.toInt();
+      if (value is String) {
+        String clean = value.replaceAll(RegExp(r'[^0-9]'), '');
+        return int.tryParse(clean) ?? 0;
+      }
       return 0;
+    }
+
+    // 1. Parse Base Values from API
+    double regular = parseDouble(json['regular_price']);
+    double effective = parseDouble(json['price']); // This is coming as 101.35
+    double? sale = json['sale_price'] != null ? parseDouble(json['sale_price']) : null;
+
+    // 2. APPLY DISCOUNT MATH (The Missing Logic)
+    // The backend sends { "type": "fixed", "value": 17.35 } instead of the final price.
+    if (json['discount'] != null && json['discount'] is Map) {
+      Map<String, dynamic> d = json['discount'];
+      String type = d['type']?.toString().toLowerCase() ?? '';
+      double value = parseDouble(d['value']);
+
+      if (value > 0) {
+        double calculatedPrice = effective;
+
+        // Logic: Apply discount to the base price
+        if (type == 'fixed') {
+          calculatedPrice = effective - value; // $101.35 - $17.35 = $84.00
+        } else if (type == 'percent') {
+          calculatedPrice = effective - (effective * (value / 100)); // 10% off
+        }
+
+        // If we calculated a valid lower price, update the model
+        if (calculatedPrice < effective && calculatedPrice > 0) {
+          // Ensure regular price is set to the high original value
+          if (regular <= 0 || regular == calculatedPrice) {
+            regular = effective;
+          }
+          effective = calculatedPrice;
+          sale = calculatedPrice;
+        }
+      }
+    }
+
+    // 3. Fallback Logic (Swap if regular is missing)
+    if (regular <= 0.0 && sale != null && sale > 0) {
+      regular = effective > sale ? effective : sale + 10; // Fallback to show strikethrough
+      effective = sale;
+    } else if (effective <= 0.0 && regular > 0) {
+      effective = regular;
     }
 
     return ProductModel(
@@ -75,25 +111,57 @@ class ProductModel {
       title: json['title'] ?? "No Title",
       sku: json['sku'] ?? "",
       image: json['image'] ?? "",
-      brandName: extractBrand(json),
-      category: extractCategory(json),
-      price: parseDouble(json['unit'] ?? json['regular_price'] ?? json['price']),
-      salePrice: json['sale_price'] != null ? parseDouble(json['sale_price']) : null,
+      category: json['category'] ?? "General",
+      brandName: json['brand_name'] ?? "",
+
+      // Pricing
+      regularPrice: regular,
+      salePrice: sale,
+      effectivePrice: effective,
+
+      // Logic
+      stock: parseInt(json['quantity']),
       rating: parseDouble(json['rating'] ?? json['avg_rating']),
-      freeShipping: json['is_free_shipping'] == true ||
-          json['is_free_shipping'] == 1 ||
-          json['free_shipping'] == 1,
-      discount: json['discount'] is Map
-          ? Map<String, dynamic>.from(json['discount'])
-          : null,
-      faq: json['faq'] != null
-          ? List<List<String>>.from(
-          (json['faq'] as List).map((item) => List<String>.from(item)))
+
+      // Pass the raw discount map for the timer
+      discount: json['discount'] is Map ? Map<String, dynamic>.from(json['discount']) : null,
+
+      tablePrices: (json['table_price'] != null && json['table_price'] is List)
+          ? (json['table_price'] as List).map((e) => TablePriceItem.fromJson(e)).toList()
           : [],
 
-      // 4. MAP THE JSON
-      // If the API calls it 'stock', 'qty', or 'quantity', change the string key below accordingly.
-      quantity: parseInt(json['quantity'] ?? json['stock_quantity']),
+      freeShipping: json['is_free_shipping'] == 1 || json['is_free_shipping'] == true,
+    );
+  }
+}
+
+class TablePriceItem {
+  final int minQty;
+  final int? maxQty;
+  final double price;
+
+  TablePriceItem({required this.minQty, this.maxQty, required this.price});
+
+  factory TablePriceItem.fromJson(Map<String, dynamic> json) {
+    // Re-use the same safe logic internally
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        String clean = value.replaceAll(RegExp(r'[^0-9.]'), '');
+        return double.tryParse(clean) ?? 0.0;
+      }
+      return 0.0;
+    }
+
+    return TablePriceItem(
+      minQty: json['min_qty'] is int ? json['min_qty'] : (int.tryParse(json['min_qty']?.toString() ?? "1") ?? 1),
+      maxQty: json['max_qty'] != null ? int.tryParse(json['max_qty'].toString()) : null,
+
+      // Prioritize sale_price if it exists in the table tier
+      price: json['sale_price'] != null
+          ? parseDouble(json['sale_price'])
+          : parseDouble(json['price']),
     );
   }
 }

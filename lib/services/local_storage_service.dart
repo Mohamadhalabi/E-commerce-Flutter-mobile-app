@@ -6,7 +6,7 @@ class LocalStorageService {
   static const String _historyKey = 'search_history';
   static const String _recentsKey = 'recently_viewed';
 
-  // --- SEARCH HISTORY (Keep as is) ---
+  // --- SEARCH HISTORY ---
   static Future<List<String>> getSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList(_historyKey) ?? [];
@@ -38,42 +38,48 @@ class LocalStorageService {
 
   // --- RECENTLY VIEWED ---
 
-  // 1. Get List
   static Future<List<ProductModel>> getRecentlyViewed() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> jsonList = prefs.getStringList(_recentsKey) ?? [];
 
-    // Convert saved JSON strings back to ProductModel using your factory
     return jsonList.map((str) {
       return ProductModel.fromJson(jsonDecode(str));
     }).toList();
   }
 
-  // 2. Add Item
   static Future<void> addToRecentlyViewed(ProductModel product) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> jsonList = prefs.getStringList(_recentsKey) ?? [];
 
-    // We manually create a Map because your model doesn't have .toJson()
-    // We only save fields needed for the Product Card to save space.
+    // [UPDATE] Mapped to match ProductModel.fromJson expectations
     Map<String, dynamic> simpleProduct = {
       'id': product.id,
       'title': product.title,
       'image': product.image,
-      'price': product.price,
-      'sale_price': product.salePrice, // Important: Save sale price
+
+      // Pricing Fields
+      'price': product.effectivePrice,   // Mapped to effectivePrice in fromJson
+      'regular_price': product.regularPrice,
+      'sale_price': product.salePrice,
+
+      // Stock
+      'quantity': product.stock,
+
       'sku': product.sku,
       'rating': product.rating,
-      'is_free_shipping': product.freeShipping, // Note: mapped to match your fromJson logic
+      'is_free_shipping': product.freeShipping,
       'discount': product.discount,
-      'brand_name': product.brandName,
+      'brand_name': "", // Add if available in model or leave empty
       'category': product.category,
-      'faq': [], // We don't need FAQ for the recent list, save space
+
+      // Complex objects set to defaults to avoid storage bloat/errors
+      'table_price': [],
+      'faq': [],
     };
 
     String jsonStr = jsonEncode(simpleProduct);
 
-    // Remove if already exists (check by ID to avoid duplicates)
+    // Remove if already exists (check by ID)
     jsonList.removeWhere((item) {
       try {
         return jsonDecode(item)['id'] == product.id;

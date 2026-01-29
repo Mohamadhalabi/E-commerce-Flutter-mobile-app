@@ -1,9 +1,9 @@
 name: shop
-description: FlutterShop is a premium E-commerce UI kit that you can use to build various e-commerce apps using Flutter that works on both Android & iOS. This kit contains 100+ nicely crafted minimal screens that cover everything you need for your shop app.
+description: Techno Lock Keys Trading mobile app.
 
 publish_to: "none"
 
-version: 1.0.0+9
+version: 1.0.0+13
 
 environment:
   sdk: ">=3.2.0 <4.0.0"

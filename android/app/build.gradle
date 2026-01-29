@@ -65,7 +65,7 @@ android {
         // ✅ FIXED: Must match the namespace above
         applicationId "com.technolockkeys.app"
 
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

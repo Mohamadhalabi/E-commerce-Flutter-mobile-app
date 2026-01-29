@@ -1,33 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shop/providers/cart_provider.dart';
 import '../../constants.dart';
+import '../../models/product_model.dart';
 
 class ProductCard extends StatefulWidget {
   const ProductCard({
     super.key,
-    required this.id,
-    required this.image,
-    required this.category,
-    required this.title,
-    required this.price,
-    required this.rating,
-    required this.sku,
-    this.salePrice,
-    this.discount,
-    this.freeShipping,
-    this.stock = 9999,
+    required this.product,
     required this.press,
   });
 
-  final String image, category, title, sku;
-  final double price, rating;
-  final double? salePrice;
-  final Map<String, dynamic>? discount;
-  final int? id;
-  final bool? freeShipping;
-  final int stock;
+  final ProductModel product;
   final VoidCallback press;
 
   @override
@@ -37,10 +23,17 @@ class ProductCard extends StatefulWidget {
 class _ProductCardState extends State<ProductCard> {
   late TextEditingController _qtyController;
 
+  // State for dynamic pricing
+  late double _currentUnitPrice;
+  late double _regularPrice;
+
   @override
   void initState() {
     super.initState();
     _qtyController = TextEditingController(text: "1");
+    // Default to the regular price from model
+    _regularPrice = widget.product.regularPrice;
+    _calculatePrice(1);
   }
 
   @override
@@ -49,266 +42,370 @@ class _ProductCardState extends State<ProductCard> {
     super.dispose();
   }
 
+  void _calculatePrice(int qty) {
+    double finalPrice = widget.product.effectivePrice;
+
+    // Check table pricing
+    if (widget.product.tablePrices.isNotEmpty) {
+      for (var tier in widget.product.tablePrices) {
+        if (qty >= tier.minQty && (tier.maxQty == null || qty <= tier.maxQty!)) {
+          finalPrice = tier.price;
+          break;
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _currentUnitPrice = finalPrice;
+      });
+    }
+  }
+
   void _incrementQuantity() {
     int current = int.tryParse(_qtyController.text) ?? 1;
-    setState(() {
-      _qtyController.text = (current + 1).toString();
-    });
+    int newQty = current + 1;
+    _qtyController.text = newQty.toString();
+    _calculatePrice(newQty);
   }
 
   void _decrementQuantity() {
     int current = int.tryParse(_qtyController.text) ?? 1;
     if (current > 1) {
-      setState(() {
-        _qtyController.text = (current - 1).toString();
-      });
+      int newQty = current - 1;
+      _qtyController.text = newQty.toString();
+      _calculatePrice(newQty);
     }
   }
 
   void _handleManualInput(String value) {
     if (value.isEmpty) return;
     int? val = int.tryParse(value);
-    if (val != null && val < 1) {
-      _qtyController.text = "1";
-      _qtyController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _qtyController.text.length),
-      );
+    if (val != null && val >= 1) {
+      _calculatePrice(val);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Detect Dark Mode
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color cardBg = isDark ? const Color(0xFF1E1E2C) : Colors.white;
+    final Color textColor = isDark ? Colors.white : const Color(0xFF333333);
+    final Color inputBg = isDark ? const Color(0xFF2C2C38) : const Color(0xFFF5F5F5);
+    final Color borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
 
-    // 2. Define Dynamic Colors
-    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color borderColor = isDark ? Colors.white10 : const Color(0xFFF0F0F0);
-    final Color textColor = isDark ? Colors.white : Colors.black87;
-    // Light Green for Dark Mode visibility, Dark Green for Light Mode
-    final Color skuColor = isDark ? Colors.greenAccent.shade100 : Colors.green.shade900;
-
-    // Inputs
-    final Color inputBg = isDark ? const Color(0xFF2A2A35) : const Color(0xFFFAFAFA);
-    final Color inputBorder = isDark ? Colors.white12 : Colors.grey.shade200;
-    final Color btnBg = isDark ? const Color(0xFF2A2A35) : Colors.white;
-    final Color btnIconColor = isDark ? Colors.white70 : Colors.black54;
+    bool isDiscounted = _currentUnitPrice < _regularPrice;
 
     return Container(
+      // Margin allows shadow to be visible
+      margin: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: cardBg,
-        border: Border.all(color: borderColor, width: 1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            offset: const Offset(0, 2),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            offset: const Offset(0, 4),
+            blurRadius: 8,
           ),
         ],
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ------------------------------------------
-          // 1. IMAGE SECTION
-          // ------------------------------------------
-          GestureDetector(
-            onTap: widget.press,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. IMAGE & TIMER
+            Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Keep image bg white for consistency
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: borderColor, width: 1)),
               ),
-              child: AspectRatio(
-                aspectRatio: 1.0,
-                child: Image.network(
-                  widget.image,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.image_not_supported, color: Colors.grey, size: 30),
-                ),
-              ),
-            ),
-          ),
-
-          // ------------------------------------------
-          // 2. CONTENT SECTION
-          // ------------------------------------------
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  // SKU
-                  Text(
-                    "SKU: ${widget.sku}",
-                    style: TextStyle(
-                      color: skuColor, // Dynamic SKU Color
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 2),
-
-                  // TITLE
-                  Text(
-                    widget.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: textColor, // Dynamic Title Color
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      height: 1.5,
-                    ),
-                  ),
-
-                  const Spacer(),
-                  const SizedBox(height: 4),
-
-                  // PRICE
-                  Text(
-                    "\$${widget.price.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      color: primaryColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // ------------------------------------------
-                  // 3. COMPACT BOTTOM ACTIONS
-                  // ------------------------------------------
-                  // Quantity Row
-                  SizedBox(
-                    height: 26,
-                    child: Row(
-                      children: [
-                        _buildQtyBtn(Icons.remove, _decrementQuantity, btnBg, inputBorder, btnIconColor),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: inputBorder),
-                              borderRadius: BorderRadius.circular(4),
-                              color: inputBg,
-                            ),
-                            child: TextField(
-                              controller: _qtyController,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              textAlignVertical: TextAlignVertical.center,
-                              onChanged: _handleManualInput,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(3),
-                              ],
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                color: textColor, // Dynamic Input Text
-                              ),
-                              decoration: const InputDecoration(
-                                isCollapsed: true,
-                                border: InputBorder.none,
-                              ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.press,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: Hero(
+                            tag: "product_${widget.product.id}",
+                            child: Image.network(
+                              widget.product.image,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.image_not_supported, color: Colors.grey.shade300, size: 40),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        _buildQtyBtn(Icons.add, _incrementQuantity, btnBg, inputBorder, btnIconColor),
-                      ],
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  // Add to Cart Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 30,
-                    child: Consumer<CartProvider>(
-                      builder: (context, cartProvider, child) {
-                        return ElevatedButton(
-                          onPressed: () {
-                            int qty = int.tryParse(_qtyController.text) ?? 1;
-                            if (widget.id != null) {
-                              cartProvider.addToCart(
-                                productId: widget.id!,
-                                title: widget.title,
-                                image: widget.image,
-                                sku: widget.sku,
-                                price: widget.salePrice ?? widget.price,
-                                quantity: qty,
-                                stock: widget.stock,
-                                context: context,
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: cartProvider.isLoading
-                              ? const SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                              : const Text(
-                            "Add",
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      },
+                  if (widget.product.discount != null &&
+                      widget.product.discount!['end_date'] != null)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: DiscountTimer(endDate: widget.product.discount!['end_date']),
                     ),
-                  ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            // 2. CONTENT
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "SKU: ${widget.product.sku}",
+                      style: const TextStyle(
+                        color: greenColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.product.title,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        height: 1.6,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Price Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "\$${_currentUnitPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            color: primaryColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        if (isDiscounted)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              "\$${_regularPrice.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 11,
+                                decoration: TextDecoration.lineThrough,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Actions Row
+                    Row(
+                      children: [
+                        Container(
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: inputBg,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildQtyBtn(Icons.remove, _decrementQuantity, isDark),
+                              Container(
+                                width: 28,
+                                alignment: Alignment.center,
+                                child: TextField(
+                                  controller: _qtyController,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  onChanged: _handleManualInput,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: textColor,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    isCollapsed: true,
+                                    border: InputBorder.none,
+                                  ),
+                                  inputFormatters: [
+                                    LengthLimitingTextInputFormatter(3),
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                ),
+                              ),
+                              _buildQtyBtn(Icons.add, _incrementQuantity, isDark),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Consumer<CartProvider>(
+                            builder: (context, cart, child) {
+                              return SizedBox(
+                                height: 28,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    int qty = int.tryParse(_qtyController.text) ?? 1;
+                                    cart.addToCart(
+                                      productId: widget.product.id,
+                                      title: widget.product.title,
+                                      image: widget.product.image,
+                                      sku: widget.product.sku,
+                                      price: _currentUnitPrice,
+                                      quantity: qty,
+                                      stock: widget.product.stock,
+                                      context: context,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: cart.isLoading
+                                      ? const SizedBox(
+                                    height: 14,
+                                    width: 14,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2),
+                                  )
+                                      : const Icon(Icons.shopping_cart_outlined,
+                                      size: 16, color: Colors.white),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildQtyBtn(IconData icon, VoidCallback onTap, Color bg, Color border, Color iconColor) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: bg,
-          border: Border.all(color: border),
+  Widget _buildQtyBtn(IconData icon, VoidCallback onTap, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Icon(icon, size: 14, color: isDark ? Colors.white70 : Colors.black54),
+        ),
+      ),
+    );
+  }
+}
+
+class DiscountTimer extends StatefulWidget {
+  final String endDate;
+  const DiscountTimer({super.key, required this.endDate});
+
+  @override
+  State<DiscountTimer> createState() => _DiscountTimerState();
+}
+
+class _DiscountTimerState extends State<DiscountTimer> {
+  late Timer _timer;
+  Duration _timeLeft = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateTimeLeft();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _calculateTimeLeft());
+  }
+
+  void _calculateTimeLeft() {
+    final end = DateTime.tryParse(widget.endDate);
+    if (end != null) {
+      final now = DateTime.now();
+      final diff = end.difference(now);
+      if (diff.isNegative) {
+        _timer.cancel();
+        setState(() => _timeLeft = Duration.zero);
+      } else {
+        setState(() => _timeLeft = diff);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_timeLeft.inSeconds <= 0) return const SizedBox.shrink();
+
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    final days = _timeLeft.inDays;
+    final hours = _timeLeft.inHours.remainder(24);
+    final minutes = _timeLeft.inMinutes.remainder(60);
+    final seconds = _timeLeft.inSeconds.remainder(60);
+
+    String timerText;
+    if (days > 0) {
+      timerText = "${days}d ${twoDigits(hours)}h ${twoDigits(minutes)}m ${twoDigits(seconds)}s";
+    } else {
+      timerText = "${twoDigits(hours)}h ${twoDigits(minutes)}m ${twoDigits(seconds)}s";
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+          color: Colors.red.shade600,
           borderRadius: BorderRadius.circular(4),
-        ),
-        child: Icon(
-          icon,
-          size: 14,
-          color: iconColor,
-        ),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))]
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.access_time_filled, color: Colors.white, size: 10),
+          const SizedBox(width: 4),
+          Text(
+            timerText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }

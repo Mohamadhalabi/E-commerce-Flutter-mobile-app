@@ -9,6 +9,8 @@ import 'package:visibility_detector/visibility_detector.dart';
 import '../../../../constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../../discover/views/view_all_products_screen.dart';
+
 class FreeShippingProducts extends StatefulWidget {
   const FreeShippingProducts({super.key});
 
@@ -29,7 +31,6 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
 
   Future<void> fetchProducts() async {
     final locale = Localizations.localeOf(context).languageCode;
-
     try {
       final response = await ApiService.fetchFreeShippingProducts(locale);
       setState(() {
@@ -46,8 +47,23 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Calculate width to fit 2.5 items
-    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+    Size size = MediaQuery.of(context).size;
+
+    // ---------------------------------------------------------
+    // 📱 RESPONSIVE CALCULATIONS
+    // ---------------------------------------------------------
+    // 1. Tablet Check
+    bool isTablet = size.width > 600;
+
+    // 2. Card Width
+    // Mobile: Shows ~2.3 cards (peek)
+    // Tablet: Shows ~4.5 cards (peek)
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+
+    // 3. List Height
+    // Image height (square) + Content height (~190px)
+    double listHeight = cardWidth + 190;
+    // ---------------------------------------------------------
 
     return VisibilityDetector(
       key: const Key('free-shipping-products-section'),
@@ -74,7 +90,16 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/free-shipping');
+                    // ✅ UPDATED NAVIGATION
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewAllProductsScreen(
+                          title: AppLocalizations.of(context)!.freeShipping,
+                          type: ProductListType.freeShipping, // Select correct type
+                        ),
+                      ),
+                    );
                   },
                   child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
@@ -90,7 +115,7 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
             )
           else
             SizedBox(
-              height: 330, // 2. Adjusted height
+              height: listHeight, // Dynamic Height Applied Here
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
@@ -98,23 +123,13 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
                   final product = products[index];
                   return Padding(
                     padding: EdgeInsets.only(
-                      left: defaultPadding,
+                      left: index == 0 ? defaultPadding : defaultPadding / 2,
                       right: index == products.length - 1 ? defaultPadding : 0,
                     ),
-                    // 3. Wrap in SizedBox with calculated width
                     child: SizedBox(
-                      width: cardWidth,
+                      width: cardWidth, // Dynamic Width Applied Here
                       child: ProductCard(
-                        id: product.id,
-                        image: product.image,
-                        category: product.category,
-                        title: product.title,
-                        price: product.price,
-                        salePrice: product.salePrice,
-                        sku: product.sku,
-                        rating: product.rating,
-                        discount: product.discount,
-                        freeShipping: product.freeShipping,
+                        product: product,
                         press: () {
                           Navigator.pushNamed(
                             context,

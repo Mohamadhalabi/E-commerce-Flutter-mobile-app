@@ -8,6 +8,7 @@ import 'package:shop/services/api_service.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../constants.dart';
+import '../../../discover/views/view_all_products_screen.dart';
 
 class BundleProducts extends StatefulWidget {
   const BundleProducts({super.key});
@@ -15,6 +16,7 @@ class BundleProducts extends StatefulWidget {
   @override
   State<BundleProducts> createState() => _BundleProductsState();
 }
+
 class _BundleProductsState extends State<BundleProducts> {
   List<ProductModel> products = [];
   bool isLoading = true;
@@ -28,7 +30,6 @@ class _BundleProductsState extends State<BundleProducts> {
 
   Future<void> fetchProducts() async {
     final locale = Localizations.localeOf(context).languageCode;
-
     try {
       final response = await ApiService.fetchBundleProducts(locale);
       setState(() {
@@ -45,8 +46,24 @@ class _BundleProductsState extends State<BundleProducts> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Calculate width to fit 2.5 items
-    double cardWidth = (MediaQuery.of(context).size.width / 2.5) - 16;
+    Size size = MediaQuery.of(context).size;
+
+    // ---------------------------------------------------------
+    // 📱 RESPONSIVE CALCULATIONS
+    // ---------------------------------------------------------
+    // 1. Tablet Check
+    bool isTablet = size.width > 600;
+
+    // 2. Card Width
+    // Mobile: Shows ~2.3 cards (wide enough to see details)
+    // Tablet: Shows ~4.5 cards (standard tablet view)
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+
+    // 3. List Height
+    // Image height (square) + Content height (~190px)
+    // This prevents the "RenderFlex overflowed" error
+    double listHeight = cardWidth + 190;
+    // ---------------------------------------------------------
 
     return VisibilityDetector(
       key: const Key('bundle-products-section'),
@@ -73,7 +90,16 @@ class _BundleProductsState extends State<BundleProducts> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/bundle-products');
+                    // ✅ UPDATED NAVIGATION
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewAllProductsScreen(
+                          title: AppLocalizations.of(context)!.bundleProducts,
+                          type: ProductListType.bundle, // Select correct type
+                        ),
+                      ),
+                    );
                   },
                   child: Text(AppLocalizations.of(context)!.viewAll),
                 ),
@@ -89,7 +115,7 @@ class _BundleProductsState extends State<BundleProducts> {
             )
           else
             SizedBox(
-              height: 330, // 2. Adjusted height
+              height: listHeight, // Dynamic Height Applied Here
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
@@ -97,23 +123,13 @@ class _BundleProductsState extends State<BundleProducts> {
                   final product = products[index];
                   return Padding(
                     padding: EdgeInsets.only(
-                      left: defaultPadding,
+                      left: index == 0 ? defaultPadding : defaultPadding / 2,
                       right: index == products.length - 1 ? defaultPadding : 0,
                     ),
-                    // 3. Wrap in SizedBox with calculated width
                     child: SizedBox(
-                      width: cardWidth,
+                      width: cardWidth, // Dynamic Width Applied Here
                       child: ProductCard(
-                        id: product.id,
-                        image: product.image,
-                        category: product.category,
-                        title: product.title,
-                        price: product.price,
-                        salePrice: product.salePrice,
-                        sku: product.sku,
-                        rating: product.rating,
-                        discount: product.discount,
-                        freeShipping: product.freeShipping,
+                        product: product,
                         press: () {
                           Navigator.pushNamed(
                             context,

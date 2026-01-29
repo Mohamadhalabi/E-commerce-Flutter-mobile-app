@@ -24,7 +24,6 @@ class SubCategoryProductsScreen extends StatefulWidget {
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
 
-  // Flag to know if this is the Main "Shop" Tab
   final bool isMainTab;
 
   const SubCategoryProductsScreen({
@@ -189,7 +188,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   Widget _buildActiveFilters() {
-    // ✅ Dark Mode Colors for Filter Bar
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
 
@@ -227,7 +225,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: containerBg, // Dynamic Background
+      color: containerBg,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: chips.map((c) => Padding(padding: const EdgeInsets.only(right: 8), child: c)).toList()),
@@ -298,14 +296,39 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     );
   }
 
+  // =========================================================
+  // 📱 RESPONSIVE GRID DELEGATE (The Fix)
+  // =========================================================
   Widget _buildGridDelegate({required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
+    // 1. Get Screen Width
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    // 2. Determine Column Count (Responsive Breakpoints)
+    int crossAxisCount;
+    if (screenWidth > 900) {
+      crossAxisCount = 4; // Desktop/Large Tablet
+    } else if (screenWidth > 600) {
+      crossAxisCount = 3; // Tablet
+    } else {
+      crossAxisCount = 2; // Mobile
+    }
+
+    // 3. Calculate Aspect Ratio Dynamically
+    // We assume roughly 16px padding on sides + 16px spacing between items
+    double totalSpacing =  ((crossAxisCount - 1));
+    double cardWidth = (screenWidth - totalSpacing) / crossAxisCount;
+
+    // Formula: Ratio = Width / (Width + StaticContentHeight)
+    // We add ~195px for the image content (Title, Price, Buttons)
+    double childAspectRatio = cardWidth / (cardWidth + 195);
+
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: itemCount,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.45,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio, // Use dynamic ratio
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -315,7 +338,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Dark Mode Detection & Variables
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
     final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
@@ -326,7 +348,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
 
     String noProductsText = "No products found";
 
-    // ✅ Determine Leading Icon
     Widget? leadingIcon;
     if (widget.isMainTab) {
       leadingIcon = Builder(
@@ -385,7 +406,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: textColor), // Input Text Color
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.search_for_title(widget.title),
                 hintStyle: TextStyle(color: hintColor),
@@ -440,17 +461,9 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                     return const ProductCardSkeleton();
                   }
                   final product = products[index];
+                  // [UPDATED PRODUCT CARD CALL]
                   return ProductCard(
-                    id: product.id,
-                    image: product.image,
-                    category: widget.title,
-                    title: product.title,
-                    price: product.price,
-                    salePrice: product.salePrice ?? 0.0,
-                    sku: product.sku,
-                    rating: product.rating,
-                    discount: product.discount,
-                    freeShipping: product.freeShipping,
+                    product: product,
                     press: () {
                       Navigator.pushNamed(
                           context,
