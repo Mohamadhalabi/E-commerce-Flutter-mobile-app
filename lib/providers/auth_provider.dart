@@ -220,4 +220,23 @@ class AuthProvider with ChangeNotifier {
       }
     }
   }
+  // ✅ NEW: Delete Account Logic
+  Future<bool> deleteAccount() async {
+    if (_token == null) return false;
+
+    _setLoading(true);
+
+    // 1. Call Backend
+    bool success = await ApiService.deleteAccount(_token!);
+
+    // 2. Clear Local Data regardless of server response (client-side safety)
+    if (success) {
+      await _clearAuthData();
+      await _googleSignIn.signOut();
+      await FacebookAuth.instance.logOut();
+    }
+
+    _setLoading(false);
+    return success;
+  }
 }

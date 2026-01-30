@@ -552,6 +552,28 @@ class ApiService {
     }
   }
 
+  static Future<bool> deleteAccount(String token) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    // Match the route defined in Laravel: api-mobile/auth/delete-account
+    String url = '$apiBaseUrl/auth/delete-account';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey, token: token),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Delete Account Error: $e");
+      return false;
+    }
+  }
+
 // In lib/services/api_service.dart
 
 // API to fetch logged-in user profile

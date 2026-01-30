@@ -245,5 +245,6 @@
  "orderNote": "Order Note",
  "shipmentValue": "Declared Shipment Value ($)",
  "saveAddress": "Save Address",
- "required": "Required"
+ "required": "Required",
+ "deleteAccount": "Delete Account"
 }

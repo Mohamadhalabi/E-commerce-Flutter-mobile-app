@@ -36,11 +36,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // ✅ NEW: Theme Selection Logic (Bottom Sheet)
+  // ✅ NEW: Delete Account Logic & Alert
+  // --------------------------------------------------------------------------
+  void _confirmDeleteAccount(BuildContext context) {
+    final tr = AppLocalizations.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr?.deleteAccount ?? "Delete Account"),
+        // Warning user it is permanent (even though backend is soft delete)
+        content: const Text(
+            "Are you sure you want to delete your account?\n\nThis action is permanent and cannot be undone. All your data and order history will be lost."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(tr?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop(); // Close dialog
+
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+              // Call provider delete method
+              bool success = await authProvider.deleteAccount();
+
+              if (success && context.mounted) {
+                // Clear cart and go to login
+                Provider.of<CartProvider>(context, listen: false).clearLocalCart();
+
+                // Navigate to Login and remove all previous routes
+                Navigator.pushNamedAndRemoveUntil(context, logInScreenRoute, (route) => false);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Account deleted successfully.")),
+                );
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Failed to delete account. Please try again.")),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(tr?.delete ?? "Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Theme Selection Logic (Bottom Sheet)
   // --------------------------------------------------------------------------
   void _showThemeSelection(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final tr = AppLocalizations.of(context)!; // Ensure localization is available
+    final tr = AppLocalizations.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -55,7 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const SizedBox(height: 16),
               Text(
-                tr.darkMode, // Or "Select Theme" if you add it to arb
+                tr?.darkMode ?? "Select Theme",
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
@@ -73,7 +124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildThemeOption(
       BuildContext context, ThemeProvider provider, String title, ThemeMode mode) {
-    // Check if this mode is the one currently selected in settings
     final isSelected = provider.themeMode == mode;
     final color = isSelected ? brandingColor : Colors.grey;
 
@@ -93,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       trailing: isSelected ? Icon(Icons.check, color: brandingColor) : null,
       onTap: () {
-        provider.setTheme(mode); // ✅ Calls the new method in ThemeProvider
+        provider.setTheme(mode);
         Navigator.pop(context);
       },
     );
@@ -101,12 +151,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getThemeName(ThemeMode mode) {
     switch (mode) {
-      case ThemeMode.light:
-        return "Light";
-      case ThemeMode.dark:
-        return "Dark";
-      case ThemeMode.system:
-        return "System";
+      case ThemeMode.light: return "Light";
+      case ThemeMode.dark: return "Dark";
+      case ThemeMode.system: return "System";
     }
   }
 
@@ -121,13 +168,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isAuthenticated = authProvider.isAuthenticated;
     final user = authProvider.user;
 
-    // ✅ UPDATED: Check actual brightness (handles System mode correctly)
+    // Check actual brightness
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final tr = AppLocalizations.of(context);
+    // If localization is not ready, show loader
     if (tr == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    // ✅ Define Dynamic Colors
+    // Define Dynamic Colors
     final Color scaffoldBg = isDark ? const Color(0xFF101015) : const Color(0xFFF4F5F7);
     final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final Color textColor = isDark ? Colors.white : Colors.black87;
@@ -313,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             _buildDivider(isDark),
 
-            // ✅ REPLACED SWITCH WITH SELECTION MENU
+            // Theme Selection
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               leading: Container(
@@ -348,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // ------------------------------------------
           // 5. LOGIN / LOGOUT
           // ------------------------------------------
-          if (isAuthenticated)
+          if (isAuthenticated) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
               child: TextButton(
@@ -374,8 +422,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-            )
-          else
+            ),
+
+            // ✅ DELETE ACCOUNT BUTTON (Added below Logout)
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+              child: TextButton(
+                onPressed: () => _confirmDeleteAccount(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete_forever, color: Colors.grey.shade400, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Delete Account",
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          ] else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
               child: ElevatedButton(
