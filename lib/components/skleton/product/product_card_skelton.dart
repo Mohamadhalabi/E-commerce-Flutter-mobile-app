@@ -6,10 +6,17 @@ class ProductCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Detect Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Define Dynamic Colors
+    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color borderColor = isDark ? Colors.white12 : const Color(0xFFF0F0F0);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
+        color: cardBg, // ✅ Dynamic Background
+        border: Border.all(color: borderColor, width: 1), // ✅ Dynamic Border
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Column(
@@ -58,10 +65,10 @@ class ProductCardSkeleton extends StatelessWidget {
                       Skeleton(width: 80, height: 28),
                       SizedBox(width: 8),
 
-                      // Add Button (The Error was here)
+                      // Add Button
                       Expanded(
                         child: Skeleton(
-                          width: double.infinity, // [FIX] Added required width
+                          width: double.infinity,
                           height: 28,
                         ),
                       ),

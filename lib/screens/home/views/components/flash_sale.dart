@@ -58,11 +58,11 @@ class _FlashSaleProductsState extends State<FlashSaleProducts> {
     // 2. Card Width
     // Mobile: Shows ~2.3 cards
     // Tablet: Shows ~4.5 cards
-    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.6;
 
     // 3. List Height
     // Image is square (height = width) + Content (~190px)
-    double listHeight = cardWidth + 190;
+    double listHeight = cardWidth + 180;
     // ---------------------------------------------------------
 
     return Column(

@@ -58,11 +58,11 @@ class _FreeShippingProductsState extends State<FreeShippingProducts> {
     // 2. Card Width
     // Mobile: Shows ~2.3 cards (peek)
     // Tablet: Shows ~4.5 cards (peek)
-    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.6;
 
     // 3. List Height
     // Image height (square) + Content height (~190px)
-    double listHeight = cardWidth + 190;
+    double listHeight = cardWidth + 180;
     // ---------------------------------------------------------
 
     return VisibilityDetector(

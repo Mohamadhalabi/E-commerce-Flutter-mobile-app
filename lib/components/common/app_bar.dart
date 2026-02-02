@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:shop/route/route_constants.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shop/components/tutorial_tooltip.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey? menuKey;
+  // ✅ ADDED: Callback function
+  final VoidCallback? onSearchTap;
 
   const CustomAppBar({
     super.key,
     this.menuKey,
+    this.onSearchTap, // ✅ ADDED
   });
 
   @override
@@ -16,32 +18,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Detect Dark Mode
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // 2. Define Dynamic Colors
-    // Background: White vs Dark Background
     final Color backgroundColor = isDark ? const Color(0xFF101015) : Colors.white;
-    // Icon Color: Navy vs White
     final Color iconColor = isDark ? Colors.white : const Color(0xFF0C1E4E);
-    // Button/Search Backgrounds: Light Grey vs Dark Surface
     final Color elementBgColor = isDark ? const Color(0xFF1C1C23) : const Color(0xFFF5F5F5);
-    // Text Color: Grey vs White70
     final Color textColor = isDark ? Colors.white70 : Colors.grey[500]!;
 
     return AppBar(
       backgroundColor: backgroundColor,
-      elevation: 0, // Removed elevation for cleaner look in dark mode
+      elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-
-      // Leading (Menu)
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: CircleAvatar(
-          backgroundColor: elementBgColor, // Dynamic BG
+          backgroundColor: elementBgColor,
           radius: 20,
           child: menuKey != null
               ? Showcase.withWidget(
@@ -50,19 +43,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             width: 280,
             container: const TutorialTooltip(
               title: "Menu",
-              description: "Open the side menu to access categories, language settings, and currency.",
+              description: "Open the side menu to access categories...",
               currentStep: 1,
               totalSteps: 6,
             ),
             child: IconButton(
-              icon: Icon(Icons.menu_rounded, color: iconColor), // Dynamic Icon Color
+              icon: Icon(Icons.menu_rounded, color: iconColor),
               onPressed: () => Scaffold.of(context).openDrawer(),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
           )
               : IconButton(
-            icon: Icon(Icons.menu_rounded, color: iconColor), // Dynamic Icon Color
+            icon: Icon(Icons.menu_rounded, color: iconColor),
             onPressed: () => Scaffold.of(context).openDrawer(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -73,15 +66,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       // Search Bar
       title: GestureDetector(
+        // ✅ CHANGED: Use the callback if provided, otherwise do nothing
         onTap: () {
-          Navigator.pushNamed(context, discoverScreenRoute);
+          if (onSearchTap != null) {
+            onSearchTap!();
+          }
         },
         child: Container(
           height: 45,
           margin: const EdgeInsets.symmetric(horizontal: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: elementBgColor, // Dynamic Search BG
+            color: elementBgColor,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Row(
@@ -99,15 +95,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
 
-      // Notification Button
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: CircleAvatar(
-            backgroundColor: elementBgColor, // Dynamic BG
+            backgroundColor: elementBgColor,
             radius: 20,
             child: IconButton(
-              icon: Icon(Icons.notifications_none_rounded, color: iconColor), // Dynamic Icon
+              icon: Icon(Icons.notifications_none_rounded, color: iconColor),
               onPressed: () {},
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

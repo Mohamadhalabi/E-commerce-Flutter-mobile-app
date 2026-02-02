@@ -297,29 +297,22 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   // =========================================================
-  // 📱 RESPONSIVE GRID DELEGATE (The Fix)
+  // 📱 RESPONSIVE GRID DELEGATE
   // =========================================================
   Widget _buildGridDelegate({required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
-    // 1. Get Screen Width
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // 2. Determine Column Count (Responsive Breakpoints)
     int crossAxisCount;
     if (screenWidth > 900) {
-      crossAxisCount = 4; // Desktop/Large Tablet
+      crossAxisCount = 4;
     } else if (screenWidth > 600) {
-      crossAxisCount = 3; // Tablet
+      crossAxisCount = 3;
     } else {
-      crossAxisCount = 2; // Mobile
+      crossAxisCount = 2;
     }
 
-    // 3. Calculate Aspect Ratio Dynamically
-    // We assume roughly 16px padding on sides + 16px spacing between items
     double totalSpacing =  ((crossAxisCount - 1));
     double cardWidth = (screenWidth - totalSpacing) / crossAxisCount;
-
-    // Formula: Ratio = Width / (Width + StaticContentHeight)
-    // We add ~195px for the image content (Title, Price, Buttons)
     double childAspectRatio = cardWidth / (cardWidth + 195);
 
     return GridView.builder(
@@ -328,7 +321,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       itemCount: itemCount,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio, // Use dynamic ratio
+        childAspectRatio: childAspectRatio,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -342,9 +335,10 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
     final Color appBarBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final Color textColor = isDark ? Colors.white : Colors.black;
-    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[200]!;
+    final Color inputFill = isDark ? const Color(0xFF2A2A35) : const Color(0xFFF5F5F5);
     final Color hintColor = isDark ? Colors.white38 : Colors.grey[600]!;
     final Color loadingBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final Color dividerColor = isDark ? Colors.white12 : Colors.grey.withOpacity(0.1);
 
     String noProductsText = "No products found";
 
@@ -358,7 +352,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       );
     } else {
       leadingIcon = IconButton(
-        icon: Icon(Icons.arrow_back_ios_new, color: textColor),
+        icon: Icon(Icons.arrow_back_ios_new, size: 20, color: textColor),
         onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : null,
       );
     }
@@ -373,47 +367,67 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
       )
           : null,
 
+      // ✅ UPDATED PROFESSIONAL HEADER
       appBar: AppBar(
-        title: Text(widget.title, style: TextStyle(color: textColor)),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
         backgroundColor: appBarBg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        // Hairline border
+        shape: Border(bottom: BorderSide(color: dividerColor, width: 1)),
+
         leading: leadingIcon,
         automaticallyImplyLeading: false,
+
+        title: Text(
+          widget.title,
+          style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 17,
+              letterSpacing: 0.5
+          ),
+        ),
+
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                Icon(Icons.filter_list, color: textColor),
-                if (_selectedBrands.isNotEmpty || _selectedManufacturers.isNotEmpty || _selectedCategories.isNotEmpty || _selectedAttributes.isNotEmpty)
-                  Positioned(
-                    right: 0, top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                      constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
-                    ),
-                  )
-              ],
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Stack(
+                children: [
+                  Icon(Icons.filter_list, color: textColor),
+                  if (_selectedBrands.isNotEmpty || _selectedManufacturers.isNotEmpty || _selectedCategories.isNotEmpty || _selectedAttributes.isNotEmpty)
+                    Positioned(
+                      right: 0, top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
+                      ),
+                    )
+                ],
+              ),
+              onPressed: _openFilterModal,
             ),
-            onPressed: _openFilterModal,
           )
         ],
       ),
+
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8), // Adjusted padding
             child: TextField(
               controller: _searchController,
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.search_for_title(widget.title),
-                hintStyle: TextStyle(color: hintColor),
-                prefixIcon: Icon(Icons.search, color: hintColor),
+                hintStyle: TextStyle(color: hintColor, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: hintColor, size: 22),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                    icon: Icon(Icons.clear, color: hintColor),
+                    icon: Icon(Icons.clear, color: hintColor, size: 20),
                     onPressed: () {
                       _searchController.clear();
                       _currentQuery = "";
@@ -426,6 +440,7 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 filled: true,
                 fillColor: inputFill,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
               ),
             ),
           ),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'components/offer_carousel_and_categories.dart';
 import 'components/new_arrival_products.dart';
-import 'components/slider_carousel.dart';
+// import 'components/slider_carousel.dart';
 import 'components/flash_sale.dart';
 import 'components/free_shipping_products.dart';
-// import 'components/banners.dart';
 import 'components/bundle_products.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,7 +12,6 @@ class HomeScreen extends StatefulWidget {
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
 
-  // ✅ ADDED: Accept the key from EntryPoint
   final GlobalKey? categoryKey;
 
   const HomeScreen({
@@ -65,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SliverToBoxAdapter(child: NewArrivalProducts()),
-              const SliverToBoxAdapter(child: SliderCarousel()),
+              // const SliverToBoxAdapter(child: SliderCarousel()),
               const SliverToBoxAdapter(child: FlashSaleProducts()),
               const SliverToBoxAdapter(child: FreeShippingProducts()),
               // const SliverToBoxAdapter(child: BannerFetcher()),

@@ -64,13 +64,13 @@ class _NewArrivalProductsState extends State<NewArrivalProducts> {
     // 2. Card Width:
     //    - Mobile: Divide by 2.3 (Shows 2 full cards + a peek of the 3rd)
     //    - Tablet: Divide by 4.5 (Shows 4 full cards + a peek of the 5th)
-    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.3;
+    double cardWidth = isTablet ? size.width / 4.5 : size.width / 2.6;
 
     // 3. List Height:
     //    Since the ProductCard image is square (AspectRatio 1.0),
     //    Image Height = Card Width.
     //    We add ~190px for the text, price, buttons, and padding below the image.
-    double listHeight = cardWidth + 190;
+    double listHeight = cardWidth + 180;
 
     // 4. Red Background Height:
     //    Slightly shorter than the list to create the "pop-out" effect.
