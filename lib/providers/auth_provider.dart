@@ -201,10 +201,22 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // 1. Clear Local Data FIRST (Most Important)
     await _clearAuthData();
-    // Optional: Sign out from social providers to force account selection next time
-    await _googleSignIn.signOut();
-    await FacebookAuth.instance.logOut();
+
+    // 2. Safely try to sign out of Google (Ignore errors)
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      print("⚠️ Google Logout Failed (Safe to ignore): $e");
+    }
+
+    // 3. Safely try to log out of Facebook (Ignore errors)
+    try {
+      await FacebookAuth.instance.logOut();
+    } catch (e) {
+      print("⚠️ Facebook Logout Failed (Safe to ignore): $e");
+    }
   }
 
   Future<void> fetchUserProfile() async {
@@ -220,23 +232,35 @@ class AuthProvider with ChangeNotifier {
       }
     }
   }
-  // ✅ NEW: Delete Account Logic
   Future<bool> deleteAccount() async {
     if (_token == null) return false;
 
     _setLoading(true);
 
-    // 1. Call Backend
-    bool success = await ApiService.deleteAccount(_token!);
+    try {
+      // 1. Call Backend
+      bool success = await ApiService.deleteAccount(_token!);
 
-    // 2. Clear Local Data regardless of server response (client-side safety)
-    if (success) {
-      await _clearAuthData();
-      await _googleSignIn.signOut();
-      await FacebookAuth.instance.logOut();
+      // 2. Clear Local Data regardless of server response
+      if (success) {
+        await _clearAuthData();
+
+        // 3. Safe Social Logout
+        try {
+          await _googleSignIn.signOut();
+        } catch (_) {}
+
+        try {
+          await FacebookAuth.instance.logOut();
+        } catch (_) {}
+      }
+
+      _setLoading(false);
+      return success;
+    } catch (e) {
+      print("Delete Account Error: $e");
+      _setLoading(false);
+      return false;
     }
-
-    _setLoading(false);
-    return success;
   }
 }

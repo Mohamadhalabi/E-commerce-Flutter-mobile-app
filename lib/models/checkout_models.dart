@@ -1,8 +1,9 @@
 import 'package:shop/models/address_model.dart';
-import 'package:shop/models/product_model.dart';
+// Note: We removed ProductModel import because we are defining a specific QuoteItem class below
+// to handle the checkout-specific fields (unit, line, etc.)
 
 class Quote {
-  final List<ProductModel> products;
+  final List<QuoteItem> products; // Changed from ProductModel to QuoteItem
   final List<AddressModel> addresses;
   final int? selectedAddressId;
   final QuoteShipping shipping;
@@ -28,21 +29,20 @@ class Quote {
 
     return Quote(
       products: (data['products'] as List?)
-          ?.map((e) => ProductModel.fromJson(e))
+          ?.map((e) => QuoteItem.fromJson(e))
           .toList() ?? [],
       addresses: (data['addresses'] as List?)
           ?.map((e) => AddressModel.fromJson(e))
           .toList() ?? [],
       selectedAddressId: int.tryParse(data['selected_address_id'].toString()),
 
-      // ✅ SAFETY CHECK: Handle [] vs {}
       shipping: data['shipping'] is Map<String, dynamic>
           ? QuoteShipping.fromJson(data['shipping'])
-          : QuoteShipping(options: []), // Default empty if invalid/empty array
+          : QuoteShipping(options: []),
 
       summary: data['summary'] is Map<String, dynamic>
           ? QuoteSummary.fromJson(data['summary'])
-          : QuoteSummary.empty(), // Default zero summary
+          : QuoteSummary.empty(),
 
       checkoutBlock: data['checkout_block'] is Map<String, dynamic>
           ? CheckoutBlock.fromJson(data['checkout_block'])
@@ -55,6 +55,49 @@ class Quote {
       coupon: data['coupon'] is Map<String, dynamic>
           ? QuoteCoupon.fromJson(data['coupon'])
           : null,
+    );
+  }
+}
+
+// ✅ NEW CLASS: Handles the specific structure of items in the Checkout Quote
+class QuoteItem {
+  final String productId;
+  final String title;
+  final String sku;
+  final String image;
+  final int quantity;
+  final double price; // Unit price (mapped from 'unit')
+  final double total; // Line total (mapped from 'line')
+
+  QuoteItem({
+    required this.productId,
+    required this.title,
+    required this.sku,
+    required this.image,
+    required this.quantity,
+    required this.price,
+    required this.total,
+  });
+
+  factory QuoteItem.fromJson(Map<String, dynamic> json) {
+    // Helper to safely parse doubles
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
+    return QuoteItem(
+      productId: json['product_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      sku: json['sku']?.toString() ?? '',
+      image: json['image']?.toString() ?? '',
+      quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
+
+      // ✅ VITAL FIX: Map 'unit' from API to 'price'
+      price: json['unit'] != null ? parseDouble(json['unit']) : parseDouble(json['price']),
+
+      // ✅ VITAL FIX: Map 'line' from API to 'total'
+      total: json['line'] != null ? parseDouble(json['line']) : parseDouble(json['total']),
     );
   }
 }
@@ -84,14 +127,12 @@ class ShippingOption {
   ShippingOption({required this.key, required this.label, required this.price, this.disabled = false});
 
   factory ShippingOption.fromJson(Map<String, dynamic> json) {
-    // Helper to safely parse price strings like "$12.50" or "1,000"
     double safeParse(dynamic value) {
       if (value == null) return 0.0;
-      String str = value.toString().replaceAll(RegExp(r'[$,]'), ''); // Remove $ and ,
+      String str = value.toString().replaceAll(RegExp(r'[$,]'), '');
       return double.tryParse(str) ?? 0.0;
     }
 
-    // 1. TRY ALL COMMON NAMES FOR PRICE
     double foundPrice = 0.0;
     if (json.containsKey('price')) foundPrice = safeParse(json['price']);
     else if (json.containsKey('cost')) foundPrice = safeParse(json['cost']);
@@ -100,7 +141,6 @@ class ShippingOption {
 
     return ShippingOption(
       key: json['key']?.toString() ?? '',
-      // If label is missing, use the key or "Shipping"
       label: json['label']?.toString() ?? json['name']?.toString() ?? 'Shipping',
       price: foundPrice,
       disabled: json['disabled'] == true,
@@ -123,7 +163,6 @@ class QuoteSummary {
     required this.total,
   });
 
-  // Empty fallback
   factory QuoteSummary.empty() => QuoteSummary(subTotal: 0, shipping: 0, couponDiscount: 0, promoDiscount: 0, total: 0);
 
   factory QuoteSummary.fromJson(Map<String, dynamic> json) {

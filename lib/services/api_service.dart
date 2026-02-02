@@ -1257,18 +1257,31 @@ class ApiService {
 
     String url = '$apiBaseUrl/user/orders/create';
 
+    print("🔵 CREATING ORDER: $url");
+
+    // 1. Build Headers
+    final headers = _buildHeaders(locale, apiKey, secretKey, token: token);
+
+    // 🔍 DEBUG: Print headers to confirm Token is present
+    print("🔵 HEADERS: $headers");
+    print("🔵 BODY: ${jsonEncode(body)}");
+
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        headers: headers,
         body: jsonEncode(body),
       );
 
+      print("🟡 STATUS CODE: ${response.statusCode}");
+      print("🟡 RESPONSE: ${response.body}");
+
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 || response.statusCode == 201) {
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'message': data['message'] ?? 'Failed to create order'};
+        return {'success': false, 'message': data['message'] ?? 'Unauthorized'};
       }
     } catch (e) {
       return {'success': false, 'message': 'Network Error: $e'};
