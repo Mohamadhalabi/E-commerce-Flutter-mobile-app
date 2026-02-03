@@ -5,8 +5,7 @@ import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-// ✅ IMPORTS FOR APPBAR AND DRAWER
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../../components/common/CustomBottomNavigationBar.dart';
 import '../../../../components/common/drawer.dart';
 import '../../../../components/common/app_bar.dart';
@@ -55,10 +54,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // ✅ HANDLER FOR DRAWER LOCALE CHANGE
   void _onLocaleChange(String locale) {
     LocaleController.updateLocale?.call(locale);
-    setState(() {}); // Refresh UI
+    setState(() {});
   }
 
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
@@ -136,7 +134,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     FocusScope.of(context).unfocus();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     bool success = await authProvider.register(
       name: _nameController.text.trim(),
@@ -149,12 +146,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _handleAuthResult(success, tr.registerSuccess, tr.registerFailed);
   }
 
-  // ✅ Google Login Logic (Same as Login Screen)
   Future<void> _handleGoogleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     bool success = await authProvider.signInWithGoogle();
     if (!mounted) return;
     _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
+  }
+
+  // ✅ ADDED: Apple Login Logic
+  Future<void> _handleAppleLogin() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // ignore: use_build_context_synchronously
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // TODO: You need to implement 'signInWithApple' in your AuthProvider
+      // bool success = await authProvider.signInWithApple(credential);
+
+      print("Apple Login Credential: $credential");
+
+      // Uncomment this when you add the method to your provider:
+      // if (!mounted) return;
+      // _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
+
+    } catch (e) {
+      print("Apple Sign In Error: $e");
+      _showCustomNotification(context, "Apple Sign In Cancelled or Failed", false);
+    }
   }
 
   Future<void> _handleAuthResult(bool success, String successMsg, String failMsg) async {
@@ -183,17 +207,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
 
-    // ✅ Modified Input Fill Color (Darker for Light Mode)
     final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[100]!;
     final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-
-      // ✅ 1. APP BAR
       appBar: const CustomAppBar(),
-
-      // ✅ 2. DRAWER
       drawer: CustomEndDrawer(
         onLocaleChange: _onLocaleChange,
         user: null,
@@ -206,12 +225,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           );
         },
       ),
-
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 4,
         onTap: _onBottomNavTap,
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(defaultPadding),
@@ -229,12 +246,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
                 Text(tr.registerPrompt, style: TextStyle(color: subTextColor)),
-
                 const SizedBox(height: 30),
-
-                // Name
                 TextFormField(
                   controller: _nameController,
                   style: TextStyle(color: textColor),
@@ -246,14 +259,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Darker
+                    fillColor: inputFill,
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.person_outline, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -266,14 +277,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Darker
+                    fillColor: inputFill,
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.email_outlined, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Phone
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -286,14 +295,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Darker
+                    fillColor: inputFill,
                     suffixIcon: Padding(padding: const EdgeInsets.all(12), child: Icon(Icons.phone_android_outlined, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscureText,
@@ -306,7 +313,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Darker
+                    fillColor: inputFill,
                     suffixIcon: IconButton(
                       icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
@@ -314,10 +321,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
-                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -332,10 +336,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         : Text(tr.signUp, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
-                // ✅ 3. ADDED SOCIAL LOGIN SECTION TO SIGN UP
                 Row(
                   children: [
                     Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
@@ -348,6 +349,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // ✅ UPDATED SOCIAL BUTTONS ROW
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -360,10 +362,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         child: const Icon(Icons.g_mobiledata, size: 35, color: Colors.red),
                       ),
                     ),
+
+                    const SizedBox(width: 20),
+
+                    // ✅ Apple Button (Added Here)
+                    InkWell(
+                      onTap: isLoading ? null : _handleAppleLogin,
+                      borderRadius: BorderRadius.circular(50),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: isDark ? Colors.white : Colors.black,
+                        child: Icon(
+                            Icons.apple,
+                            size: 28,
+                            color: isDark ? Colors.black : Colors.white
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

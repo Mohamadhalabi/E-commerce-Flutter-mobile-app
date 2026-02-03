@@ -13,12 +13,18 @@ import 'package:shop/route/router.dart' as router;
 import 'package:flutter/services.dart';
 import "controllers/locale_controller.dart";
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-// ✅ Import ShowcaseView
 import 'package:showcaseview/showcaseview.dart';
+
+// ✅ 1. ADD THIS IMPORT
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // ✅ 2. ADD THIS LINE (Must be before running the app)
+  // This uses the GoogleService-Info.plist you added to Xcode.
+  await Firebase.initializeApp();
 
   await dotenv.load();
   await initApiClient();
@@ -105,11 +111,8 @@ class _MyAppState extends State<MyApp> {
       builder: (context, child) {
         return ShowCaseWidget(
           builder: (context) => child!,
-          // ✅ Add this: clearer duration and auto-play options if you want
           autoPlay: false,
           blurValue: 1,
-          // You can't easily add a global "Skip" button here without a custom builder,
-          // so the best "quick fix" is to change the Tooltip text to instruct the user.
         );
       },
     );

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -200,23 +202,65 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> signInWithApple(AuthorizationCredentialAppleID appleCredential) async {
+    _setLoading(true);
+    try {
+      // 1. Create a credential for Firebase
+      final OAuthProvider oAuthProvider = OAuthProvider('apple.com');
+      final credential = oAuthProvider.credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // 2. Sign in to Firebase
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        // 3. Construct Name
+        String displayName = user.displayName ?? "Apple User";
+        if (displayName == "Apple User" && appleCredential.givenName != null) {
+          displayName = "${appleCredential.givenName} ${appleCredential.familyName ?? ''}";
+        }
+
+        // 4. Send to Laravel Backend
+        final response = await ApiService.socialLogin(
+          provider: 'apple',
+          providerId: user.uid,
+          email: user.email ?? "",
+          name: displayName,
+          avatar: user.photoURL,
+        );
+
+        // 5. Handle Backend Response
+        if (response['success'] == true && response['token'] != null) {
+          await _saveAuthData(response['token'], response['user']);
+          _setLoading(false);
+          return true;
+        } else {
+          print("Apple Backend Login Failed: ${response['message']}");
+        }
+      }
+
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      print("Apple Sign In Error: $e");
+      _setLoading(false);
+      return false;
+    }
+  }
+
   Future<void> logout() async {
-    // 1. Clear Local Data FIRST (Most Important)
+    // 1. Clear Local Data FIRST
     await _clearAuthData();
 
-    // 2. Safely try to sign out of Google (Ignore errors)
-    try {
-      await _googleSignIn.signOut();
-    } catch (e) {
-      print("⚠️ Google Logout Failed (Safe to ignore): $e");
-    }
-
-    // 3. Safely try to log out of Facebook (Ignore errors)
-    try {
-      await FacebookAuth.instance.logOut();
-    } catch (e) {
-      print("⚠️ Facebook Logout Failed (Safe to ignore): $e");
-    }
+    // 2. Social Logout (Safely ignore errors)
+    try { await _googleSignIn.signOut(); } catch (_) {}
+    try { await FacebookAuth.instance.logOut(); } catch (_) {}
+    try { await FirebaseAuth.instance.signOut(); } catch (_) {} // ✅ Sign out of Firebase too
   }
 
   Future<void> fetchUserProfile() async {
@@ -232,6 +276,7 @@ class AuthProvider with ChangeNotifier {
       }
     }
   }
+
   Future<bool> deleteAccount() async {
     if (_token == null) return false;
 
@@ -246,13 +291,9 @@ class AuthProvider with ChangeNotifier {
         await _clearAuthData();
 
         // 3. Safe Social Logout
-        try {
-          await _googleSignIn.signOut();
-        } catch (_) {}
-
-        try {
-          await FacebookAuth.instance.logOut();
-        } catch (_) {}
+        try { await _googleSignIn.signOut(); } catch (_) {}
+        try { await FacebookAuth.instance.logOut(); } catch (_) {}
+        try { await FirebaseAuth.instance.signOut(); } catch (_) {}
       }
 
       _setLoading(false);

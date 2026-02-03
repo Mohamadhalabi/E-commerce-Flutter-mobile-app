@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/models/address_model.dart';
 import 'package:shop/models/checkout_models.dart';
 import 'package:shop/models/country_model.dart';
 import 'package:shop/providers/auth_provider.dart';

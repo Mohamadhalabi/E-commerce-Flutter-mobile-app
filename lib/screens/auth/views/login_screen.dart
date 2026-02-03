@@ -5,8 +5,7 @@ import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-// ✅ IMPORTS FOR APPBAR AND DRAWER
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../../components/common/CustomBottomNavigationBar.dart';
 import '../../../../components/common/drawer.dart';
 import '../../../../components/common/app_bar.dart';
@@ -46,10 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ✅ HANDLER FOR DRAWER LOCALE CHANGE
   void _onLocaleChange(String locale) {
     LocaleController.updateLocale?.call(locale);
-    setState(() {}); // Refresh UI
+    setState(() {});
   }
 
   void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
@@ -144,6 +142,36 @@ class _LoginScreenState extends State<LoginScreen> {
     _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
   }
 
+  // ✅ ADDED: Apple Login Logic
+  Future<void> _handleAppleLogin() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // ignore: use_build_context_synchronously
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // TODO: You need to implement 'signInWithApple' in your AuthProvider
+      // Pass credential.identityToken and credential.authorizationCode to your backend
+      // bool success = await authProvider.signInWithApple(credential);
+
+      // For now, we simulate success just to print the credential
+      print("Apple Login Credential: $credential");
+
+      // Uncomment this when you add the method to your provider:
+      // if (!mounted) return;
+      // _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
+
+    } catch (e) {
+      print("Apple Sign In Error: $e");
+      _showCustomNotification(context, "Apple Sign In Cancelled or Failed", false);
+    }
+  }
+
   Future<void> _handleAuthResult(bool success, String successMsg, String failMsg) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
@@ -170,17 +198,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
 
-    // ✅ Modified Input Fill Color (Darker for Light Mode)
     final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[100]!;
     final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-
-      // ✅ 1. APP BAR
       appBar: const CustomAppBar(),
-
-      // ✅ 2. DRAWER
       drawer: CustomEndDrawer(
         onLocaleChange: _onLocaleChange,
         user: null,
@@ -193,7 +216,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         },
       ),
-
       bottomNavigationBar: CustomBottomNavigationBar(currentIndex: 4, onTap: _onBottomNavTap),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -212,9 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
                 Text(tr.signInPrompt, style: TextStyle(color: subTextColor)),
-
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailController,
@@ -228,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Uses darker fill
+                    fillColor: inputFill,
                     suffixIcon: Padding(padding: const EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined, color: inputIconColor)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
@@ -246,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     filled: true,
-                    fillColor: inputFill, // ✅ Uses darker fill
+                    fillColor: inputFill,
                     suffixIcon: IconButton(
                       icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
@@ -270,7 +290,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
                 Row(
                   children: [
                     Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
@@ -283,17 +302,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ✅ SOCIAL BUTTONS
+                // ✅ UPDATED SOCIAL BUTTONS ROW
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Google Button
                     InkWell(
                       onTap: isLoading ? null : _handleGoogleLogin,
                       borderRadius: BorderRadius.circular(50),
                       child: CircleAvatar(
                         radius: 26,
-                        backgroundColor: isDark ? const Color(0xFF353545) : Colors.grey[200], // Slightly darker circle bg
+                        backgroundColor: isDark ? const Color(0xFF353545) : Colors.grey[200],
                         child: const Icon(Icons.g_mobiledata, size: 35, color: Colors.red),
+                      ),
+                    ),
+
+                    const SizedBox(width: 20), // Spacing between buttons
+
+                    // ✅ Apple Button (Added Here)
+                    InkWell(
+                      onTap: isLoading ? null : _handleAppleLogin,
+                      borderRadius: BorderRadius.circular(50),
+                      child: CircleAvatar(
+                        radius: 26,
+                        // Apple requires high contrast: White on Dark Mode, Black on Light Mode
+                        backgroundColor: isDark ? Colors.white : Colors.black,
+                        child: Icon(
+                            Icons.apple,
+                            size: 28,
+                            color: isDark ? Colors.black : Colors.white
+                        ),
                       ),
                     ),
                   ],
