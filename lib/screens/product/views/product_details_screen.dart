@@ -146,7 +146,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    double currentUnitPrice = _calculateUnitPrice(_quantity);
+    // Calculate Prices
+    double originalPrice = (product!['price'] as num).toDouble();
+    double baseUnitPrice = _calculateUnitPrice(1); // Price for 1 unit (top display)
+    double currentUnitPrice = _calculateUnitPrice(_quantity); // Price factoring bulk qty (bottom bar)
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -186,7 +189,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         onTabChanged: (int _) {},
       ),
       bottomNavigationBar: Container(
-        // Ensure bottom area matches theme
         color: isDark ? const Color(0xFF1C1C23) : Colors.white,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -261,7 +263,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
 
-              // 2. PRODUCT INFO
+              // 2. ✅ NEW: DISCOUNT TIMER MOVED DIRECTLY UNDER IMAGE
+              if (product!['discount'] is Map && (product!['discount'] as Map).isNotEmpty)
+                SliverToBoxAdapter(
+                  child: DiscountTimerBanner(discount: product!['discount'], isBadge: false),
+                ),
+
+              // 3. PRODUCT INFO (Title, SKU, Category)
               ProductInfo(
                 category: product!['category'] ?? "Unknown",
                 sku: product!['sku'] ?? "Unknown",
@@ -275,9 +283,44 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     : product!['num_of_reviews'] ?? 0,
               ),
 
+              // 4. ✅ NEW: PRICE DISPLAY ADDED DIRECTLY UNDER TITLE
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "\$${baseUnitPrice.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                      if (baseUnitPrice < originalPrice) ...[
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3.0),
+                          child: Text(
+                            "\$${originalPrice.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
               SliverToBoxAdapter(child: Divider(thickness: 1, color: dividerColor)),
 
-              // 3. BULK SAVINGS TABLE
+              // 5. BULK SAVINGS TABLE
               if (product!['table_price'] is List && (product!['table_price'] as List).isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -286,13 +329,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                 ),
 
-              // 4. DISCOUNT TIMER
-              if (product!['discount'] is Map && (product!['discount'] as Map).isNotEmpty)
-                SliverToBoxAdapter(
-                  child: DiscountTimerBanner(discount: product!['discount'], isBadge: false),
-                ),
-
-              // 5. ATTRIBUTES
+              // 6. ATTRIBUTES
               if (product!['attributes'] != null)
                 ExpandableSection(
                   title: "Product Specifications",
@@ -303,7 +340,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
               SliverToBoxAdapter(child: Divider(thickness: 1, color: dividerColor)),
 
-              // 6. DESCRIPTION
+              // 7. DESCRIPTION
               ExpandableSection(
                 title: "Description",
                 leadingIcon: Icons.notes_outlined,
@@ -312,7 +349,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   style: {
                     "body": Style(
                       fontSize: FontSize(14.0),
-                      // ✅ Dynamic Text Color
                       color: isDark ? Colors.white70 : Colors.black87,
                       lineHeight: LineHeight(1.5),
                     ),
@@ -322,10 +358,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-              // 7. RELATED PRODUCTS
+              // 8. RELATED PRODUCTS
               SliverToBoxAdapter(
                 child: Container(
-                  // ✅ Dynamic Background for "You might like"
                   color: isDark ? const Color(0xFF101015) : const Color(0xFFF9F9F9),
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Column(
@@ -338,7 +373,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: textColor, // Dynamic Text
+                            color: textColor,
                           ),
                         ),
                       ),
@@ -386,7 +421,8 @@ class BottomCartAction extends StatelessWidget {
     double total = unitPrice * quantity;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      // ✅ Reduced padding to slim the overall bar height
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: bgColor,
         boxShadow: [
@@ -398,9 +434,12 @@ class BottomCartAction extends StatelessWidget {
         ],
       ),
       child: SafeArea(
+        bottom: false,
         child: Row(
           children: [
+            // ✅ SLIM QUANTITY BOX
             Container(
+              height: 44, // Enforced slimmer height
               decoration: BoxDecoration(
                 color: qtyBoxColor,
                 border: Border.all(color: borderColor),
@@ -410,44 +449,49 @@ class BottomCartAction extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => quantity > 1 ? onQtyChanged(quantity - 1) : null,
-                    icon: Icon(Icons.remove, size: 20, color: iconColor),
+                    icon: Icon(Icons.remove, size: 18, color: iconColor),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36), // Reduced
                   ),
-                  Text("$quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+                  Text("$quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   IconButton(
                     onPressed: () => onQtyChanged(quantity + 1),
-                    icon: Icon(Icons.add, size: 20, color: iconColor),
+                    icon: Icon(Icons.add, size: 18, color: iconColor),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36), // Reduced
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
+
+            // ✅ SLIM ADD TO CART BUTTON
             Expanded(
               child: Consumer<CartProvider>(
                 builder: (context, cart, child) {
-                  return ElevatedButton(
-                    onPressed: cart.isLoading ? null : onAddToCart,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: cart.isLoading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.shopping_cart_outlined, size: 20, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Add \$${total.toStringAsFixed(2)}",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
+                  return SizedBox(
+                    height: 44, // Explicitly match the quantity box height
+                    child: ElevatedButton(
+                      onPressed: cart.isLoading ? null : onAddToCart,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        padding: EdgeInsets.zero, // Padding removed since SizedBox controls height
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: cart.isLoading
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_cart_outlined, size: 18, color: Colors.white), // Slightly smaller icon
+                          SizedBox(width: 8),
+                          Text(
+                            "Add To Cart",
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

@@ -58,6 +58,7 @@ class CartItem {
 class CartProvider with ChangeNotifier {
   List<CartItem> _cartItems = [];
   bool _isLoading = false;
+  bool _isSyncing = false;
 
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
@@ -96,7 +97,26 @@ class CartProvider with ChangeNotifier {
 
     try {
       List<dynamic> serverData = await ApiService.fetchCart(_authToken!, 'en');
-      _cartItems = serverData.map((item) => CartItem.fromJson(item)).toList();
+      Map<int, CartItem> groupedItems = {};
+
+      for (var itemData in serverData) {
+        CartItem parsedItem = CartItem.fromJson(itemData);
+
+        if (groupedItems.containsKey(parsedItem.id)) {
+          // 🚨 BACKEND DUPLICATE DETECTED! Self-Healing Protocol:
+          int combinedQty = groupedItems[parsedItem.id]!.quantity + parsedItem.quantity;
+          groupedItems[parsedItem.id]!.quantity = combinedQty;
+
+          // Silently clean up the backend: Delete all rows for this product, then insert ONE clean row
+          await ApiService.removeFromCart(parsedItem.id, _authToken!);
+          await ApiService.addToCart(parsedItem.id, combinedQty, _authToken!, 'en');
+        } else {
+          groupedItems[parsedItem.id] = parsedItem;
+        }
+      }
+
+      _cartItems = groupedItems.values.toList();
+
     } catch (e) {
       print("Error fetching server cart: $e");
     } finally {
@@ -120,18 +140,28 @@ class CartProvider with ChangeNotifier {
 
     final tr = AppLocalizations.of(context)!;
 
-    if (quantity > stock) {
+    // ✅ FIX: PREVENT DUPLICATES!
+    // If the item is already in the cart, just update the quantity instead of adding a new row!
+    int existingIndex = _cartItems.indexWhere((item) => item.id == productId);
+    if (existingIndex >= 0) {
+      int newQty = _cartItems[existingIndex].quantity + quantity;
+      await updateQuantity(productId, newQty);
+
       _isLoading = false;
       notifyListeners();
 
       NotificationService.show(
         context: context,
-        title: "Unavailable",
-        message: tr.stockLimitWarning(sku),
+        title: tr.itemAddedTitle,
+        message: "Quantity updated in your cart.",
+        sku: sku,
         image: image,
-        isError: true,
+        isError: false,
+        onActionPressed: () {
+          Navigator.pushNamed(context, cartScreenRoute);
+        },
       );
-      return;
+      return; // Stop here so we don't duplicate
     }
 
     bool success = false;
@@ -153,7 +183,7 @@ class CartProvider with ChangeNotifier {
       NotificationService.show(
         context: context,
         title: tr.itemAddedTitle,
-        message: "$title has been added.",
+        message: "has been added to your cart.",
         sku: sku,
         image: image,
         isError: false,
@@ -174,17 +204,26 @@ class CartProvider with ChangeNotifier {
     int index = _cartItems.indexWhere((item) => item.id == productId);
     if (index == -1) return;
 
+    int oldQuantity = _cartItems[index].quantity; // Save in case of failure
+
     if (isLoggedIn) {
+      // Optimistic update (feels instantly fast to the user)
       _cartItems[index].quantity = quantity;
       notifyListeners();
 
+      // ✅ FIX: Send productId as expected by Laravel
       double? newUnitPrice = await ApiService.updateCartQuantity(productId, quantity, _authToken!);
 
-      if (newUnitPrice != null && newUnitPrice >= 0) {
-        _cartItems[index].price = newUnitPrice;
+      if (newUnitPrice != null) { // Success!
+        if (newUnitPrice > 0) {
+          // Update price if the server returned a new bulk discount price
+          _cartItems[index].price = newUnitPrice;
+        }
         notifyListeners();
       } else {
-        await fetchServerCart();
+        // API Failed (Returned null). Revert back to the old quantity so the user isn't tricked.
+        _cartItems[index].quantity = oldQuantity;
+        notifyListeners();
       }
     } else {
       _cartItems[index].quantity = quantity;
@@ -203,6 +242,7 @@ class CartProvider with ChangeNotifier {
     final tr = AppLocalizations.of(context)!;
 
     if (isLoggedIn) {
+      // ✅ FIX: Send productId
       bool success = await ApiService.removeFromCart(productId, _authToken!);
       if (success) {
         _cartItems.removeWhere((item) => item.id == productId);
@@ -238,7 +278,9 @@ class CartProvider with ChangeNotifier {
   }
 
   Future<void> mergeLocalCartToAccount(String token) async {
-    if (_cartItems.isEmpty) return;
+    if (_cartItems.isEmpty || _isSyncing) return;
+
+    _isSyncing = true;
 
     List<Map<String, dynamic>> apiFormat = _cartItems.map((e) {
       return {'product_id': e.id, 'quantity': e.quantity};
@@ -251,6 +293,8 @@ class CartProvider with ChangeNotifier {
       await prefs.remove('guest_cart');
       _cartItems.clear();
     }
+
+    _isSyncing = false;
   }
 
   Future<void> _addToLocalCart(int id, String title, String sku, String image, double price, int qty, int stock) async {
@@ -288,7 +332,6 @@ class CartProvider with ChangeNotifier {
     await prefs.setString('guest_cart', encoded);
   }
 
-  // ✅ NEW METHOD: Clears the cart locally (UI only) without calling server
   void clearLocalCart() {
     _cartItems = [];
     _authToken = null;

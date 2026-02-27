@@ -202,6 +202,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // ✅ APPLE LOGIN
   Future<bool> signInWithApple(AuthorizationCredentialAppleID appleCredential) async {
     _setLoading(true);
     try {
@@ -219,9 +220,11 @@ class AuthProvider with ChangeNotifier {
       final user = userCredential.user;
 
       if (user != null) {
-        // 3. Construct Name
+        // 3. Construct Name (Apple only returns names on first login, so we handle defaults)
         String displayName = user.displayName ?? "Apple User";
-        if (displayName == "Apple User" && appleCredential.givenName != null) {
+
+        // If Firebase didn't catch the name, try to use the one from the credential
+        if ((displayName == "Apple User" || displayName.isEmpty) && appleCredential.givenName != null) {
           displayName = "${appleCredential.givenName} ${appleCredential.familyName ?? ''}";
         }
 
@@ -260,7 +263,7 @@ class AuthProvider with ChangeNotifier {
     // 2. Social Logout (Safely ignore errors)
     try { await _googleSignIn.signOut(); } catch (_) {}
     try { await FacebookAuth.instance.logOut(); } catch (_) {}
-    try { await FirebaseAuth.instance.signOut(); } catch (_) {} // ✅ Sign out of Firebase too
+    try { await FirebaseAuth.instance.signOut(); } catch (_) {}
   }
 
   Future<void> fetchUserProfile() async {

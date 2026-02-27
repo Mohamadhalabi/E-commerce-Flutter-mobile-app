@@ -37,20 +37,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  // ✅ UPDATED: Now matches LoginScreen navigation exactly
   void _onBottomNavTap(int index) {
-    if (index == 4) return;
-    if (index == 0) {
-      Navigator.popUntil(context, (route) => route.isFirst);
+    if (index == 3) {
+      Navigator.pushNamed(context, cartScreenRoute);
     } else {
-      String? routeName;
-      switch (index) {
-        case 1: routeName = searchScreenRoute; break;
-        case 2: routeName = discoverScreenRoute; break;
-        case 3: routeName = cartScreenRoute; break;
-      }
-      if (routeName != null) {
-        Navigator.pushNamed(context, routeName);
-      }
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+            (route) => false,
+        arguments: index,
+      );
     }
   }
 
@@ -153,7 +150,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
   }
 
-  // ✅ ADDED: Apple Login Logic
   Future<void> _handleAppleLogin() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -166,18 +162,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // TODO: You need to implement 'signInWithApple' in your AuthProvider
-      // bool success = await authProvider.signInWithApple(credential);
+      // Call the provider method
+      bool success = await authProvider.signInWithApple(credential);
 
-      print("Apple Login Credential: $credential");
-
-      // Uncomment this when you add the method to your provider:
-      // if (!mounted) return;
-      // _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
+      if (!mounted) return;
+      _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
 
     } catch (e) {
       print("Apple Sign In Error: $e");
-      _showCustomNotification(context, "Apple Sign In Cancelled or Failed", false);
+      if (e.toString().contains('Canceled')) return;
+      _showCustomNotification(context, "Apple Sign In Failed", false);
     }
   }
 
@@ -349,7 +343,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ✅ UPDATED SOCIAL BUTTONS ROW
+                // Social Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -365,7 +359,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     const SizedBox(width: 20),
 
-                    // ✅ Apple Button (Added Here)
                     InkWell(
                       onTap: isLoading ? null : _handleAppleLogin,
                       borderRadius: BorderRadius.circular(50),

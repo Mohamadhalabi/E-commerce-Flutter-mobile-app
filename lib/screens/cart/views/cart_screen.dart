@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ Added for input formatters
 import 'package:provider/provider.dart';
 import 'package:shop/providers/auth_provider.dart';
 import 'package:shop/providers/cart_provider.dart';
@@ -214,7 +215,7 @@ class _CartScreenState extends State<CartScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// SUB-COMPONENTS (Kept same logic, slightly cleaned up for visual consistency)
+// SUB-COMPONENTS
 // ---------------------------------------------------------------------------
 
 class _CartItemTile extends StatelessWidget {
@@ -345,6 +346,8 @@ class _CartItemTile extends StatelessWidget {
                         qty: item.quantity,
                         onAdd: () => cart.updateQuantity(item.id, item.quantity + 1),
                         onRemove: () => cart.updateQuantity(item.id, item.quantity - 1),
+                        // ✅ Added manual update trigger
+                        onUpdate: (newQty) => cart.updateQuantity(item.id, newQty),
                       ),
                       Text("\$${rowTotal.toStringAsFixed(2)}", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
                     ],
@@ -359,11 +362,75 @@ class _CartItemTile extends StatelessWidget {
   }
 }
 
-class _QuantityCounter extends StatelessWidget {
+// ✅ CHANGED: Upgraded from StatelessWidget to StatefulWidget to handle typing
+class _QuantityCounter extends StatefulWidget {
   final int qty;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
-  const _QuantityCounter({required this.qty, required this.onAdd, required this.onRemove});
+  final Function(int) onUpdate; // ✅ Custom input callback
+
+  const _QuantityCounter({
+    required this.qty,
+    required this.onAdd,
+    required this.onRemove,
+    required this.onUpdate,
+  });
+
+  @override
+  State<_QuantityCounter> createState() => _QuantityCounterState();
+}
+
+class _QuantityCounterState extends State<_QuantityCounter> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.qty.toString());
+    _focusNode = FocusNode();
+
+    // Listen for when the user clicks out of the text field
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        _submit();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _QuantityCounter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If quantity changes from the outside (like server sync or +/- buttons), update the field
+    if (oldWidget.qty != widget.qty) {
+      if (!_focusNode.hasFocus) { // Don't interrupt them if they are currently typing
+        _controller.text = widget.qty.toString();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final text = _controller.text;
+    final newQty = int.tryParse(text);
+
+    // If valid number and greater than 0, push the update
+    if (newQty != null && newQty > 0) {
+      if (newQty != widget.qty) {
+        widget.onUpdate(newQty);
+      }
+    } else {
+      // Revert to original quantity if input is invalid (e.g., empty or 0)
+      _controller.text = widget.qty.toString();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -378,15 +445,28 @@ class _QuantityCounter extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-              onTap: onRemove,
+              onTap: widget.onRemove,
               child: Padding(padding: const EdgeInsets.all(6.0), child: Icon(Icons.remove, size: 16, color: iconColor))
           ),
           SizedBox(
-            width: 24,
-            child: Text("$qty", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textColor)),
+            width: 36, // Slightly wider to give typing room
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Prevents decimals/letters
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textColor),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onSubmitted: (_) => _submit(), // Triggered when they press "Enter/Done" on keyboard
+            ),
           ),
           InkWell(
-              onTap: onAdd,
+              onTap: widget.onAdd,
               child: Padding(padding: const EdgeInsets.all(6.0), child: Icon(Icons.add, size: 16, color: iconColor))
           ),
         ],

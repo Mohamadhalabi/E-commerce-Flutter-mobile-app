@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
   }
 
-  // ✅ ADDED: Apple Login Logic
+  // ✅ FIXED: Apple Login Implementation
   Future<void> _handleAppleLogin() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -155,20 +155,17 @@ class _LoginScreenState extends State<LoginScreen> {
       // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // TODO: You need to implement 'signInWithApple' in your AuthProvider
-      // Pass credential.identityToken and credential.authorizationCode to your backend
-      // bool success = await authProvider.signInWithApple(credential);
+      // Call the provider method
+      bool success = await authProvider.signInWithApple(credential);
 
-      // For now, we simulate success just to print the credential
-      print("Apple Login Credential: $credential");
-
-      // Uncomment this when you add the method to your provider:
-      // if (!mounted) return;
-      // _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
+      if (!mounted) return;
+      _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
 
     } catch (e) {
       print("Apple Sign In Error: $e");
-      _showCustomNotification(context, "Apple Sign In Cancelled or Failed", false);
+      // Don't show error notification for simple cancellations
+      if (e.toString().contains('Canceled')) return;
+      _showCustomNotification(context, "Apple Sign In Failed", false);
     }
   }
 
@@ -319,13 +316,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(width: 20), // Spacing between buttons
 
-                    // ✅ Apple Button (Added Here)
+                    // ✅ Apple Button
                     InkWell(
                       onTap: isLoading ? null : _handleAppleLogin,
                       borderRadius: BorderRadius.circular(50),
                       child: CircleAvatar(
                         radius: 26,
-                        // Apple requires high contrast: White on Dark Mode, Black on Light Mode
+                        // Apple requires high contrast
                         backgroundColor: isDark ? Colors.white : Colors.black,
                         child: Icon(
                             Icons.apple,

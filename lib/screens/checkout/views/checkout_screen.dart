@@ -88,7 +88,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (_selectedShippingKey != null) params['shipping_method'] = _selectedShippingKey;
     if (_couponCtrl.text.isNotEmpty) params['coupon'] = _couponCtrl.text;
 
-    // ✅ FIX: Always send the promo value, specifically when it is 'none'
     params['promo'] = _selectedPromo;
 
     try {
@@ -111,8 +110,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _shipmentValueCtrl.text = newQuote.summary.subTotal.toString();
           }
 
-          // ✅ SYNC PROMO FROM SERVER
-          // Now that we sent 'none', the server should return 'none', and this will stay correct.
           if (newQuote.promotions != null) {
             _selectedPromo = newQuote.promotions!.selected;
           }
@@ -149,14 +146,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _fetchQuote();
   }
 
-  // ✅ HANDLE PROMO SELECTION
   void _onPromoSelected(String? value) {
     if (value != null && value != _selectedPromo) {
       setState(() => _selectedPromo = value);
-      _fetchQuote(); // Refresh to apply logic
+      _fetchQuote();
     }
   }
 
+  // ✅ FIX 1: Make Save Address automatically select the newly created address
   Future<void> _saveAddress() async {
     if (!_addressFormKey.currentState!.validate()) return;
     _addressFormKey.currentState!.save();
@@ -171,8 +168,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       setState(() {
         _showAddressForm = false;
         _addressFormData.clear();
+        _selectedAddressId = null; // Clear so we can grab the fresh ones
       });
+
+      // 1. Fetch the newly updated list of addresses from the server
       await _fetchQuote();
+
+      // 2. Find the newest address (highest ID) and select it
+      if (_quote?.addresses != null && _quote!.addresses.isNotEmpty) {
+        final newestId = _quote!.addresses.map((a) => a.id).reduce((a, b) => a > b ? a : b);
+
+        if (_selectedAddressId != newestId) {
+          setState(() {
+            _selectedAddressId = newestId;
+            _selectedShippingKey = null; // Reset shipping so it recalculates for this new address
+          });
+          // 3. Fetch quote one more time to calculate shipping rates for the new selected address
+          await _fetchQuote();
+        }
+      }
     } else {
       setState(() => _isLoading = false);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to save address")));
@@ -180,7 +194,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _createOrder() async {
-    // 1. Validation
     if (_quote?.checkoutBlock?.isBlocked == true) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_quote?.checkoutBlock?.message ?? "Checkout Blocked")));
       return;
@@ -190,7 +203,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // 2. Token Check
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
 
@@ -202,12 +214,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() => _isCreatingOrder = true);
     final locale = Localizations.localeOf(context).languageCode;
 
-    // 3. Map Payment Method
     String apiPaymentMethod = 'ccavenue';
     if (_paymentMethod == 'paypal') apiPaymentMethod = 'paypal';
     if (_paymentMethod == 'transfer') apiPaymentMethod = 'transfer_online';
 
-    // 4. Prepare Body
     final body = {
       'address': _selectedAddressId,
       'shipping_method': _selectedShippingKey,
@@ -219,7 +229,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'shipment_value': _shipmentValueCtrl.text,
     };
 
-    // 5. Call API
     final result = await ApiService.createOrder(body, locale, token);
 
     if (mounted) setState(() => _isCreatingOrder = false);
@@ -228,26 +237,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final data = result['data'];
       final innerData = (data['data'] != null && data['data'] is Map) ? data['data'] : data;
 
-      // -----------------------------------------------------------
-      // ✅ SMART REDIRECT LOGIC
-      // -----------------------------------------------------------
-      // Check if the server sent ANY payment link.
-      // Your backend seems to put all links (PayPal or Card) into 'paypal_url'.
       String? redirectUrl = innerData['paypal_url'];
-
-      // Fallback checks just in case backend changes
       if (redirectUrl == null) redirectUrl = innerData['card_url'];
       if (redirectUrl == null) redirectUrl = innerData['url'];
       if (redirectUrl == null) redirectUrl = innerData['payment_link'];
 
-      // 🚀 IF URL EXISTS, LAUNCH IT (For PayPal & Cards)
       if (redirectUrl != null && redirectUrl.toString().isNotEmpty && redirectUrl != "null") {
-        print("🚀 Redirecting to Payment: $redirectUrl");
         _launchUrl(redirectUrl);
-        return; // Stop here, do not show the modal
+        return;
       }
 
-      // 🛑 IF NO URL, SHOW SUCCESS MODAL (For Bank Transfer / COD)
       final orderInfo = innerData['order'];
       final orderId = orderInfo != null ? orderInfo['order_id']?.toString() : "Confirmed";
       _showSuccessDialog(orderId ?? "Confirmed");
@@ -266,7 +265,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // Helper Method: Handle Expired Session
   void _handleSessionExpired() {
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -276,38 +274,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         )
     );
 
-    // 1. Clear Token in Provider
     Provider.of<AuthProvider>(context, listen: false).logout();
 
-    // 2. Redirect to Login Screen (after short delay for UX)
     Future.delayed(const Duration(seconds: 1), () {
-      // Replace '/login' with your actual Login route name (e.g. signInScreenRoute)
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     });
   }
-  Future<void> _launchUrl(String urlString) async {
-    // 1. Sanitize the URL (Trim whitespace)
-    String cleanUrl = urlString.trim();
 
-    // 2. Ensure it starts with http:// or https://
+  Future<void> _launchUrl(String urlString) async {
+    String cleanUrl = urlString.trim();
     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
       cleanUrl = 'https://$cleanUrl';
     }
 
     final Uri url = Uri.parse(cleanUrl);
 
-    print("🚀 Attempting to launch: $url"); // Debug print
-
     try {
-      // 3. Try "externalApplication" mode first (Best for Payment Links)
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
-        // Fallback: Try platform default if external fails
         await launchUrl(url, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
-      print("❌ Launch Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Could not open payment link: $cleanUrl"))
@@ -355,8 +343,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     elevation: 0
                 ),
                 onPressed: () {
-                  Navigator.of(ctx).pop(); // Close Dialog
-                  // Reset to Home Screen
+                  Navigator.of(ctx).pop();
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 child: const Text("Continue Shopping", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -367,7 +354,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -401,14 +387,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           : _errorMessage != null
           ? _buildErrorState(textColor)
           : RefreshIndicator(
-        // ✅ REFRESH LOGIC
         onRefresh: () async {
           await _fetchQuote();
         },
         color: _navyBlue,
         backgroundColor: isDark ? const Color(0xFF2A2A35) : Colors.white,
         child: SingleChildScrollView(
-          // ✅ IMPORTANT: Allows refresh even if content is short
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
@@ -424,11 +408,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
               _buildPromotionsSection(isDark, textColor, dividerColor),
               const SizedBox(height: 24),
-
-              // _buildSectionTitle("Promo Code", textColor),
-              // const SizedBox(height: 12),
-              // _buildCouponSection(isDark, tr),
-              // const SizedBox(height: 24),
 
               _buildSectionTitle(tr?.shippingAddress ?? "Shipping Address", textColor,
                   action: TextButton(
@@ -465,10 +444,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- NEW: PROMOTIONS WIDGET ---
   Widget _buildPromotionsSection(bool isDark, Color textColor, Color borderColor) {
     final promos = _quote?.promotions;
-    // Only show if available
     if (promos == null || (!promos.eligible['free_ship']! && !promos.eligible['ten_off']!)) {
       return const SizedBox();
     }
@@ -487,7 +464,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           child: Column(
             children: [
-              // 1. FREE SHIPPING
               if (promos.eligible['free_ship'] == true)
                 RadioListTile<String>(
                   value: 'free_ship',
@@ -498,7 +474,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       const Text("Free Shipping", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(width: 8),
-                      // Show savings if selected
                       if(promos.savings['free_ship'] != null && promos.savings['free_ship']! > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -510,7 +485,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   subtitle: Text(promos.notes['free_ship'] ?? 'Free shipping on eligible items.', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 ),
 
-              // 2. 10% OFF
               if (promos.eligible['ten_off'] == true)
                 RadioListTile<String>(
                   value: 'ten_off',
@@ -532,7 +506,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   subtitle: Text(promos.notes['ten_off'] ?? '10% off for first order > \$700.', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 ),
 
-              // 3. NO PROMO
               RadioListTile<String>(
                 value: 'none',
                 groupValue: _selectedPromo,
@@ -547,8 +520,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ],
     );
   }
-
-  // --- EXISTING HELPERS (Unchanged) ---
 
   Widget _buildErrorState(Color textColor) {
     return Center(
@@ -752,7 +723,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
               const Divider(),
-              _buildModernInput("Country ID (Select)", isDark, isDropdown: true),
+              _buildModernInput("Country (Select)", isDark, isDropdown: true),
               const SizedBox(height: 12),
               _buildModernInput("City", isDark, onSaved: (v) => _addressFormData['city'] = v),
               const SizedBox(height: 12),
@@ -843,10 +814,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       child: isDropdown
           ? DropdownButtonFormField<int>(
+        isExpanded: true,
         decoration: const InputDecoration(border: InputBorder.none),
         dropdownColor: isDark ? const Color(0xFF2A2A35) : Colors.white,
         hint: Text(hint, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
-        items: _countries.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, style: TextStyle(color: isDark ? Colors.white : Colors.black)))).toList(),
+        items: _countries.map((c) => DropdownMenuItem(
+            value: c.id,
+            child: Text(
+              c.name,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              overflow: TextOverflow.ellipsis,
+            )
+        )).toList(),
         onChanged: (val) => _addressFormData['country_id'] = val,
       )
           : TextFormField(
@@ -1011,35 +990,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           if (s.promoDiscount > 0) _summaryRow("Promo", -s.promoDiscount, Colors.green),
           _summaryRow(tr?.shipping ?? "Shipping", s.shipping, textColor),
 
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: MySeparator(), // Custom Dashed Divider
-          ),
-
-          // Terms Checkbox inside summary
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 24, width: 24,
-                child: Checkbox(
-                    value: _acceptTerms,
-                    activeColor: _navyBlue,
-                    onChanged: (v) => setState(() => _acceptTerms = v!)
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    tr?.iAgreeToTerms ?? "I agree to Terms & Conditions and Privacy Policy.",
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey[700]),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // Removed the check box from here!
         ],
       ),
     );
@@ -1058,12 +1009,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // ✅ STICKY FOOTER WIDGET
+  // ✅ FIX 2: MOVED TERMS CHECKBOX TO STICKY FOOTER
   Widget _buildStickyFooter(bool isDark, Color textColor, AppLocalizations? tr) {
     final s = _quote?.summary;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1C1C23) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -1089,6 +1040,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+
+            // ✅ MOVED TERMS & CONDITIONS HERE
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 24, width: 24,
+                  child: Checkbox(
+                      value: _acceptTerms,
+                      activeColor: _navyBlue,
+                      onChanged: (v) => setState(() => _acceptTerms = v!)
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      tr?.iAgreeToTerms ?? "I agree to Terms & Conditions and Privacy Policy.",
+                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey[700]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -1120,7 +1098,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-// ... CheckoutPageSkeleton and MySeparator widgets remain the same
 // ==========================================
 // 💀 SKELETON LOADER CLASS
 // ==========================================

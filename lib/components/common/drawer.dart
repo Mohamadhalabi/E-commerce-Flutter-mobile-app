@@ -182,6 +182,8 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                     }).toList())],
                   ),
 
+                  // 🛑 Disabled Language and Currency sections below
+                  /*
                   _buildDivider(isDark),
 
                   _buildMenuSection(
@@ -209,6 +211,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
                       _buildSimpleOption(isDark, localizations.turkishLira),
                     ],
                   ),
+                  */
                 ],
               ),
             ),
@@ -379,6 +382,7 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
     );
   }
 
+  // NOTE: Keeping the builder functions in the code so they don't break when you uncomment the sections later.
   Widget _buildLanguageOption(BuildContext context, bool isDark,
       {required String flagAsset, required String label, required String localeCode}) {
     return ListTile(
