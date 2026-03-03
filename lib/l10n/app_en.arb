@@ -246,5 +246,6 @@
  "shipmentValue": "Declared Shipment Value ($)",
  "saveAddress": "Save Address",
  "required": "Required",
- "deleteAccount": "Delete Account"
+ "deleteAccount": "Delete Account",
+ "forgotPassword" : "Forgot Password"
 }

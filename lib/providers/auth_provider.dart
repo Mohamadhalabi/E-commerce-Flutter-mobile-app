@@ -307,4 +307,16 @@ class AuthProvider with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> resetPassword(String email) async {
+    _setLoading(true);
+    try {
+      bool success = await ApiService.forgotPassword(email);
+      _setLoading(false);
+      return success;
+    } catch (e) {
+      _setLoading(false);
+      return false;
+    }
+  }
 }

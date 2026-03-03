@@ -574,6 +574,32 @@ class ApiService {
     }
   }
 
+  // Inside ApiService class...
+
+  // Forgot Password
+  static Future<bool> forgotPassword(String email) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/auth/forgot-password';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders('en', apiKey, secretKey),
+        body: jsonEncode({'email': email}),
+      );
+
+      final data = jsonDecode(response.body);
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (e) {
+      print("Forgot Password Error: $e");
+      return false;
+    }
+  }
+
 // In lib/services/api_service.dart
 
 // API to fetch logged-in user profile

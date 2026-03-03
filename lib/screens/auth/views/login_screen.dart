@@ -119,6 +119,85 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // ✅ NEW: Forgot Password Dialog Logic
+  void _showForgotPasswordDialog() {
+    final tr = AppLocalizations.of(context)!;
+    final emailController = TextEditingController();
+
+    // Pre-fill if user already typed in login box
+    if (_emailController.text.isNotEmpty) {
+      emailController.text = _emailController.text;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color dialogBg = isDark ? const Color(0xFF2A2A35) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dialogBg,
+        // Make sure you add "forgotPassword" to your arb file, or use a hardcoded string fallback
+        title: Text(tr.forgotPassword ?? "Forgot Password", style: TextStyle(color: textColor)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Enter your email address and we will send you a link to reset your password.",
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: TextStyle(color: textColor),
+              decoration: InputDecoration(
+                labelText: tr.email,
+                labelStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey)
+                ),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: primaryColor)
+                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr.cancel, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (emailController.text.isEmpty) return;
+              Navigator.pop(ctx); // Close dialog
+
+              final auth = Provider.of<AuthProvider>(context, listen: false);
+
+              // Call the reset password API
+              bool success = await auth.resetPassword(emailController.text.trim());
+
+              if (!mounted) return;
+
+              if (success) {
+                _showCustomNotification(context, "Reset link sent to your email", true);
+              } else {
+                _showCustomNotification(context, "Failed to send reset link. Please check your email.", false);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+            child: const Text("Send", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
@@ -142,7 +221,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
   }
 
-  // ✅ FIXED: Apple Login Implementation
   Future<void> _handleAppleLogin() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -155,7 +233,6 @@ class _LoginScreenState extends State<LoginScreen> {
       // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // Call the provider method
       bool success = await authProvider.signInWithApple(credential);
 
       if (!mounted) return;
@@ -163,7 +240,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     } catch (e) {
       print("Apple Sign In Error: $e");
-      // Don't show error notification for simple cancellations
       if (e.toString().contains('Canceled')) return;
       _showCustomNotification(context, "Apple Sign In Failed", false);
     }
@@ -271,7 +347,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
-                const SizedBox(height: 40),
+
+                // ✅ ADDED: Forgot Password Button
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _showForgotPasswordDialog,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(50, 30),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      tr.forgotPassword ?? "Forgot Password?",
+                      style: TextStyle(color: subTextColor, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -299,7 +395,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ✅ UPDATED SOCIAL BUTTONS ROW
+                // Social Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -316,13 +412,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(width: 20), // Spacing between buttons
 
-                    // ✅ Apple Button
+                    // Apple Button
                     InkWell(
                       onTap: isLoading ? null : _handleAppleLogin,
                       borderRadius: BorderRadius.circular(50),
                       child: CircleAvatar(
                         radius: 26,
-                        // Apple requires high contrast
                         backgroundColor: isDark ? Colors.white : Colors.black,
                         child: Icon(
                             Icons.apple,
