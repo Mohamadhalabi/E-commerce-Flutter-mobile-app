@@ -476,7 +476,6 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
                     return const ProductCardSkeleton();
                   }
                   final product = products[index];
-                  // [UPDATED PRODUCT CARD CALL]
                   return ProductCard(
                     product: product,
                     press: () {

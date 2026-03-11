@@ -1,9 +1,9 @@
 name: shop
-description: Techno Lock Keys Trading mobile app.
+description: Techno Lock Keys mobile app.
 
 publish_to: "none"
 
-version: 1.0.0+16
+version: 1.0.3+21
 
 environment:
   sdk: ">=3.2.0 <4.0.0"

@@ -6,8 +6,6 @@ import 'package:shop/models/product_model.dart';
 import 'package:shop/services/local_storage_service.dart';
 import 'package:shop/services/api_service.dart';
 import 'package:shop/route/route_constants.dart';
-
-// Ensure this import points to your Skeleton file
 import '../../../components/skleton/skeleton.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -33,7 +31,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void initState() {
     super.initState();
     _loadLocalData();
-    // Auto-focus the search field when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
     });
@@ -129,84 +126,85 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Custom Header Colors
     final Color inputBg = isDark ? const Color(0xFF2A2A35) : const Color(0xFFF5F5F5);
     final Color inputBorder = isDark ? Colors.white12 : Colors.transparent;
     final Color hintColor = isDark ? Colors.white38 : Colors.grey[500]!;
 
     bool isTyping = _searchCtrl.text.isNotEmpty;
 
-    // ✅ FIXED: Using Scaffold again to provide 'Material' context, but with NO AppBar.
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // --- Custom Search Header ---
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                height: 50,
-                child: TextField(
-                  controller: _searchCtrl,
-                  focusNode: _searchFocus,
-                  textInputAction: TextInputAction.search,
-                  onChanged: _onSearchChanged,
-                  onSubmitted: _onSubmitSearch,
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    hintText: "Search products (min 3 chars)...",
-                    hintStyle: TextStyle(color: hintColor, fontSize: 14),
-                    filled: true,
-                    fillColor: inputBg,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    prefixIcon: Icon(Icons.search, color: hintColor),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(
-                      icon: Icon(Icons.close, size: 20, color: hintColor),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        _onSearchChanged("");
-                      },
-                    )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: inputBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFF37A20), width: 1.5),
+    return GestureDetector(
+      // ✅ FIX 1: Dismisses keyboard when tapping anywhere on the screen
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  height: 50,
+                  child: TextField(
+                    controller: _searchCtrl,
+                    focusNode: _searchFocus,
+                    textInputAction: TextInputAction.search,
+                    onChanged: _onSearchChanged,
+                    onSubmitted: _onSubmitSearch,
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    decoration: InputDecoration(
+                      hintText: "Search products (min 3 chars)...",
+                      hintStyle: TextStyle(color: hintColor, fontSize: 14),
+                      filled: true,
+                      fillColor: inputBg,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      prefixIcon: Icon(Icons.search, color: hintColor),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                        icon: Icon(Icons.close, size: 20, color: hintColor),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          _onSearchChanged("");
+                        },
+                      )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFF37A20), width: 1.5),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // --- Body Content ---
-            Expanded(
-              child: isTyping
-                  ? _buildSearchResults(isDark)
-                  : _buildHistoryAndRecents(isDark),
-            ),
-          ],
+              Expanded(
+                child: isTyping
+                    ? _buildSearchResults(isDark)
+                    : _buildHistoryAndRecents(isDark),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSearchResults(bool isDark) {
+    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
     final Color textColor = isDark ? Colors.white : Colors.black;
     final Color skuColor = isDark ? Colors.greenAccent : Colors.green;
-    final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFEEEEEE);
     final Color imgBg = isDark ? Colors.white : Colors.white;
 
     if (_isSearching) {
       return ListView.separated(
+        // ✅ FIX 2: Dismisses keyboard when scrolling skeletons
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(16),
         itemCount: 6,
         separatorBuilder: (_, __) => Divider(height: 1, color: dividerColor),
@@ -227,13 +225,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       );
     }
 
-    final int displayCount = _suggestions.length > 5 ? 5 : _suggestions.length;
-    final bool showMore = _suggestions.length > 5;
-
     return ListView(
+      // ✅ FIX 3: Dismisses keyboard when scrolling results
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
-        ...List.generate(displayCount, (index) {
+        ...List.generate(_suggestions.length > 5 ? 5 : _suggestions.length, (index) {
           final product = _suggestions[index];
           final bool hasSale = product.salePrice != null && product.salePrice! > 0;
           final double displayPrice = hasSale ? product.salePrice! : product.price;
@@ -243,8 +240,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 leading: Container(
-                  width: 60,
-                  height: 60,
+                  width: 60, height: 60,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     color: imgBg,
@@ -271,23 +267,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (product.sku.isNotEmpty)
-                        Text(
-                          "SKU: ${product.sku}",
-                          style: TextStyle(
-                              color: skuColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold
-                          ),
-                        ),
+                        Text("SKU: ${product.sku}", style: TextStyle(color: skuColor, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(
-                        "\$${displayPrice.toStringAsFixed(2)}",
-                        style: const TextStyle(
-                          color: Color(0xFFFF3B30),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
+                      Text("\$${displayPrice.toStringAsFixed(2)}", style: const TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                 ),
@@ -299,26 +281,21 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ],
           );
         }),
-
-        if (showMore)
+        if (_suggestions.length > 5)
           Padding(
             padding: const EdgeInsets.only(top: 16, bottom: 20),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(
-                      context,
-                      "sub_category_products_screen",
-                      arguments: {
-                        'searchQuery': _searchCtrl.text,
-                        'title': _searchCtrl.text,
-                        'currentIndex': 0,
-                        'user': null,
-                        'onTabChanged': (int i) {},
-                        'onLocaleChange': (String s) {},
-                      }
-                  );
+                  Navigator.pushNamed(context, "sub_category_products_screen", arguments: {
+                    'searchQuery': _searchCtrl.text,
+                    'title': _searchCtrl.text,
+                    'currentIndex': 0,
+                    'user': null,
+                    'onTabChanged': (int i) {},
+                    'onLocaleChange': (String s) {},
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isDark ? const Color(0xFF2A2A35) : Colors.white,
@@ -328,10 +305,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: Text(
-                  "Show all results for \"${_searchCtrl.text}\"",
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
+                child: Text("Show all results for \"${_searchCtrl.text}\"", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -346,6 +320,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final Color dividerColor = isDark ? Colors.white12 : const Color(0xFFF9F9F9);
 
     return SingleChildScrollView(
+      // ✅ FIX 4: Dismisses keyboard when scrolling history/recents
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -436,10 +412,7 @@ class SearchResultSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: const Skeleton(width: 60, height: 60),
-          ),
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: const Skeleton(width: 60, height: 60)),
           const SizedBox(width: 12),
           const Expanded(
             child: Column(

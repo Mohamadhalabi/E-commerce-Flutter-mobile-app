@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/components/common/CustomBottomNavigationBar.dart';
 import 'package:shop/components/common/drawer.dart';
-import 'app_bar.dart'; // Ensure this points to your CustomAppBar file
+import 'app_bar.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -16,6 +16,10 @@ class MainScaffold extends StatelessWidget {
   final GlobalKey? cartTabKey;
   final GlobalKey? profileTabKey;
 
+  // ✅ 1. Define the new parameters
+  final bool canGoBack;
+  final VoidCallback? onBack;
+
   const MainScaffold({
     super.key,
     required this.child,
@@ -28,20 +32,22 @@ class MainScaffold extends StatelessWidget {
     this.shopTabKey,
     this.cartTabKey,
     this.profileTabKey,
+    // ✅ 2. Add them to the constructor
+    this.canGoBack = false,
+    this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ HIDE AppBar for Search (1) and Shop (2)
-    // We hide it on Search (1) because DiscoverScreen has its own search bar.
     bool showAppBar = currentIndex != 1 && currentIndex != 2 && currentIndex != 3;
 
     return Scaffold(
       appBar: showAppBar
           ? CustomAppBar(
         menuKey: appBarMenuKey,
-        // ✅ PASS THE SWITCH LOGIC HERE
-        // When user clicks search in AppBar, switch to Tab 1
+        // ✅ 3. Pass the back logic into your CustomAppBar
+        canGoBack: canGoBack,
+        onBack: onBack,
         onSearchTap: () {
           if (onTabChanged != null) {
             onTabChanged!(1);

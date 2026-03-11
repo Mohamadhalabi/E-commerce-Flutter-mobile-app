@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shop/providers/cart_provider.dart';
 import '../../constants.dart';
 import '../../models/product_model.dart';
@@ -86,6 +87,16 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
+  Future<void> _launchWhatsApp() async {
+    // 1. & 2. Updated message to include Title + SKU, and updated phone number
+    final String message = Uri.encodeComponent("Hi, I want to ask about ${widget.product.title}\nSKU: ${widget.product.sku}");
+    final Uri waUrl = Uri.parse('https://wa.me/971504429045?text=$message');
+
+    if (!await launchUrl(waUrl, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch WhatsApp');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -97,7 +108,6 @@ class _ProductCardState extends State<ProductCard> {
     bool isDiscounted = _currentUnitPrice < _regularPrice;
 
     return Container(
-      // Margin allows shadow to be visible
       margin: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: cardBg,
@@ -187,7 +197,7 @@ class _ProductCardState extends State<ProductCard> {
 
                     const Spacer(),
 
-                    // Price Row
+                    // ALWAYS SHOW PRICE ROW
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -218,91 +228,127 @@ class _ProductCardState extends State<ProductCard> {
 
                     const SizedBox(height: 8),
 
-                    // Actions Row
-                    Row(
-                      children: [
-                        Container(
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: inputBg,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: borderColor),
+                    // CONDITIONAL ACTIONS ROW
+                    if (widget.product.hidePrice)
+                      SizedBox(
+                        height: 30, // Increased slightly from 28 so text doesn't cut off
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _launchWhatsApp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1DA851), // Accurate WhatsApp Green
+                            padding: const EdgeInsets.symmetric(horizontal: 4), // Tiny padding to fit text
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            elevation: 0,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildQtyBtn(Icons.remove, _decrementQuantity, isDark),
-                              Container(
-                                width: 28,
-                                alignment: Alignment.center,
-                                child: TextField(
-                                  controller: _qtyController,
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  onChanged: _handleManualInput,
+                              Icon(Icons.chat_bubble_outline, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  "Contact on WhatsApp",
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: textColor,
+                                      color: Colors.white,
+                                      fontSize: 10, // Scaled down to prevent overflow
+                                      fontWeight: FontWeight.w800
                                   ),
-                                  decoration: const InputDecoration(
-                                    isCollapsed: true,
-                                    border: InputBorder.none,
-                                  ),
-                                  inputFormatters: [
-                                    LengthLimitingTextInputFormatter(3),
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              _buildQtyBtn(Icons.add, _incrementQuantity, isDark),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Consumer<CartProvider>(
-                            builder: (context, cart, child) {
-                              return SizedBox(
-                                height: 28,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    int qty = int.tryParse(_qtyController.text) ?? 1;
-                                    cart.addToCart(
-                                      productId: widget.product.id,
-                                      title: widget.product.title,
-                                      image: widget.product.image,
-                                      sku: widget.product.sku,
-                                      price: _currentUnitPrice,
-                                      quantity: qty,
-                                      stock: widget.product.stock,
-                                      context: context,
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColor,
-                                    padding: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                      )
+                    else
+                      Row(
+                        children: [
+                          Container(
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: inputBg,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildQtyBtn(Icons.remove, _decrementQuantity, isDark),
+                                Container(
+                                  width: 28,
+                                  alignment: Alignment.center,
+                                  child: TextField(
+                                    controller: _qtyController,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    onChanged: _handleManualInput,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: textColor,
                                     ),
-                                    elevation: 0,
+                                    decoration: const InputDecoration(
+                                      isCollapsed: true,
+                                      border: InputBorder.none,
+                                    ),
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(3),
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
                                   ),
-                                  child: cart.isLoading
-                                      ? const SizedBox(
-                                    height: 14,
-                                    width: 14,
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2),
-                                  )
-                                      : const Icon(Icons.shopping_cart_outlined,
-                                      size: 16, color: Colors.white),
                                 ),
-                              );
-                            },
+                                _buildQtyBtn(Icons.add, _incrementQuantity, isDark),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Consumer<CartProvider>(
+                              builder: (context, cart, child) {
+                                return SizedBox(
+                                  height: 28,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      int qty = int.tryParse(_qtyController.text) ?? 1;
+                                      cart.addToCart(
+                                        productId: widget.product.id,
+                                        title: widget.product.title,
+                                        image: widget.product.image,
+                                        sku: widget.product.sku,
+                                        price: _currentUnitPrice,
+                                        quantity: qty,
+                                        stock: widget.product.stock,
+                                        context: context,
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: cart.isLoading
+                                        ? const SizedBox(
+                                      height: 14,
+                                      width: 14,
+                                      child: CircularProgressIndicator(
+                                          color: Colors.white, strokeWidth: 2),
+                                    )
+                                        : const Icon(Icons.shopping_cart_outlined,
+                                        size: 16, color: Colors.white),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),

@@ -4,13 +4,18 @@ import 'package:shop/components/tutorial_tooltip.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey? menuKey;
-  // ✅ ADDED: Callback function
   final VoidCallback? onSearchTap;
+
+  // ✅ ADDED: Parameters to handle navigation state
+  final bool canGoBack;
+  final VoidCallback? onBack;
 
   const CustomAppBar({
     super.key,
     this.menuKey,
-    this.onSearchTap, // ✅ ADDED
+    this.onSearchTap,
+    this.canGoBack = false, // ✅ Default to false
+    this.onBack,           // ✅ Default to null
   });
 
   @override
@@ -31,12 +36,22 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
+
+      // ✅ UPDATED: Leading logic to switch between Back and Menu
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: CircleAvatar(
           backgroundColor: elementBgColor,
           radius: 20,
-          child: menuKey != null
+          child: canGoBack
+              ? IconButton(
+            // iOS standard back icon
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor, size: 18),
+            onPressed: onBack,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          )
+              : (menuKey != null
               ? Showcase.withWidget(
             key: menuKey!,
             height: 200,
@@ -59,14 +74,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-          ),
+          )),
         ),
       ),
       leadingWidth: 60,
 
-      // Search Bar
       title: GestureDetector(
-        // ✅ CHANGED: Use the callback if provided, otherwise do nothing
         onTap: () {
           if (onSearchTap != null) {
             onSearchTap!();

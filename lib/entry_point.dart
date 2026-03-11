@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
-import 'package:showcaseview/showcaseview.dart'; // ✅ Import
+import 'package:showcaseview/showcaseview.dart';
 import 'components/common/MainScaffold.dart';
 import 'screens/category/sub_category_products_screen.dart';
 
@@ -24,16 +24,15 @@ class EntryPoint extends StatefulWidget {
 
 class _EntryPointState extends State<EntryPoint> {
   late int _currentIndex;
-  final List<int> _history = [];
+  final List<int> _history = []; // Tracks tab navigation for hardware back button
   Map<String, dynamic>? user;
 
-  // ✅ 1. Define ALL Keys for the Tutorial Steps
-  final GlobalKey _appBarMenuKey = GlobalKey(); // Menu in AppBar
-  final GlobalKey _categoriesKey = GlobalKey(); // Home Categories
-  final GlobalKey _searchTabKey = GlobalKey();  // Search in BottomNav
-  final GlobalKey _shopTabKey = GlobalKey();    // Shop in BottomNav
-  final GlobalKey _cartTabKey = GlobalKey();    // Cart in BottomNav
-  final GlobalKey _profileTabKey = GlobalKey(); // Profile in BottomNav
+  final GlobalKey _appBarMenuKey = GlobalKey();
+  final GlobalKey _categoriesKey = GlobalKey();
+  final GlobalKey _searchTabKey = GlobalKey();
+  final GlobalKey _shopTabKey = GlobalKey();
+  final GlobalKey _cartTabKey = GlobalKey();
+  final GlobalKey _profileTabKey = GlobalKey();
 
   @override
   void initState() {
@@ -41,33 +40,17 @@ class _EntryPointState extends State<EntryPoint> {
     _currentIndex = widget.initialIndex;
     _history.add(_currentIndex);
     _loadUserData();
-
-    // ✅ 2. Trigger Tutorial Check
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstTime());
   }
 
   Future<void> _checkFirstTime() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // ---------------------------------------------------------
-    // 👇 DEVELOPMENT MODE (Use this while you are building/testing)
-    // await prefs.setBool('first_time_tutorial', true);
-    // ---------------------------------------------------------
-
     bool? isFirstTime = prefs.getBool('first_time_tutorial');
-
     if (isFirstTime == null || isFirstTime == true) {
       await Future.delayed(const Duration(milliseconds: 500));
-
       if (mounted) {
-        // ✅ 3. Start the FULL Sequence
         ShowCaseWidget.of(context).startShowCase([
-          _appBarMenuKey,  // 1. Menu
-          _categoriesKey,  // 2. Categories
-          _searchTabKey,   // 3. Search
-          _shopTabKey,     // 4. Shop
-          _cartTabKey,     // 5. Cart
-          _profileTabKey   // 6. Profile
+          _appBarMenuKey, _categoriesKey, _searchTabKey, _shopTabKey, _cartTabKey, _profileTabKey
         ]);
       }
       await prefs.setBool('first_time_tutorial', false);
@@ -78,9 +61,7 @@ class _EntryPointState extends State<EntryPoint> {
     final prefs = await SharedPreferences.getInstance();
     final userString = prefs.getString('user');
     if (userString != null) {
-      setState(() {
-        user = jsonDecode(userString);
-      });
+      setState(() => user = jsonDecode(userString));
     }
   }
 
@@ -88,7 +69,20 @@ class _EntryPointState extends State<EntryPoint> {
     if (index != _currentIndex) {
       setState(() {
         _currentIndex = index;
+
+        // Keep track of history for the physical phone back button
+        _history.remove(index);
         _history.add(index);
+      });
+    }
+  }
+
+  // ✅ Function to handle going back (via phone swipe/button)
+  void _handleBack() {
+    if (_history.length > 1) {
+      setState(() {
+        _history.removeLast();
+        _currentIndex = _history.last;
       });
     }
   }
@@ -101,7 +95,7 @@ class _EntryPointState extends State<EntryPoint> {
         user: user,
         onTabChanged: _onTabChanged,
         onLocaleChange: widget.onLocaleChange,
-        categoryKey: _categoriesKey, // Pass Key
+        categoryKey: _categoriesKey,
       ),
       const DiscoverScreen(),
       SubCategoryProductsScreen(
@@ -118,13 +112,11 @@ class _EntryPointState extends State<EntryPoint> {
     ];
 
     return PopScope(
+      // ✅ Intercepts iPhone/Android Swipe-to-back
       canPop: _history.length <= 1,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        setState(() {
-          _history.removeLast();
-          _currentIndex = _history.last;
-        });
+        _handleBack();
       },
       child: MainScaffold(
         user: user,
@@ -132,13 +124,17 @@ class _EntryPointState extends State<EntryPoint> {
         currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
 
-        // ✅ Pass ALL Keys down to MainScaffold
+        // ✅ THE FIX: Hardcode this to false!
+        // Because these 5 pages are root-level bottom navigation tabs,
+        // the visual AppBar should ALWAYS show the Drawer menu, not a back arrow.
+        canGoBack: false,
+        onBack: _handleBack,
+
         appBarMenuKey: _appBarMenuKey,
         searchTabKey: _searchTabKey,
         shopTabKey: _shopTabKey,
         cartTabKey: _cartTabKey,
         profileTabKey: _profileTabKey,
-
         child: PageTransitionSwitcher(
           duration: defaultDuration,
           transitionBuilder: (child, animation, secondAnimation) {
