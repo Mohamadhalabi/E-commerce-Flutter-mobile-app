@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart'; // Added for WhatsApp functionality
 
 import 'package:shop/providers/cart_provider.dart';
 import '../../../components/skleton/product_details_skeleton.dart';
@@ -70,7 +71,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ProductModel pModel = ProductModel.fromJson(result);
         await LocalStorageService.addToRecentlyViewed(pModel);
       } catch (e) {
-        print("Error saving recent view: $e");
+        debugPrint("Error saving recent view: $e");
       }
 
       setState(() {
@@ -128,9 +129,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return finalPrice < 0 ? 0 : finalPrice;
   }
 
+  // Safe bool parser for hide_price flag
+  bool _parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value == '1' || value.toLowerCase() == 'true';
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ 1. Theme Detection
+    // 1. Theme Detection
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final Color textColor = isDark ? Colors.white : Colors.black;
@@ -146,10 +156,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    // Calculate Prices
+    // Calculate Prices & Flags
     double originalPrice = (product!['price'] as num).toDouble();
     double baseUnitPrice = _calculateUnitPrice(1); // Price for 1 unit (top display)
     double currentUnitPrice = _calculateUnitPrice(_quantity); // Price factoring bulk qty (bottom bar)
+    bool hidePrice = _parseBool(product!['hide_price']);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -193,35 +204,42 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            BottomCartAction(
-              unitPrice: currentUnitPrice,
-              quantity: _quantity,
-              onQtyChanged: (val) => setState(() => _quantity = val),
-              onAddToCart: () {
-                final cart = Provider.of<CartProvider>(context, listen: false);
+            // Conditionally render WhatsApp button OR Cart Action based on hidePrice flag
+            if (hidePrice)
+              BottomWhatsAppAction(
+                sku: product!['sku'] ?? 'N/A',
+                title: product!['title'] ?? 'Unknown Product',
+              )
+            else
+              BottomCartAction(
+                unitPrice: currentUnitPrice,
+                quantity: _quantity,
+                onQtyChanged: (val) => setState(() => _quantity = val),
+                onAddToCart: () {
+                  final cart = Provider.of<CartProvider>(context, listen: false);
 
-                String imgUrl = "";
-                if (product!['image'] != null) {
-                  imgUrl = product!['image'];
-                } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
-                  imgUrl = product!['gallery'][0];
-                }
+                  String imgUrl = "";
+                  if (product!['image'] != null) {
+                    imgUrl = product!['image'];
+                  } else if (product!['gallery'] != null && (product!['gallery'] as List).isNotEmpty) {
+                    imgUrl = product!['gallery'][0];
+                  }
 
-                String sku = product!['sku'] ?? 'N/A';
-                int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
+                  String sku = product!['sku'] ?? 'N/A';
+                  int stock = (product!['quantity'] as num?)?.toInt() ?? 0;
 
-                cart.addToCart(
-                  productId: widget.productId,
-                  title: product!['title'] ?? 'Unknown',
-                  sku: sku,
-                  image: imgUrl,
-                  price: currentUnitPrice,
-                  quantity: _quantity,
-                  stock: stock,
-                  context: context,
-                );
-              },
-            ),
+                  cart.addToCart(
+                    productId: widget.productId,
+                    title: product!['title'] ?? 'Unknown',
+                    sku: sku,
+                    image: imgUrl,
+                    price: currentUnitPrice,
+                    quantity: _quantity,
+                    stock: stock,
+                    context: context,
+                  );
+                },
+              ),
             CustomBottomNavigationBar(
               currentIndex: _currentIndex,
               onTap: _onBottomNavTap,
@@ -263,7 +281,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
 
-              // 2. ✅ NEW: DISCOUNT TIMER MOVED DIRECTLY UNDER IMAGE
+              // 2. DISCOUNT TIMER MOVED DIRECTLY UNDER IMAGE
               if (product!['discount'] is Map && (product!['discount'] as Map).isNotEmpty)
                 SliverToBoxAdapter(
                   child: DiscountTimerBanner(discount: product!['discount'], isBadge: false),
@@ -283,7 +301,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     : product!['num_of_reviews'] ?? 0,
               ),
 
-              // 4. ✅ NEW: PRICE DISPLAY ADDED DIRECTLY UNDER TITLE
+              // 4. PRICE DISPLAY ADDED DIRECTLY UNDER TITLE (Always visible)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -394,6 +412,71 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
 // --- SUPPORTING WIDGETS ---
 
+// New WhatsApp Action Widget
+class BottomWhatsAppAction extends StatelessWidget {
+  final String sku;
+  final String title;
+
+  const BottomWhatsAppAction({
+    super.key,
+    required this.sku,
+    required this.title,
+  });
+
+  Future<void> _launchWhatsApp(BuildContext context) async {
+    final String message = Uri.encodeComponent("Hi, I want to ask about $title\nSKU: $sku");
+    final Uri waUrl = Uri.parse('https://wa.me/971504429045?text=$message');
+
+    if (!await launchUrl(waUrl, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp')));
+      }
+      debugPrint('Could not launch WhatsApp');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, -2),
+            blurRadius: 10,
+          )
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 44, // Matched height with standard cart bar
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _launchWhatsApp(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1DA851), // WhatsApp Green
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.white),
+            label: const Text(
+              "Contact on WhatsApp",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
 class BottomCartAction extends StatelessWidget {
   final double unitPrice;
   final int quantity;
@@ -410,7 +493,6 @@ class BottomCartAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Dark Mode Logic
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
     final qtyBoxColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
@@ -418,10 +500,7 @@ class BottomCartAction extends StatelessWidget {
     final iconColor = isDark ? Colors.white70 : Colors.black54;
     final textColor = isDark ? Colors.white : Colors.black;
 
-    double total = unitPrice * quantity;
-
     return Container(
-      // ✅ Reduced padding to slim the overall bar height
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: bgColor,
@@ -437,9 +516,8 @@ class BottomCartAction extends StatelessWidget {
         bottom: false,
         child: Row(
           children: [
-            // ✅ SLIM QUANTITY BOX
             Container(
-              height: 44, // Enforced slimmer height
+              height: 44,
               decoration: BoxDecoration(
                 color: qtyBoxColor,
                 border: Border.all(color: borderColor),
@@ -451,31 +529,30 @@ class BottomCartAction extends StatelessWidget {
                     onPressed: () => quantity > 1 ? onQtyChanged(quantity - 1) : null,
                     icon: Icon(Icons.remove, size: 18, color: iconColor),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36), // Reduced
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                   ),
                   Text("$quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   IconButton(
                     onPressed: () => onQtyChanged(quantity + 1),
                     icon: Icon(Icons.add, size: 18, color: iconColor),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36), // Reduced
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
 
-            // ✅ SLIM ADD TO CART BUTTON
             Expanded(
               child: Consumer<CartProvider>(
                 builder: (context, cart, child) {
                   return SizedBox(
-                    height: 44, // Explicitly match the quantity box height
+                    height: 44,
                     child: ElevatedButton(
                       onPressed: cart.isLoading ? null : onAddToCart,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
-                        padding: EdgeInsets.zero, // Padding removed since SizedBox controls height
+                        padding: EdgeInsets.zero,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -484,7 +561,7 @@ class BottomCartAction extends StatelessWidget {
                           : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.shopping_cart_outlined, size: 18, color: Colors.white), // Slightly smaller icon
+                          Icon(Icons.shopping_cart_outlined, size: 18, color: Colors.white),
                           SizedBox(width: 8),
                           Text(
                             "Add To Cart",
@@ -579,7 +656,6 @@ class _DiscountTimerBannerState extends State<DiscountTimerBanner> {
       );
     }
 
-    // ✅ Dark Mode Colors for Banner
     final Color bannerBg = isDark ? const Color(0xFF2A1010) : const Color(0xFFFFF0F0);
     final Color bannerBorder = isDark ? const Color(0xFF4A1010) : Colors.red.shade100;
     final Color textColor = isDark ? Colors.red.shade200 : Colors.red.shade700;
