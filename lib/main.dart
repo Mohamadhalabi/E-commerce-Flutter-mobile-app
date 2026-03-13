@@ -14,9 +14,8 @@ import 'package:flutter/services.dart';
 import "controllers/locale_controller.dart";
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:showcaseview/showcaseview.dart';
-
-// ✅ 1. ADD THIS IMPORT
 import 'package:firebase_core/firebase_core.dart';
+import 'package:upgrader/upgrader.dart'; // Add this line
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -110,7 +109,15 @@ class _MyAppState extends State<MyApp> {
       initialRoute: entryPointScreenRoute,
       builder: (context, child) {
         return ShowCaseWidget(
-          builder: (context) => child!,
+          builder: (context) => UpgradeAlert(
+            // ✅ These parameters now belong directly to UpgradeAlert
+            showIgnore: false,
+            showLater: false,
+            barrierDismissible: false,
+
+            upgrader: Upgrader(), // Leave this empty for default checks
+            child: child!,
+          ),
           autoPlay: false,
           blurValue: 1,
         );
