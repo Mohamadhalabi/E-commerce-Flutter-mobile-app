@@ -227,6 +227,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'free_ship': _selectedPromo == 'free_ship' ? 1 : 0,
       'note': _noteCtrl.text,
       'shipment_value': _shipmentValueCtrl.text,
+      'platform': 'mobile_app',
     };
 
     final result = await ApiService.createOrder(body, locale, token);
@@ -1107,25 +1108,25 @@ class CheckoutPageSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return const SingleChildScrollView(
+      padding: EdgeInsets.all(16),
       child: Column(
         children: [
-          const Skeleton(width: double.infinity, height: 100),
-          const SizedBox(height: 24),
-          const Skeleton(width: 150, height: 20),
-          const SizedBox(height: 12),
-          const Skeleton(width: double.infinity, height: 80),
-          const SizedBox(height: 24),
-          const Skeleton(width: 150, height: 20),
-          const SizedBox(height: 12),
-          const Skeleton(width: double.infinity, height: 60),
-          const SizedBox(height: 24),
-          const Skeleton(width: 150, height: 20),
-          const SizedBox(height: 12),
-          const Skeleton(width: double.infinity, height: 150),
-          const SizedBox(height: 24),
-          const Skeleton(width: double.infinity, height: 200),
+          Skeleton(width: double.infinity, height: 100),
+          SizedBox(height: 24),
+          Skeleton(width: 150, height: 20),
+          SizedBox(height: 12),
+          Skeleton(width: double.infinity, height: 80),
+          SizedBox(height: 24),
+          Skeleton(width: 150, height: 20),
+          SizedBox(height: 12),
+          Skeleton(width: double.infinity, height: 60),
+          SizedBox(height: 24),
+          Skeleton(width: 150, height: 20),
+          SizedBox(height: 12),
+          Skeleton(width: double.infinity, height: 150),
+          SizedBox(height: 24),
+          Skeleton(width: double.infinity, height: 200),
         ],
       ),
     );

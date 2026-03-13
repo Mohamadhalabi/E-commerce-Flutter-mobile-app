@@ -87,7 +87,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // ✅ STANDARD REGISTER
-  Future<bool> register({
+  Future<String?> register({
     required String name,
     required String email,
     required String phone,
@@ -106,16 +106,26 @@ class AuthProvider with ChangeNotifier {
       if (response['success'] == true && response['token'] != null && response['user'] != null) {
         await _saveAuthData(response['token'], response['user']);
         _setLoading(false);
-        return true;
+        return null; // Return null to indicate SUCCESS
       } else {
-        print("Register Failed: ${response['message']}");
         _setLoading(false);
-        return false;
+
+        // Extract specific validation errors from Laravel if they exist
+        if (response['errors'] != null) {
+          if (response['errors']['email'] != null) {
+            return response['errors']['email'][0]; // "The email has already been taken."
+          }
+          // Fallback to grab the first validation error if it's a different field
+          return response['errors'].values.first[0].toString();
+        }
+
+        // Fallback to the generic message
+        return response['message'] ?? "Registration failed";
       }
     } catch (e) {
       print("Register Exception: $e");
       _setLoading(false);
-      return false;
+      return "Network error occurred. Please try again.";
     }
   }
 

@@ -43,7 +43,7 @@
  "emptyCart": "Your cart is empty",
  "startShopping": "Start Shopping",
  "loginSuccess": "Login Successful",
- "loginFailed": "Login Failed",
+ "loginFailed": "The email or password you entered is incorrect",
  "email": "Email",
  "password": "Password",
  "login": "Login",

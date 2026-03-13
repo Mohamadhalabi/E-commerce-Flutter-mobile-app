@@ -132,7 +132,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    bool success = await authProvider.register(
+    // ✅ UPDATED: Expects an error message (or null if successful)
+    String? errorMessage = await authProvider.register(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
@@ -140,7 +141,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     if (!mounted) return;
-    _handleAuthResult(success, tr.registerSuccess, tr.registerFailed);
+
+    // ✅ UPDATED: Handle the result based on the string
+    if (errorMessage == null) {
+      _handleAuthResult(true, tr.registerSuccess, "");
+    } else {
+      _handleAuthResult(false, "", errorMessage); // Pass the exact backend error!
+    }
   }
 
   Future<void> _handleGoogleLogin() async {
