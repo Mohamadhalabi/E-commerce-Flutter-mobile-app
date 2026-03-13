@@ -176,8 +176,9 @@ class _ProductCardState extends State<ProductCard> {
                   children: [
                     Text(
                       "SKU: ${widget.product.sku}",
-                      style: const TextStyle(
-                        color: greenColor,
+                      style: TextStyle( // Removed 'const' here
+                        // ✅ Use a lighter green for dark mode, standard for light mode
+                        color: isDark ? Colors.green.shade400 : greenColor,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),

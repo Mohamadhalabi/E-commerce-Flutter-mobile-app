@@ -251,11 +251,20 @@ class _SubCategoryProductsScreenState extends State<SubCategoryProductsScreen> {
   }
 
   void _openFilterModal() {
+    // ✅ NEW: Determine the primary filter type based on how they entered the screen
+    String primaryType = 'categories';
+    if (widget.initialBrandSlug != null && widget.initialBrandSlug!.isNotEmpty) {
+      primaryType = 'brands';
+    } else if (widget.initialManufacturerSlug != null && widget.initialManufacturerSlug!.isNotEmpty) {
+      primaryType = 'manufacturers';
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => FilterModal(
+        primaryFilterType: primaryType, // ✅ NEW: Pass the type to the modal
         facets: _facets,
         selectedBrands: _selectedBrands,
         selectedManufacturers: _selectedManufacturers,

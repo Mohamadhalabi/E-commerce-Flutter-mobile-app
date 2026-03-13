@@ -113,6 +113,9 @@ class CategoryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ 1. Detect if the app is currently in Dark Mode
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -143,10 +146,12 @@ class CategoryBtn extends StatelessWidget {
               child: Text(
                 category,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: greenColor, // Ensure greenColor is defined in constants
+                  // ✅ 2. Use a lighter green (like Colors.green.shade400) for Dark Mode,
+                  // and your standard greenColor for Light Mode.
+                  color: isDark ? Colors.green.shade400 : greenColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

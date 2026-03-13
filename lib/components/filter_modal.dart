@@ -7,6 +7,9 @@ class FilterModal extends StatefulWidget {
   final List<String> selectedCategories;
   final Map<String, List<String>> selectedAttributes;
 
+  // ✅ NEW: Property to determine which section goes first
+  final String? primaryFilterType;
+
   final Function(
       List<String> brands,
       List<String> manufs,
@@ -21,6 +24,7 @@ class FilterModal extends StatefulWidget {
     required this.selectedManufacturers,
     required this.selectedCategories,
     required this.selectedAttributes,
+    this.primaryFilterType, // ✅ NEW: Added to constructor
     required this.onApply,
   });
 
@@ -33,8 +37,6 @@ class _FilterModalState extends State<FilterModal> {
   late List<String> _manufacturers;
   late List<String> _categories;
   late Map<String, List<String>> _attributes;
-
-  final Color _applyButtonColor = const Color(0xFF333333);
 
   @override
   void initState() {
@@ -50,17 +52,27 @@ class _FilterModalState extends State<FilterModal> {
 
   // --- UI Helpers ---
 
-  Widget _buildSectionHeader(String title, {VoidCallback? onClear}) {
+  Widget _buildSectionHeader(String title, bool isDark, {VoidCallback? onClear}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              )
+          ),
           if (onClear != null)
             TextButton(
               onPressed: onClear,
-              child: const Text("Clear All", style: TextStyle(color: Colors.red)),
+              child: Text(
+                  "Clear All",
+                  style: TextStyle(color: isDark ? Colors.red.shade400 : Colors.red)
+              ),
             ),
         ],
       ),
@@ -68,25 +80,32 @@ class _FilterModalState extends State<FilterModal> {
   }
 
   // Custom Expansion Tile with cleaner look
-  Widget _buildExpansionSection(String title, List<dynamic> items, List<String> selectedList) {
+  Widget _buildExpansionSection(String title, List<dynamic> items, List<String> selectedList, bool isDark) {
     if (items.isEmpty) return const SizedBox.shrink();
 
-    // Check if any item in this section is selected to possibly style the title
     bool hasSelection = items.any((i) => selectedList.contains(i['slug'].toString()));
 
+    final highlightColor = isDark ? Colors.blue.shade300 : Colors.blue;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black;
+    final countColor = isDark ? Colors.white38 : Colors.grey[500];
+
     return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // Remove borders
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent, // Remove borders
+        unselectedWidgetColor: isDark ? Colors.white54 : Colors.black54, // Checkbox border color
+      ),
       child: ExpansionTile(
-        initiallyExpanded: hasSelection, // Auto-expand if something is selected
-        textColor: Colors.black,
-        iconColor: Colors.black,
-        collapsedIconColor: Colors.grey,
+        initiallyExpanded: hasSelection,
+        textColor: highlightColor,
+        iconColor: highlightColor,
+        collapsedIconColor: isDark ? Colors.white54 : Colors.grey,
         title: Text(
             title,
             style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: hasSelection ? Colors.blue : Colors.black87
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: hasSelection ? highlightColor : textColor,
             )
         ),
         children: items.map((item) {
@@ -101,14 +120,23 @@ class _FilterModalState extends State<FilterModal> {
             visualDensity: VisualDensity.compact,
             title: Row(
               children: [
-                Expanded(child: Text(name, style: const TextStyle(fontSize: 14))),
+                Expanded(
+                    child: Text(
+                        name,
+                        style: TextStyle(fontSize: 14, color: subTextColor)
+                    )
+                ),
                 if (count != null)
-                  Text("($count)", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  Text(
+                      "($count)",
+                      style: TextStyle(color: countColor, fontSize: 12)
+                  ),
               ],
             ),
             value: isSelected,
-            activeColor: _applyButtonColor,
-            controlAffinity: ListTileControlAffinity.leading, // Checkbox on left
+            activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF333333),
+            checkColor: Colors.white,
+            controlAffinity: ListTileControlAffinity.leading,
             onChanged: (val) {
               setState(() {
                 if (val == true) {
@@ -124,8 +152,13 @@ class _FilterModalState extends State<FilterModal> {
     );
   }
 
-  Widget _buildAttributeSections(List<dynamic> attributesData) {
+  Widget _buildAttributeSections(List<dynamic> attributesData, bool isDark) {
     if (attributesData.isEmpty) return const SizedBox.shrink();
+
+    final highlightColor = isDark ? Colors.blue.shade300 : Colors.blue;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black;
+    final countColor = isDark ? Colors.white38 : Colors.grey[500];
 
     return Column(
       children: attributesData.map((attrGroup) {
@@ -140,16 +173,21 @@ class _FilterModalState extends State<FilterModal> {
         bool hasSelection = items.any((i) => _attributes[groupSlug]!.contains(i['slug'].toString()));
 
         return Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          data: Theme.of(context).copyWith(
+            dividerColor: Colors.transparent,
+            unselectedWidgetColor: isDark ? Colors.white54 : Colors.black54,
+          ),
           child: ExpansionTile(
             initiallyExpanded: hasSelection,
-            textColor: Colors.black,
+            textColor: highlightColor,
+            iconColor: highlightColor,
+            collapsedIconColor: isDark ? Colors.white54 : Colors.grey,
             title: Text(
                 groupName,
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: hasSelection ? Colors.blue : Colors.black87
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: hasSelection ? highlightColor : textColor,
                 )
             ),
             children: items.map((subItem) {
@@ -164,12 +202,21 @@ class _FilterModalState extends State<FilterModal> {
                 visualDensity: VisualDensity.compact,
                 title: Row(
                   children: [
-                    Expanded(child: Text(subName, style: const TextStyle(fontSize: 14))),
-                    Text("($count)", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    Expanded(
+                        child: Text(
+                            subName,
+                            style: TextStyle(fontSize: 14, color: subTextColor)
+                        )
+                    ),
+                    Text(
+                        "($count)",
+                        style: TextStyle(color: countColor, fontSize: 12)
+                    ),
                   ],
                 ),
                 value: isSelected,
-                activeColor: _applyButtonColor,
+                activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF333333),
+                checkColor: Colors.white,
                 controlAffinity: ListTileControlAffinity.leading,
                 onChanged: (val) {
                   setState(() {
@@ -190,23 +237,46 @@ class _FilterModalState extends State<FilterModal> {
 
   @override
   Widget build(BuildContext context) {
+    // Detect theme brightness
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
+    final dividerColor = isDark ? Colors.white12 : Colors.grey.shade300;
+    final buttonBgColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF333333);
+
     final brandsList = widget.facets['brands'] as List<dynamic>? ?? [];
     final manufList = widget.facets['manufacturers'] as List<dynamic>? ?? [];
     final catList = widget.facets['categories'] as List<dynamic>? ?? [];
     final attrList = widget.facets['attributes'] as List<dynamic>? ?? [];
 
+    // ✅ NEW: Pre-build the filter sections
+    final catSection = _buildExpansionSection("Categories", catList, _categories, isDark);
+    final manSection = _buildExpansionSection("Manufacturers", manufList, _manufacturers, isDark);
+    final brandSection = _buildExpansionSection("Brands", brandsList, _brands, isDark);
+    final attrSection = _buildAttributeSections(attrList, isDark);
+
+    // ✅ NEW: Reorder them based on the 'primaryFilterType'
+    List<Widget> filterSections;
+    if (widget.primaryFilterType == 'brands') {
+      filterSections = [brandSection, catSection, manSection, attrSection];
+    } else if (widget.primaryFilterType == 'manufacturers') {
+      filterSections = [manSection, catSection, brandSection, attrSection];
+    } else {
+      // Default (Categories first)
+      filterSections = [catSection, manSection, brandSection, attrSection];
+    }
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       padding: const EdgeInsets.only(top: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildSectionHeader("Filters", onClear: () {
+          _buildSectionHeader("Filters", isDark, onClear: () {
             setState(() {
               _brands.clear();
               _manufacturers.clear();
@@ -214,17 +284,13 @@ class _FilterModalState extends State<FilterModal> {
               _attributes.clear();
             });
           }),
-          const Divider(height: 1),
+          Divider(height: 1, color: dividerColor),
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 0), // Tiles have padding
-              children: [
-                _buildExpansionSection("Categories", catList, _categories),
-                _buildExpansionSection("Manufacturers", manufList, _manufacturers),
-                _buildExpansionSection("Brands", brandsList, _brands),
-                _buildAttributeSections(attrList),
-              ],
+              padding: const EdgeInsets.symmetric(horizontal: 0),
+              // ✅ NEW: Feed the dynamically ordered list to the UI
+              children: filterSections,
             ),
           ),
 
@@ -235,7 +301,7 @@ class _FilterModalState extends State<FilterModal> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _applyButtonColor,
+                  backgroundColor: buttonBgColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
