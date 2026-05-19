@@ -63,3 +63,5 @@ const String aboutUsScreenRoute = "about_us";
 const String deliveryInfoScreenRoute = "delivery_info";
 const String termsConditionScreenRoute = "terms_conditions";
 const String contactUsScreenRoute = "contact_us";
+const String kiaHyundaiScreenRoute = "kia_hyundai_lookup";
+const String toyotaPasscodeScreenRoute = "toyota_passcode";

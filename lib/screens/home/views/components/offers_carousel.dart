@@ -23,8 +23,8 @@ class _OffersCarouselState extends State<OffersCarousel> {
   bool _isTimerStarted = false;
 
   final double imgWidth = 1800;
-  final double imgHeight = 454;
-  final double viewPortFraction = 0.92;
+  final double imgHeight = 600;
+  final double viewPortFraction = 0.97;
 
   @override
   void initState() {
@@ -64,7 +64,6 @@ class _OffersCarouselState extends State<OffersCarousel> {
     final String keyword = bannerData['keyword'] ?? '';
 
     if (keyword.isNotEmpty && keyword != "null") {
-      print("DEBUG: Keyword found ($keyword). Navigating to results...");
 
       Navigator.pushNamed(
           context,

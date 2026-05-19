@@ -284,8 +284,6 @@ class AuthProvider with ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_userKey, jsonEncode(userData));
         notifyListeners();
-      } else {
-        await logout();
       }
     }
   }

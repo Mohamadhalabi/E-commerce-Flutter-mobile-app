@@ -7,12 +7,12 @@ class BannerMStyle1 extends StatelessWidget {
     super.key,
     required this.image,
     required this.press,
-    this.onLoaded, // [ADDED] Defined the parameter here
+    this.onLoaded,
   });
 
   final String image;
   final VoidCallback press;
-  final VoidCallback? onLoaded; // [ADDED]
+  final VoidCallback? onLoaded;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +35,10 @@ class BannerMStyle1 extends StatelessWidget {
           borderRadius: BorderRadius.circular(defaultBorderRadius),
           child: Image.network(
             image,
-            fit: BoxFit.cover,
+            fit: BoxFit.fill, // CHANGED: Prevents image from cropping
             width: double.infinity,
 
-            // [ADDED] Loading Builder for Skeleton
+            // Loading Builder for Skeleton
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return const Skeleton(
@@ -47,7 +47,7 @@ class BannerMStyle1 extends StatelessWidget {
               );
             },
 
-            // [ADDED] Frame Builder to trigger auto-slide when loaded
+            // Frame Builder to trigger auto-slide when loaded
             frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
               if (frame != null) {
                 // If the image has a frame (is loaded), call the callback

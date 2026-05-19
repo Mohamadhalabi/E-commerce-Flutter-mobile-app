@@ -1313,4 +1313,71 @@ class ApiService {
       return {'success': false, 'message': 'Network Error: $e'};
     }
   }
+
+
+  // part number and toyota
+
+// ==================================================
+  // CALCULATORS / TOOLS
+  // ==================================================
+
+  static Future<Map<String, dynamic>> vinLookup(String vin, String token, String locale) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/vin-lookup';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        body: jsonEncode({'vin': vin}),
+      );
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to lookup VIN',
+          'status': response.statusCode
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> calculateToyotaPasscode(Map<String, String> body, String token, String locale) async {
+    await dotenv.load();
+    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String apiKey = dotenv.env['API_KEY'] ?? '';
+    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    String url = '$apiBaseUrl/toyota-passcode';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        body: jsonEncode(body),
+      );
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to calculate passcode',
+          'status': response.statusCode
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }

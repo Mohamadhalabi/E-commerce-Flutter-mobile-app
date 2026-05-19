@@ -15,7 +15,7 @@ import "controllers/locale_controller.dart";
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:upgrader/upgrader.dart'; // Add this line
+import 'package:upgrader/upgrader.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();

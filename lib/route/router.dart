@@ -6,6 +6,8 @@ import '../screens/category/sub_category_screen.dart';
 import '../screens/category/sub_category_products_screen.dart';
 import '../screens/checkout/views/checkout_screen.dart';
 import '../screens/profile/views/info_screens.dart';
+import '../screens/tools/kia_hyundai_screen.dart';
+import '../screens/tools/toyota_passcode_screen.dart';
 import 'screen_export.dart' hide UserInfoScreen;
 import "package:shop/controllers/locale_controller.dart";
 import 'package:shop/screens/profile/views/user_info_screen.dart';
@@ -67,7 +69,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case searchScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const SearchScreen(),
+        builder: (context) => const DiscoverScreen(),
       );
     case bookmarkScreenRoute:
       return MaterialPageRoute(
@@ -181,6 +183,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
           builder: (context) => const CheckoutScreen(),
       );
+    case kiaHyundaiScreenRoute:
+      return MaterialPageRoute(builder: (_) => const KiaHyundaiScreen());
+    case toyotaPasscodeScreenRoute:
+      return MaterialPageRoute(builder: (_) => const ToyotaPasscodeScreen());
     default:
       return MaterialPageRoute(
         builder: (context) => EntryPoint(
