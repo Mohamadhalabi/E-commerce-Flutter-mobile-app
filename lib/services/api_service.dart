@@ -1351,33 +1351,33 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> calculateToyotaPasscode(Map<String, String> body, String token, String locale) async {
-    await dotenv.load();
-    String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    String apiKey = dotenv.env['API_KEY'] ?? '';
-    String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+    static Future<Map<String, dynamic>> calculateToyotaPasscode(Map<String, String> body, String token, String locale) async {
+      await dotenv.load();
+      String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      String secretKey = dotenv.env['SECRET_KEY'] ?? '';
 
-    String url = '$apiBaseUrl/toyota-passcode';
+      String url = '$apiBaseUrl/toyota-passcode';
 
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
-        body: jsonEncode(body),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse(url),
+          headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+          body: jsonEncode(body),
+        );
 
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        return {'success': true, 'data': data};
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to calculate passcode',
-          'status': response.statusCode
-        };
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          return {'success': true, 'data': data};
+        } else {
+          return {
+            'success': false,
+            'message': data['message'] ?? 'Failed to calculate passcode',
+            'status': response.statusCode
+          };
+        }
+      } catch (e) {
+        return {'success': false, 'message': 'Network error: $e'};
       }
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
     }
-  }
 }
