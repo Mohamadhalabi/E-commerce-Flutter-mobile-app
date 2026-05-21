@@ -15,15 +15,38 @@ import "controllers/locale_controller.dart";
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:upgrader/upgrader.dart';
+import 'firebase_options.dart';
+import 'services/push_notification_service.dart';
+
+// Top-level function for background notifications (MUST keep the pragma)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    }
+  } catch (e) {
+    debugPrint('Firebase already initialized in background');
+  }
+}
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // ✅ 2. ADD THIS LINE (Must be before running the app)
-  // This uses the GoogleService-Info.plist you added to Xcode.
-  await Firebase.initializeApp();
+  // Bulletproof Firebase Initialization
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    }
+  } catch (e) {
+    debugPrint('Firebase already initialized in main');
+  }
+
+  // Set background handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await dotenv.load();
   await initApiClient();
@@ -69,6 +92,9 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _loadLocale();
     LocaleController.updateLocale = _setLocale;
+
+    // Initialize notification listeners
+    PushNotificationService.setupInteractions();
   }
 
   Future<void> _loadLocale() async {
@@ -95,11 +121,14 @@ class _MyAppState extends State<MyApp> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
+      // CRITICAL: Connect the navigatorKey here
+      navigatorKey: PushNotificationService.navigatorKey,
+
       locale: _locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
-      title: 'Techno Lock Keys Trading mobile app',
+      title: 'Techno Lock Keys mobile app',
 
       theme: AppTheme.lightTheme(context),
       darkTheme: AppTheme.darkTheme(context),
@@ -110,12 +139,10 @@ class _MyAppState extends State<MyApp> {
       builder: (context, child) {
         return ShowCaseWidget(
           builder: (context) => UpgradeAlert(
-            // ✅ These parameters now belong directly to UpgradeAlert
             showIgnore: false,
             showLater: false,
             barrierDismissible: false,
-
-            upgrader: Upgrader(), // Leave this empty for default checks
+            upgrader: Upgrader(),
             child: child!,
           ),
           autoPlay: false,

@@ -217,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fit: BoxFit.cover,
                         image: NetworkImage(
                           isAuthenticated
-                              ? (user?['avatar'] ?? "https://i.imgur.com/IXnwbLk.png")
+                              ? (user?['avatar'] ?? "https://cdn-icons-png.flaticon.com/512/847/847969.png")
                               : "https://cdn-icons-png.flaticon.com/512/847/847969.png",
                         ),
                       ),

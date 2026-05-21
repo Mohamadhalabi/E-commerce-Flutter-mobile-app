@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
@@ -169,48 +168,48 @@ class AuthProvider with ChangeNotifier {
   }
 
   // ✅ FACEBOOK LOGIN
-  Future<bool> signInWithFacebook() async {
-    _setLoading(true);
-    try {
-      // 1. Trigger Native Facebook Login
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['public_profile', 'email'],
-      );
-
-      if (result.status == LoginStatus.success) {
-        // 2. Get User Data
-        final userData = await FacebookAuth.instance.getUserData();
-
-        // 3. Send to Laravel Backend
-        final response = await ApiService.socialLogin(
-          provider: 'facebook',
-          providerId: userData['id'],
-          email: userData['email'],
-          name: userData['name'],
-          avatar: userData['picture']?['data']?['url'],
-        );
-
-        // 4. Handle Backend Response
-        if (response['success'] == true && response['token'] != null) {
-          await _saveAuthData(response['token'], response['user']);
-          _setLoading(false);
-          return true;
-        } else {
-          print("Facebook Backend Login Failed: ${response['message']}");
-          _setLoading(false);
-          FacebookAuth.instance.logOut();
-          return false;
-        }
-      } else {
-        _setLoading(false);
-        return false;
-      }
-    } catch (e) {
-      print("Facebook Login Error: $e");
-      _setLoading(false);
-      return false;
-    }
-  }
+  // Future<bool> signInWithFacebook() async {
+  //   _setLoading(true);
+  //   try {
+  //     // 1. Trigger Native Facebook Login
+  //     final LoginResult result = await FacebookAuth.instance.login(
+  //       permissions: ['public_profile', 'email'],
+  //     );
+  //
+  //     if (result.status == LoginStatus.success) {
+  //       // 2. Get User Data
+  //       final userData = await FacebookAuth.instance.getUserData();
+  //
+  //       // 3. Send to Laravel Backend
+  //       final response = await ApiService.socialLogin(
+  //         provider: 'facebook',
+  //         providerId: userData['id'],
+  //         email: userData['email'],
+  //         name: userData['name'],
+  //         avatar: userData['picture']?['data']?['url'],
+  //       );
+  //
+  //       // 4. Handle Backend Response
+  //       if (response['success'] == true && response['token'] != null) {
+  //         await _saveAuthData(response['token'], response['user']);
+  //         _setLoading(false);
+  //         return true;
+  //       } else {
+  //         print("Facebook Backend Login Failed: ${response['message']}");
+  //         _setLoading(false);
+  //         FacebookAuth.instance.logOut();
+  //         return false;
+  //       }
+  //     } else {
+  //       _setLoading(false);
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print("Facebook Login Error: $e");
+  //     _setLoading(false);
+  //     return false;
+  //   }
+  // }
 
   // ✅ APPLE LOGIN
   Future<bool> signInWithApple(AuthorizationCredentialAppleID appleCredential) async {
@@ -272,7 +271,7 @@ class AuthProvider with ChangeNotifier {
 
     // 2. Social Logout (Safely ignore errors)
     try { await _googleSignIn.signOut(); } catch (_) {}
-    try { await FacebookAuth.instance.logOut(); } catch (_) {}
+    // try { await FacebookAuth.instance.logOut(); } catch (_) {}
     try { await FirebaseAuth.instance.signOut(); } catch (_) {}
   }
 
@@ -303,7 +302,7 @@ class AuthProvider with ChangeNotifier {
 
         // 3. Safe Social Logout
         try { await _googleSignIn.signOut(); } catch (_) {}
-        try { await FacebookAuth.instance.logOut(); } catch (_) {}
+        // try { await FacebookAuth.instance.logOut(); } catch (_) {}
         try { await FirebaseAuth.instance.signOut(); } catch (_) {}
       }
 
