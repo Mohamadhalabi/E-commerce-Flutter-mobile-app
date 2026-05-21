@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -25,7 +26,8 @@ import 'services/push_notification_service.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
     }
   } catch (e) {
     debugPrint('Firebase already initialized in background');
@@ -36,10 +38,16 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Bulletproof Firebase Initialization
+  // Give iOS native system time to register for remote notifications
+  if (Platform.isIOS) {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  // Firebase initialization
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
     }
   } catch (e) {
     debugPrint('Firebase already initialized in main');
@@ -93,27 +101,40 @@ class _MyAppState extends State<MyApp> {
     _loadLocale();
     LocaleController.updateLocale = _setLocale;
 
-    // Initialize notification listeners
-    PushNotificationService.setupInteractions();
+    // Initialize notification listeners after a short delay
+    // to ensure the app is fully mounted before setting up notifications
+    Future.delayed(const Duration(seconds: 2), () {
+      PushNotificationService.setupInteractions();
+    });
   }
 
   Future<void> _loadLocale() async {
-    final prefs = await SharedPreferences.getInstance();
-    final langCode = prefs.getString('lang_code');
-    if (langCode != null) {
-      setState(() {
-        _locale = Locale(langCode);
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final langCode = prefs.getString('lang_code');
+      if (langCode != null) {
+        if (mounted) {
+          setState(() {
+            _locale = Locale(langCode);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Load locale error: $e');
+    } finally {
+      // Always remove splash, even if something fails
+      FlutterNativeSplash.remove();
     }
-    FlutterNativeSplash.remove();
   }
 
   Future<void> _setLocale(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('lang_code', langCode);
-    setState(() {
-      _locale = Locale(langCode);
-    });
+    if (mounted) {
+      setState(() {
+        _locale = Locale(langCode);
+      });
+    }
   }
 
   @override

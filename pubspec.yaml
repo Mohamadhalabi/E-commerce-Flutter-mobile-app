@@ -3,7 +3,7 @@ description: Techno Lock Keys mobile app.
 
 publish_to: "none"
 
-version: 1.0.4+22
+version: 1.0.8+26
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
