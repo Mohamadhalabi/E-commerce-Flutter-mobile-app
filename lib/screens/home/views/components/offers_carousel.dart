@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Added for Clipboard
-import 'package:firebase_messaging/firebase_messaging.dart'; // Added for FCM Token
 import '../../../../components/Banner/M/banner_m_style_1.dart';
 import '../../../../components/skleton/others/offers_skelton.dart';
 import '../../../../constants.dart';
@@ -58,24 +56,26 @@ class _OffersCarouselState extends State<OffersCarousel> {
   }
 
   // ---------------------------------------------------------------------------
-  // Navigate Directly to Results Screen
+  // [FIXED] Navigate Directly to Results Screen
   // ---------------------------------------------------------------------------
   void _onBannerTapped(Map<String, String> bannerData) {
+
     // 1. Check for KEYWORD -> Go to SubCategoryProductsScreen (Results)
     final String keyword = bannerData['keyword'] ?? '';
 
     if (keyword.isNotEmpty && keyword != "null") {
+
       Navigator.pushNamed(
           context,
-          "sub_category_products_screen",
+          "sub_category_products_screen", // [CORRECT ROUTE NAME]
           arguments: {
-            'searchQuery': keyword,
-            'title': keyword,
-            'categorySlug': '',
+            'searchQuery': keyword,       // Pass keyword here
+            'title': keyword,             // Title of the screen
+            'categorySlug': '',           // Empty because it's a search
             'currentIndex': 0,
             'user': null,
-            'onTabChanged': (int i) {},
-            'onLocaleChange': (String s) {},
+            'onTabChanged': (int i) {},   // Dummy callback
+            'onLocaleChange': (String s) {}, // Dummy callback
           }
       );
       return;
@@ -207,59 +207,6 @@ class _OffersCarouselState extends State<OffersCarousel> {
                 ),
               ),
             ),
-
-            // ==========================================
-            // TEMPORARY DEBUG BUTTON FOR FCM TOKEN
-            // ==========================================
-            Positioned(
-              top: 10,
-              right: 10,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () async {
-                  try {
-                    String? token = await FirebaseMessaging.instance.getToken();
-                    if (context.mounted) {
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text("FCM Token (TestFlight)"),
-                          content: SelectableText(token ?? "No token generated."),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                if (token != null) {
-                                  Clipboard.setData(ClipboardData(text: token));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Token copied to clipboard!")),
-                                  );
-                                }
-                              },
-                              child: const Text("Copy to Clipboard"),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text("Close"),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Error fetching token: $e")),
-                      );
-                    }
-                  }
-                },
-                child: const Text("GET FCM TOKEN", style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            // ==========================================
           ],
         ),
       ),

@@ -25,8 +25,6 @@ class OffersCarouselAndCategories extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const OffersCarousel(),
-
         // ✅ STEP 2: Custom Tooltip around Categories
         categoryKey != null
             ? Showcase.withWidget(
@@ -52,6 +50,7 @@ class OffersCarouselAndCategories extends StatelessWidget {
           onTabChanged: onTabChanged,
           onLocaleChange: onLocaleChange,
         ),
+        const OffersCarousel(),
       ],
     );
   }

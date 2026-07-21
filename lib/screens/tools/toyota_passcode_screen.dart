@@ -241,7 +241,7 @@ class _ToyotaPasscodeScreenState extends State<ToyotaPasscodeScreen> {
           const SizedBox(height: 16),
           _buildNumberedStep("3", "Ensure you have enough Toyota tokens in your account.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
           const SizedBox(height: 16),
-          _buildNumberedStep("4", "Click calculate to retrieve the 6-digit passcode.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
+          _buildNumberedStep("4", "Click calculate to retrieve the 12-digit passcode.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
         ],
       ),
     );
@@ -473,7 +473,7 @@ class _ToyotaPasscodeScreenState extends State<ToyotaPasscodeScreen> {
           const SizedBox(height: 20),
           _buildWarningStep("Each new Toyota calculation will consume 1 Toyota Token.", isBold: false, textColor: isDark ? Colors.orange.shade100 : Colors.brown.shade700),
           const SizedBox(height: 16),
-          _buildWarningStep("You receive 3 free retries for the same VIN within 48 hours to correct any mistyped data.", isBold: false, textColor: isDark ? Colors.orange.shade100 : Colors.brown.shade700),
+          _buildWarningStep("You receive 2 free retries for the same VIN within 48 hours to correct any mistyped data.", isBold: false, textColor: isDark ? Colors.orange.shade100 : Colors.brown.shade700),
           const SizedBox(height: 16),
           _buildWarningStep("Please double-check all data before calculating. Tokens cannot be refunded for typos.", isBold: true, textColor: isDark ? Colors.orange.shade200 : Colors.brown.shade800),
         ],
