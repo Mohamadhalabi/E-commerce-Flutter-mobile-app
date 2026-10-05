@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../services/api_service.dart';
-import '../../../constants.dart';
-import '../../components/common/drawer.dart';
-import '../../components/common/CustomBottomNavigationBar.dart';
-import '../../../route/route_constants.dart';
-import '../../../providers/auth_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shop/components/common/CustomBottomNavigationBar.dart';
+import 'package:shop/constants.dart';
+import 'package:shop/providers/auth_provider.dart';
+import 'package:shop/route/route_constants.dart';
+import 'package:shop/services/api_service.dart';
+
+const String _whatsAppNumber = "971504429045";
+
+/// VIN / frame number length accepted by this tool.
+const int _vinMin = 9;
+const int _vinMax = 20;
 
 class ToyotaPasscodeScreen extends StatefulWidget {
   const ToyotaPasscodeScreen({super.key});
@@ -16,8 +22,6 @@ class ToyotaPasscodeScreen extends StatefulWidget {
 }
 
 class _ToyotaPasscodeScreenState extends State<ToyotaPasscodeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   final TextEditingController _vinController = TextEditingController();
   final TextEditingController _data1Controller = TextEditingController();
   final TextEditingController _data2Controller = TextEditingController();
@@ -27,9 +31,14 @@ class _ToyotaPasscodeScreenState extends State<ToyotaPasscodeScreen> {
   String? _passcode;
   int? _attemptsLeft;
   String? _errorMsg;
+  String _lastVin = "";
+
+  String get _vin => _vinController.text.trim();
+
+  bool get _vinValid => _vin.length >= _vinMin && _vin.length <= _vinMax;
 
   bool get _isFormValid =>
-      _vinController.text.trim().length == 17 &&
+      _vinValid &&
           _data1Controller.text.trim().isNotEmpty &&
           _data2Controller.text.trim().isNotEmpty &&
           _data3Controller.text.trim().isNotEmpty;
@@ -37,532 +46,961 @@ class _ToyotaPasscodeScreenState extends State<ToyotaPasscodeScreen> {
   @override
   void initState() {
     super.initState();
+    for (final c in [_vinController, _data1Controller, _data2Controller, _data3Controller]) {
+      c.addListener(() => setState(() {}));
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
+      if (mounted) Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
     });
   }
 
-  void _onBottomNavTap(int index) {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      entryPointScreenRoute,
-          (route) => false,
-      arguments: index,
-    );
+  @override
+  void dispose() {
+    _vinController.dispose();
+    _data1Controller.dispose();
+    _data2Controller.dispose();
+    _data3Controller.dispose();
+    super.dispose();
   }
 
+  // ---------------------------------------------------------------------------
+  // ACTIONS
+  // ---------------------------------------------------------------------------
+  void _onBottomNavTap(int index) {
+    if (index == 3) {
+      Navigator.pushNamed(context, cartScreenRoute);
+    } else {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+            (route) => false,
+        arguments: index,
+      );
+    }
+  }
+
+  /// Pull-to-refresh only updates the token balance; it no longer wipes the form.
   Future<void> _handleRefresh() async {
     await Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
-    await Future.delayed(const Duration(milliseconds: 500));
+  }
 
+  void _reset() {
     _vinController.clear();
     _data1Controller.clear();
     _data2Controller.clear();
     _data3Controller.clear();
-
     setState(() {
       _passcode = null;
       _attemptsLeft = null;
       _errorMsg = null;
-      _isLoading = false;
     });
   }
 
-  void _formatDataField(String value, TextEditingController controller) {
-    final parsed = value.toUpperCase().replaceAll('O', '0');
-    if (parsed != controller.text) {
-      controller.value = TextEditingValue(
-        text: parsed,
-        selection: TextSelection.collapsed(offset: parsed.length),
-      );
-    }
-    setState(() {});
+  Future<void> _openWhatsApp(String message) async {
+    final uri = Uri.parse(
+      'https://wa.me/$_whatsAppNumber?text=${Uri.encodeComponent(message)}',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _handleCalculate() async {
-    if (!_isFormValid) return;
+    if (!_isFormValid || _isLoading) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    // ✅ PREVENT GUESTS FROM CALCULATING
-    if (!authProvider.isAuthenticated || authProvider.token == null || authProvider.token!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please log in to calculate Toyota Passcodes."),
-          backgroundColor: Colors.red,
-        ),
-      );
+    final token = authProvider.token;
+    if (!authProvider.isAuthenticated || token == null || token.isEmpty) {
       Navigator.pushNamed(context, logInScreenRoute);
       return;
     }
 
-    String realToken = authProvider.token!;
-    String locale = Localizations.localeOf(context).languageCode;
+    FocusScope.of(context).unfocus();
+    final locale = Localizations.localeOf(context).languageCode;
 
     setState(() {
       _isLoading = true;
       _passcode = null;
       _attemptsLeft = null;
       _errorMsg = null;
+      _lastVin = _vin;
     });
 
-    Map<String, String> body = {
-      'vin': _vinController.text,
-      'data1': _data1Controller.text,
-      'data2': _data2Controller.text,
-      'data3': _data3Controller.text,
+    final body = <String, String>{
+      'vin': _vin,
+      'data1': _data1Controller.text.trim(),
+      'data2': _data2Controller.text.trim(),
+      'data3': _data3Controller.text.trim(),
     };
 
-    final res = await ApiService.calculateToyotaPasscode(body, realToken, locale);
+    final res = await ApiService.calculateToyotaPasscode(body, token, locale);
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
-      if (res['success']) {
-        final data = res['data'];
-        _passcode = data['passcode'] ?? data['data']?['passcode'];
-        _attemptsLeft = data['attempts_left'] ?? data['data']?['attempts_left'];
+      if (res['success'] == true) {
+        final data = res['data'] ?? {};
+        _passcode = (data['passcode'] ?? data['data']?['passcode'])?.toString();
+        final attempts = data['attempts_left'] ?? data['data']?['attempts_left'];
+        _attemptsLeft = attempts is num ? attempts.toInt() : int.tryParse('$attempts');
 
-        if (_passcode == null) {
+        if (_passcode == null || _passcode!.isEmpty) {
+          _passcode = null;
           _errorMsg = "Calculation failed. Please check your data.";
         }
-
-        // Force refresh user profile to update Toyota tokens count
-        authProvider.fetchUserProfile();
       } else {
-        _errorMsg = res['message'];
+        _errorMsg = res['message']?.toString() ?? "Something went wrong. Try again.";
       }
     });
+
+    // Update the Toyota token count shown at the top
+    authProvider.fetchUserProfile();
   }
 
+  // ---------------------------------------------------------------------------
+  // BUILD
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color scaffoldBg = isDark ? const Color(0xFF101015) : const Color(0xFFF4F5F7);
-    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color textColor = isDark ? Colors.white : Colors.black87;
-
+    final bg = Theme.of(context).scaffoldBackgroundColor;
     final authProvider = Provider.of<AuthProvider>(context);
-    final Map<String, dynamic>? user = authProvider.user;
+    final isLoggedIn = authProvider.isAuthenticated;
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: scaffoldBg,
-      drawer: CustomEndDrawer(
-        onLocaleChange: (locale) {},
-        user: null,
-        onTabChanged: _onBottomNavTap,
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: 0,
-        onTap: _onBottomNavTap,
-      ),
-      body: Column(
-        children: [
-          _buildCustomAppBar(isDark, cardBg, textColor),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _handleRefresh,
-              color: const Color(0xFF0C1E4E),
-              backgroundColor: cardBg,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(defaultPadding),
-                children: [
+    final rawTokens = authProvider.user?['toyota_tokens'];
+    final int? tokens = rawTokens is num ? rawTokens.toInt() : int.tryParse('${rawTokens ?? ''}');
 
-                  // 1. HOW TO USE GUIDE
-                  _buildHowToUseBox(isDark),
-                  const SizedBox(height: 24),
-
-                  // 2. TOYOTA TOKEN BADGE (Only shows if logged in)
-                  if (authProvider.isAuthenticated)
-                    _buildTokenBadge(user, isDark),
-                  const SizedBox(height: 16),
-
-                  // 3. INPUT FORM
-                  _buildInputForm(isDark, cardBg, textColor),
-                  const SizedBox(height: 24),
-
-                  // 4. ERRORS (If any)
-                  if (_errorMsg != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 24),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: isDark ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
-                      child: Text(_errorMsg!, style: TextStyle(color: isDark ? Colors.red.shade300 : Colors.red, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                    ),
-
-                  // 5. RESULT BOX
-                  if (_passcode != null)
-                    _buildResultBox(isDark, textColor),
-
-                  // 6. IMPORTANT WARNING
-                  _buildImportantWarningBox(isDark),
-                  const SizedBox(height: 40),
-                ],
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: bg,
+        extendBody: true,
+        appBar: AppBar(
+          backgroundColor: bg,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          leadingWidth: 64,
+          leading: Padding(
+            padding: const EdgeInsetsDirectional.only(start: defaultPadding),
+            child: Center(
+              child: _RoundButton(
+                icon: Icons.arrow_back_ios_new_rounded,
+                label: 'Back',
+                onTap: () => Navigator.maybePop(context),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // UI COMPONENTS
-  // ===========================================================================
-
-  Widget _buildHowToUseBox(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A233A) : const Color(0xFFF4F8FE),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.blue.shade900 : Colors.blue.shade100, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, color: isDark ? Colors.blue.shade300 : const Color(0xFF0C1E4E), size: 22),
-              const SizedBox(width: 10),
-              Text("How to Use Toyota Passcode",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.blue.shade300 : const Color(0xFF0C1E4E),
-                      fontSize: 16
-                  )),
-            ],
+          title: Text(
+            "Toyota Passcode",
+            style: TextStyle(
+              color: AppPalette.text(context),
+              fontWeight: FontWeight.w800,
+              fontSize: 17,
+            ),
           ),
-          const SizedBox(height: 20),
-          _buildNumberedStep("1", "Enter the 17-character VIN number exactly as it appears on the vehicle.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
-          const SizedBox(height: 16),
-          _buildNumberedStep("2", "Input Data 1, Data 2, and Data 3 from your diagnostic tool. (The letter 'O' is auto-converted to zero '0').", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
-          const SizedBox(height: 16),
-          _buildNumberedStep("3", "Ensure you have enough Toyota tokens in your account.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
-          const SizedBox(height: 16),
-          _buildNumberedStep("4", "Click calculate to retrieve the 12-digit passcode.", isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E), isDark),
-        ],
-      ),
-    );
-  }
-
-  // ✅ DISPLAY AVAILABLE TOKENS
-  Widget _buildTokenBadge(Map<String, dynamic>? user, bool isDark) {
-    if (user == null) return const SizedBox.shrink();
-
-    int toyotaTokens = user['toyota_tokens'] ?? 0;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centered like the website
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C23) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.vpn_key_outlined, size: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-              const SizedBox(width: 8),
-              Text(
-                "Toyota Tokens: $toyotaTokens",
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.grey.shade300 : Colors.black87),
+        ),
+        bottomNavigationBar: CustomBottomNavigationBar(
+          currentIndex: 0,
+          onTap: _onBottomNavTap,
+        ),
+        body: Builder(
+          builder: (bodyContext) => RefreshIndicator(
+            onRefresh: _handleRefresh,
+            color: primaryColor,
+            backgroundColor: AppPalette.card(context),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                defaultPadding,
+                8,
+                defaultPadding,
+                MediaQuery.paddingOf(bodyContext).bottom + 24,
               ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInputForm(bool isDark, Color cardBg, Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            TextFormField(
-              controller: _vinController,
-              maxLength: 17,
-              textCapitalization: TextCapitalization.characters,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w600, letterSpacing: 1.0),
-              decoration: InputDecoration(
-                labelText: "VIN NUMBER",
-                hintText: "Enter 17 Character VIN",
-                counterText: "",
-                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54, letterSpacing: 0),
-                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87, letterSpacing: 0, fontSize: 13),
-                prefixIcon: Icon(Icons.directions_car, color: isDark ? Colors.white70 : Colors.black54),
-                filled: true,
-                fillColor: cardBg,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-              onChanged: (v) {
-                _vinController.value = TextEditingValue(text: v.toUpperCase(), selection: _vinController.selection);
-                setState(() {});
-              },
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]'))],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "${_vinController.text.length}/17",
-              style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey.shade600),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-        _buildDataField("DATA 1", "00000", _data1Controller, isDark, cardBg, textColor),
-        const SizedBox(height: 16),
-        _buildDataField("DATA 2", "0000", _data2Controller, isDark, cardBg, textColor),
-        const SizedBox(height: 16),
-        _buildDataField("DATA 3", "000", _data3Controller, isDark, cardBg, textColor),
-        const SizedBox(height: 24),
-
-        ElevatedButton(
-          onPressed: _isFormValid && !_isLoading ? _handleCalculate : null,
-          style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E50FF),
-              disabledBackgroundColor: Colors.grey.shade400,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-          ),
-          child: _isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text(
-              "Calculate Passcode (Costs 1 Token)",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDataField(String label, String hint, TextEditingController controller, bool isDark, Color cardBg, Color textColor) {
-    return TextFormField(
-      controller: controller,
-      textCapitalization: TextCapitalization.characters,
-      style: TextStyle(color: textColor, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54, letterSpacing: 1.5),
-        labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87, letterSpacing: 0, fontSize: 12),
-        prefixIcon: Icon(Icons.data_array, color: isDark ? Colors.white70 : Colors.black54),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-          icon: Icon(Icons.clear, color: isDark ? Colors.white54 : Colors.black54, size: 20),
-          onPressed: () => setState(() => controller.clear()),
-        )
-            : null,
-        filled: true,
-        fillColor: cardBg,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      ),
-      onChanged: (v) => _formatDataField(v, controller),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]'))],
-    );
-  }
-
-  Widget _buildResultBox(bool isDark, Color textColor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2841) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? const Color(0xFF2E3A5A) : const Color(0xFFE0E7FF), width: 2),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
-          ]
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF4F8FE),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-            ),
-            alignment: Alignment.center,
-            child: const Text("SUCCESS!", style: TextStyle(color: Color(0xFF1E50FF), fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
               children: [
-                Text("YOUR TOYOTA PASSCODE", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600, fontSize: 12)),
+                _buildHero(isLoggedIn, tokens),
                 const SizedBox(height: 12),
-
-                // ✅ PREVENT TEXT OVERFLOW: Added FittedBox to scale down long passcodes
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    _passcode!,
-                    style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                        color: isDark ? Colors.white : const Color(0xFF0C1E4E)
-                    ),
-                    maxLines: 1,
-                  ),
-                ),
-
-                if (_attemptsLeft != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12)
-                    ),
-                    child: Text(
-                        "Free Retries Left: $_attemptsLeft",
-                        style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontSize: 11, fontWeight: FontWeight.bold)
-                    ),
-                  ),
+                if (!isLoggedIn)
+                  _buildSignInCard()
+                else ...[
+                  const _HowItWorks(),
+                  const SizedBox(height: 12),
+                  if (_passcode != null) _buildResult() else _buildForm(tokens),
+                  if (_errorMsg != null) _buildError(),
+                  const _ImportantNotes(),
                 ],
-
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: _passcode!));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passcode copied!")));
-                  },
-                  style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF1E50FF)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                  ),
-                  icon: const Icon(Icons.copy, color: Color(0xFF1E50FF), size: 18),
-                  label: const Text("Copy Passcode", style: TextStyle(color: Color(0xFF1E50FF), fontWeight: FontWeight.bold)),
-                )
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SECTIONS
+  // ---------------------------------------------------------------------------
+  Widget _buildHero(bool isLoggedIn, int? tokens) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primaryColor, primaryDeepColor],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.22),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.directions_car_filled_rounded, color: Colors.white, size: 23),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            "Toyota passcode calculator",
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Get the 12-digit passcode from the VIN and your diagnostic tool's data.",
+            style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13.5, height: 1.45),
+          ),
+          if (isLoggedIn) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.16),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withOpacity(0.25)),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    tokens?.toString() ?? "–",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      "Toyota tokens available",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (tokens != null && tokens <= 0)
+                    TextButton(
+                      onPressed: () => _openWhatsApp("Hello, I'd like to buy Toyota passcode tokens."),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        shape: const StadiumBorder(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Text("Buy tokens", style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildImportantWarningBox(bool isDark) {
+  Widget _buildSignInCard() {
+    return _Card(
+      children: [
+        Text(
+          "Sign in to continue",
+          style: TextStyle(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w800,
+            color: AppPalette.text(context),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "The Toyota calculator uses the tokens on your account. Sign in to see your balance and calculate a passcode.",
+          style: TextStyle(color: AppPalette.textMuted(context), fontSize: 13.5, height: 1.5),
+        ),
+        const SizedBox(height: 14),
+        _PrimaryButton(
+          label: "Sign in",
+          onPressed: () => Navigator.pushNamed(context, logInScreenRoute),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForm(int? tokens) {
+    final muted = AppPalette.textMuted(context);
+    final noTokens = tokens != null && tokens <= 0;
+
+    return _Card(
+      children: [
+        _FieldLabel("VIN / frame number"),
+        _CodeField(
+          controller: _vinController,
+          hint: "JTDKB20U0034567",
+          enabled: !_isLoading,
+          formatter: _UpperAlnumFormatter(maxLength: _vinMax),
+          icon: Icons.directions_car_outlined,
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "$_vinMin to $_vinMax characters, exactly as on the vehicle.",
+                style: TextStyle(color: muted, fontSize: 12),
+              ),
+            ),
+            Text(
+              "${_vin.length}/$_vinMax",
+              style: TextStyle(
+                color: _vinValid ? Colors.green.shade600 : muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _FieldLabel("Data 1"),
+        _CodeField(
+          controller: _data1Controller,
+          hint: "00000",
+          enabled: !_isLoading,
+          formatter: _UpperAlnumFormatter(oToZero: true),
+          icon: Icons.data_array_rounded,
+        ),
+        const SizedBox(height: 12),
+        _FieldLabel("Data 2"),
+        _CodeField(
+          controller: _data2Controller,
+          hint: "0000",
+          enabled: !_isLoading,
+          formatter: _UpperAlnumFormatter(oToZero: true),
+          icon: Icons.data_array_rounded,
+        ),
+        const SizedBox(height: 12),
+        _FieldLabel("Data 3"),
+        _CodeField(
+          controller: _data3Controller,
+          hint: "000",
+          enabled: !_isLoading,
+          formatter: _UpperAlnumFormatter(oToZero: true),
+          icon: Icons.data_array_rounded,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "The letter O is changed to zero (0) automatically.",
+          style: TextStyle(color: muted, fontSize: 12),
+        ),
+        const SizedBox(height: 18),
+        _PrimaryButton(
+          label: _isLoading ? "Calculating…" : "Calculate passcode",
+          icon: Icons.key_rounded,
+          loading: _isLoading,
+          onPressed: _isFormValid && !_isLoading && !noTokens ? _handleCalculate : null,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          _isLoading
+              ? "This can take up to 2 minutes. Please keep the app open."
+              : noTokens
+              ? "You have no Toyota tokens left. Tap Buy tokens above."
+              : !_vinValid
+              ? "Enter a VIN of $_vinMin to $_vinMax characters to continue."
+              : !_isFormValid
+              ? "Fill in Data 1, Data 2 and Data 3 to continue."
+              : "Uses 1 Toyota token.",
+          style: TextStyle(color: muted, fontSize: 12.5, height: 1.4),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResult() {
+    final green = Colors.green.shade600;
+
+    return _Card(
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: green.withOpacity(0.12), shape: BoxShape.circle),
+              child: Icon(Icons.check_rounded, color: green, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Passcode ready",
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppPalette.text(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            SizedBox(
+              width: 50,
+              child: Text("VIN", style: TextStyle(color: AppPalette.textMuted(context), fontSize: 13)),
+            ),
+            Expanded(
+              child: SelectableText(
+                _lastVin,
+                style: TextStyle(
+                  color: AppPalette.text(context),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(AppPalette.isDark(context) ? 0.16 : 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: primaryColor.withOpacity(0.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Toyota passcode",
+                style: TextStyle(
+                  color: AppPalette.textMuted(context),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  _passcode!,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: primaryColor,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_attemptsLeft != null) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppPalette.cardElevated(context),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "Free retries left for this VIN: $_attemptsLeft",
+              style: TextStyle(
+                color: AppPalette.textMuted(context),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _passcode!));
+              HapticFeedback.lightImpact();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(
+                  content: const Text("Passcode copied"),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ));
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: const BorderSide(color: primaryColor, width: 1.4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            label: const Text("Copy passcode", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _PrimaryButton(
+          label: "New calculation",
+          icon: Icons.refresh_rounded,
+          onPressed: _reset,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError() {
+    final isDark = AppPalette.isDark(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C1E16) : const Color(0xFFFFF8F3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.orange.shade900 : Colors.orange.shade200, width: 1.5),
+        color: primaryColor.withOpacity(isDark ? 0.14 : 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryColor.withOpacity(0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.deepOrange.shade700, size: 22),
+              const Icon(Icons.error_outline_rounded, color: primaryColor, size: 22),
               const SizedBox(width: 10),
-              Text("Important — Read Before Searching",
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange.shade800, fontSize: 16)),
+              Expanded(
+                child: Text(
+                  "Calculation didn't complete",
+                  style: TextStyle(
+                    color: AppPalette.text(context),
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 20),
-          _buildWarningStep("Each new Toyota calculation will consume 1 Toyota Token.", isBold: false, textColor: isDark ? Colors.orange.shade100 : Colors.brown.shade700),
-          const SizedBox(height: 16),
-          _buildWarningStep("You receive 2 free retries for the same VIN within 48 hours to correct any mistyped data.", isBold: false, textColor: isDark ? Colors.orange.shade100 : Colors.brown.shade700),
-          const SizedBox(height: 16),
-          _buildWarningStep("Please double-check all data before calculating. Tokens cannot be refunded for typos.", isBold: true, textColor: isDark ? Colors.orange.shade200 : Colors.brown.shade800),
+          const SizedBox(height: 8),
+          Text(
+            _errorMsg!,
+            style: TextStyle(color: AppPalette.textMuted(context), fontSize: 13.5, height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => _openWhatsApp(
+                "Hello, the Toyota passcode calculator didn't work for:\n"
+                    "VIN: $_lastVin\n"
+                    "Data 1: ${_data1Controller.text}\n"
+                    "Data 2: ${_data2Controller.text}\n"
+                    "Data 3: ${_data3Controller.text}",
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1DA851),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+              label: const Text(
+                "Ask us on WhatsApp",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  // ===========================================================================
-  // HELPERS
-  // ===========================================================================
+// =============================================================================
+// PIECES
+// =============================================================================
 
-  Widget _buildCustomAppBar(bool isDark, Color cardBg, Color textColor) {
-    return Container(
-      color: cardBg,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              _buildAppBarIcon(icon: Icons.menu, isDark: isDark, onTap: () => _scaffoldKey.currentState?.openDrawer()),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, searchScreenRoute),
-                  child: Container(
-                    height: 45,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(color: isDark ? Colors.grey.shade900 : Colors.grey.shade100, borderRadius: BorderRadius.circular(30)),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.grey.shade500, size: 20),
-                        const SizedBox(width: 8),
-                        Text("Search...", style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _buildAppBarIcon(icon: Icons.notifications_none, isDark: isDark, onTap: () => Navigator.pushNamed(context, notificationsScreenRoute)),
-            ],
+/// Uppercase letters and digits only. Optionally turns O into 0 and limits length.
+class _UpperAlnumFormatter extends TextInputFormatter {
+  _UpperAlnumFormatter({this.maxLength, this.oToZero = false});
+  final int? maxLength;
+  final bool oToZero;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    var text = newValue.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (oToZero) text = text.replaceAll('O', '0');
+    if (maxLength != null && text.length > maxLength!) text = text.substring(0, maxLength);
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: AppPalette.text(context),
+        ),
+      ),
+    );
+  }
+}
+
+class _CodeField extends StatelessWidget {
+  const _CodeField({
+    required this.controller,
+    required this.hint,
+    required this.formatter,
+    this.enabled = true,
+    this.icon,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final TextInputFormatter formatter;
+  final bool enabled;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = AppPalette.textMuted(context);
+    final radius = BorderRadius.circular(16);
+    OutlineInputBorder border(Color c, [double w = 1]) =>
+        OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: c, width: w));
+
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      textCapitalization: TextCapitalization.characters,
+      autocorrect: false,
+      enableSuggestions: false,
+      cursorColor: primaryColor,
+      inputFormatters: [formatter],
+      style: TextStyle(
+        color: AppPalette.text(context),
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.5,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: muted.withOpacity(0.5),
+          letterSpacing: 1.5,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: AppPalette.cardElevated(context),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        prefixIcon: icon == null ? null : Icon(icon, color: muted, size: 20),
+        suffixIcon: controller.text.isEmpty || !enabled
+            ? null
+            : IconButton(
+          tooltip: 'Clear',
+          icon: Icon(Icons.close_rounded, color: muted, size: 19),
+          onPressed: controller.clear,
+        ),
+        border: border(AppPalette.border(context)),
+        enabledBorder: border(AppPalette.border(context)),
+        disabledBorder: border(AppPalette.border(context)),
+        focusedBorder: border(primaryColor, 1.4),
+      ),
+    );
+  }
+}
+
+class _RoundButton extends StatelessWidget {
+  const _RoundButton({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: AppPalette.cardElevated(context),
+        shape: CircleBorder(side: BorderSide(color: AppPalette.border(context))),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 42,
+            height: 42,
+            child: Icon(icon, size: 17, color: AppPalette.text(context)),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildAppBarIcon({required IconData icon, required bool isDark, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(25),
-      child: Container(
-        width: 40, height: 40,
-        decoration: BoxDecoration(
-            color: isDark ? Colors.grey.shade900 : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: isDark ? Colors.transparent : Colors.grey.shade200),
-            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]
+class _Card extends StatelessWidget {
+  const _Card({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppPalette.card(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppPalette.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.loading = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor:
+          loading ? primaryColor.withOpacity(0.75) : AppPalette.cardElevated(context),
+          disabledForegroundColor: loading ? Colors.white : AppPalette.textMuted(context),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        child: Icon(icon, color: isDark ? Colors.white : Colors.black87, size: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (loading)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            else if (icon != null)
+              Icon(icon, size: 18),
+            if (loading || icon != null) const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildNumberedStep(String number, String text, Color textColor, bool isDark) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 24, height: 24,
-          decoration: BoxDecoration(color: isDark ? Colors.blue.shade900 : const Color(0xFFD6E4FF), shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: Text(number, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.blue.shade100 : const Color(0xFF0C1E4E))),
+class _HowItWorks extends StatelessWidget {
+  const _HowItWorks();
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(20));
+    final textColor = AppPalette.isDark(context) ? Colors.white70 : blackColor80;
+
+    Widget step(int n, String text) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+            child: Text(
+              "$n",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(text, style: TextStyle(fontSize: 13.5, height: 1.45, color: textColor)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: Material(
+        color: AppPalette.card(context),
+        shape: shape.copyWith(side: BorderSide(color: AppPalette.border(context))),
+        clipBehavior: Clip.antiAlias,
+        child: ExpansionTile(
+          shape: shape,
+          collapsedShape: shape,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          iconColor: primaryColor,
+          collapsedIconColor: AppPalette.textMuted(context),
+          leading: const Icon(Icons.help_outline_rounded, color: primaryColor),
+          title: Text(
+            "How it works",
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14.5,
+              color: AppPalette.text(context),
+            ),
+          ),
+          children: [
+            step(1, "Enter the VIN or frame number exactly as on the vehicle."),
+            step(2, "Enter Data 1, Data 2 and Data 3 from your diagnostic tool."),
+            step(3, "Make sure you have at least one Toyota token."),
+            step(4, "Tap Calculate passcode to get the 12-digit passcode."),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Padding(padding: const EdgeInsets.only(top: 2.0), child: Text(text, style: TextStyle(color: textColor, height: 1.4, fontSize: 13)))),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildWarningStep(String text, {required bool isBold, required Color textColor}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(padding: const EdgeInsets.only(top: 2.0), child: Icon(Icons.warning_amber_rounded, size: 20, color: Colors.deepOrange.shade600)),
-        const SizedBox(width: 12),
-        Expanded(child: Text(text, style: TextStyle(color: textColor, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, height: 1.4, fontSize: 13))),
-      ],
+class _ImportantNotes extends StatelessWidget {
+  const _ImportantNotes();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    final textColor = isDark ? Colors.red.shade100 : primaryDarkColor;
+
+    Widget note(String text, {bool bold = false}) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 7),
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13.5,
+                height: 1.5,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(isDark ? 0.14 : 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: primaryColor, size: 21),
+              const SizedBox(width: 8),
+              Text(
+                "Read before calculating",
+                style: TextStyle(
+                  color: AppPalette.text(context),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          note("Each new Toyota calculation uses 1 Toyota token."),
+          note("You get 2 free retries for the same VIN within 48 hours."),
+          note("Double-check all data before calculating. Tokens can't be refunded for typos.", bold: true),
+        ],
+      ),
     );
   }
 }

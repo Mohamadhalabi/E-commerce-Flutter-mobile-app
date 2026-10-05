@@ -22,19 +22,28 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-  late TextEditingController _qtyController;
-
-  // State for dynamic pricing
+  late final TextEditingController _qtyController;
   late double _currentUnitPrice;
   late double _regularPrice;
+
+  // Only THIS card shows a spinner, not every card on screen
+  bool _isAdding = false;
 
   @override
   void initState() {
     super.initState();
-    _qtyController = TextEditingController(text: "1");
-    // Default to the regular price from model
-    _regularPrice = widget.product.regularPrice;
-    _calculatePrice(1);
+    _qtyController = TextEditingController(text: '1');
+    _resetPricing();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Lists recycle states — reset when a different product lands here
+    if (oldWidget.product.id != widget.product.id) {
+      _qtyController.text = '1';
+      _resetPricing();
+    }
   }
 
   @override
@@ -43,55 +52,55 @@ class _ProductCardState extends State<ProductCard> {
     super.dispose();
   }
 
-  void _calculatePrice(int qty) {
-    double finalPrice = widget.product.effectivePrice;
+  void _resetPricing() {
+    _regularPrice = widget.product.regularPrice;
+    _currentUnitPrice = _priceForQty(1);
+  }
 
-    // Check table pricing
-    if (widget.product.tablePrices.isNotEmpty) {
-      for (var tier in widget.product.tablePrices) {
-        if (qty >= tier.minQty && (tier.maxQty == null || qty <= tier.maxQty!)) {
-          finalPrice = tier.price;
-          break;
-        }
+  double _priceForQty(int qty) {
+    for (final tier in widget.product.tablePrices) {
+      if (qty >= tier.minQty && (tier.maxQty == null || qty <= tier.maxQty!)) {
+        return tier.price;
       }
     }
+    return widget.product.effectivePrice;
+  }
 
-    if (mounted) {
-      setState(() {
-        _currentUnitPrice = finalPrice;
-      });
+  int get _qty => int.tryParse(_qtyController.text) ?? 1;
+
+  void _setQty(int qty) {
+    final q = qty < 1 ? 1 : (qty > 999 ? 999 : qty);
+    _qtyController.text = '$q';
+    setState(() => _currentUnitPrice = _priceForQty(q));
+  }
+
+  void _onQtyTyped(String value) {
+    final q = int.tryParse(value);
+    if (q != null && q >= 1) {
+      setState(() => _currentUnitPrice = _priceForQty(q));
     }
   }
 
-  void _incrementQuantity() {
-    int current = int.tryParse(_qtyController.text) ?? 1;
-    int newQty = current + 1;
-    _qtyController.text = newQty.toString();
-    _calculatePrice(newQty);
-  }
-
-  void _decrementQuantity() {
-    int current = int.tryParse(_qtyController.text) ?? 1;
-    if (current > 1) {
-      int newQty = current - 1;
-      _qtyController.text = newQty.toString();
-      _calculatePrice(newQty);
-    }
-  }
-
-  void _handleManualInput(String value) {
-    if (value.isEmpty) return;
-    int? val = int.tryParse(value);
-    if (val != null && val >= 1) {
-      _calculatePrice(val);
-    }
+  void _addToCart(CartProvider cart) {
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+    setState(() => _isAdding = true);
+    cart.addToCart(
+      productId: widget.product.id,
+      title: widget.product.title,
+      image: widget.product.image,
+      sku: widget.product.sku,
+      price: _currentUnitPrice,
+      quantity: _qty,
+      stock: widget.product.stock,
+      context: context,
+    );
   }
 
   Future<void> _launchWhatsApp() async {
-    // 1. & 2. Updated message to include Title + SKU, and updated phone number
-    final String message = Uri.encodeComponent("Hi, I want to ask about ${widget.product.title}\nSKU: ${widget.product.sku}");
-    final Uri waUrl = Uri.parse('https://wa.me/971504429045?text=$message');
-
+    final message = Uri.encodeComponent(
+        "Hi, I want to ask about ${widget.product.title}\nSKU: ${widget.product.sku}");
+    final waUrl = Uri.parse('https://wa.me/971504429045?text=$message');
     if (!await launchUrl(waUrl, mode: LaunchMode.externalApplication)) {
       debugPrint('Could not launch WhatsApp');
     }
@@ -99,277 +108,338 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color cardBg = isDark ? const Color(0xFF1E1E2C) : Colors.white;
-    final Color textColor = isDark ? Colors.white : const Color(0xFF333333);
-    final Color inputBg = isDark ? const Color(0xFF2C2C38) : const Color(0xFFF5F5F5);
-    final Color borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
+    final isDark = AppPalette.isDark(context);
+    final textColor = AppPalette.text(context);
+    final mutedColor = AppPalette.textMuted(context);
 
-    bool isDiscounted = _currentUnitPrice < _regularPrice;
+    final isDiscounted = _currentUnitPrice < _regularPrice;
+    final discountPct = isDiscounted && _regularPrice > 0
+        ? ((1 - _currentUnitPrice / _regularPrice) * 100).round()
+        : 0;
 
     return Container(
       margin: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
+        color: AppPalette.card(context),
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: AppPalette.border(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
-        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. IMAGE & TIMER
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(bottom: BorderSide(color: borderColor, width: 1)),
-              ),
-              child: Stack(
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.press,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        child: AspectRatio(
-                          aspectRatio: 1.0,
-                          child: Hero(
-                            tag: "product_${widget.product.id}",
-                            child: Image.network(
-                              widget.product.image,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.image_not_supported, color: Colors.grey.shade300, size: 40),
-                            ),
-                          ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(cardRadius),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.press, // whole card opens the product now
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildImage(discountPct),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "SKU: ${widget.product.sku}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isDark ? Colors.green.shade400 : greenColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.product.title,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          height: 1.55,
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildPriceRow(isDiscounted, textColor, mutedColor),
+                      const SizedBox(height: 8),
+                      if (widget.product.hidePrice)
+                        _buildWhatsAppButton()
+                      else
+                        _buildActions(textColor),
+                    ],
                   ),
-                  if (widget.product.discount != null &&
-                      widget.product.discount!['end_date'] != null)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: DiscountTimer(endDate: widget.product.discount!['end_date']),
-                    ),
-                ],
-              ),
-            ),
-
-            // 2. CONTENT
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "SKU: ${widget.product.sku}",
-                      style: TextStyle( // Removed 'const' here
-                        // ✅ Use a lighter green for dark mode, standard for light mode
-                        color: isDark ? Colors.green.shade400 : greenColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.product.title,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        height: 1.6,
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // ALWAYS SHOW PRICE ROW
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "\$${_currentUnitPrice.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            color: primaryColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        if (isDiscounted)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child: Text(
-                              "\$${_regularPrice.toStringAsFixed(2)}",
-                              style: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 11,
-                                decoration: TextDecoration.lineThrough,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // CONDITIONAL ACTIONS ROW
-                    if (widget.product.hidePrice)
-                      SizedBox(
-                        height: 30, // Increased slightly from 28 so text doesn't cut off
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _launchWhatsApp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1DA851), // Accurate WhatsApp Green
-                            padding: const EdgeInsets.symmetric(horizontal: 4), // Tiny padding to fit text
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.chat_bubble_outline, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  "Contact on WhatsApp",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10, // Scaled down to prevent overflow
-                                      fontWeight: FontWeight.w800
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      Row(
-                        children: [
-                          Container(
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: inputBg,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildQtyBtn(Icons.remove, _decrementQuantity, isDark),
-                                Container(
-                                  width: 28,
-                                  alignment: Alignment.center,
-                                  child: TextField(
-                                    controller: _qtyController,
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    onChanged: _handleManualInput,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: textColor,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      isCollapsed: true,
-                                      border: InputBorder.none,
-                                    ),
-                                    inputFormatters: [
-                                      LengthLimitingTextInputFormatter(3),
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                  ),
-                                ),
-                                _buildQtyBtn(Icons.add, _incrementQuantity, isDark),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Consumer<CartProvider>(
-                              builder: (context, cart, child) {
-                                return SizedBox(
-                                  height: 28,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      int qty = int.tryParse(_qtyController.text) ?? 1;
-                                      cart.addToCart(
-                                        productId: widget.product.id,
-                                        title: widget.product.title,
-                                        image: widget.product.image,
-                                        sku: widget.product.sku,
-                                        price: _currentUnitPrice,
-                                        quantity: qty,
-                                        stock: widget.product.stock,
-                                        context: context,
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryColor,
-                                      padding: EdgeInsets.zero,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    child: cart.isLoading
-                                        ? const SizedBox(
-                                      height: 14,
-                                      width: 14,
-                                      child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2),
-                                    )
-                                        : const Icon(Icons.shopping_cart_outlined,
-                                        size: 16, color: Colors.white),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildQtyBtn(IconData icon, VoidCallback onTap, bool isDark) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: Icon(icon, size: 14, color: isDark ? Colors.white70 : Colors.black54),
+  Widget _buildImage(int discountPct) {
+    final endDate = widget.product.discount?['end_date'];
+
+    return Padding(
+      padding: const EdgeInsets.all(6),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          // Product photos have white backgrounds — an inset white tile
+          // looks intentional in dark mode instead of a harsh white block.
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(cardRadius - 4),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Hero(
+                  tag: "product_${widget.product.id}",
+                  child: Image.network(
+                    widget.product.image,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) =>
+                    progress == null
+                        ? child
+                        : Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: primaryColor.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.image_not_supported_outlined,
+                      color: blackColor20,
+                      size: 36,
+                    ),
+                  ),
+                ),
+              ),
+              if (discountPct > 0)
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '-$discountPct%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              if (endDate != null)
+                Positioned(
+                  left: 6,
+                  right: 6,
+                  bottom: 6,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: DiscountTimer(endDate: endDate.toString()),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(bool isDiscounted, Color textColor, Color mutedColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Flexible(
+          child: Text(
+            "\$${_currentUnitPrice.toStringAsFixed(2)}",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: primaryColor, // price is always red
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        if (isDiscounted) ...[
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              "\$${_regularPrice.toStringAsFixed(2)}",
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.lineThrough,
+                decorationColor: Colors.grey.shade500,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActions(Color textColor) {
+    final iconColor = AppPalette.textMuted(context);
+
+    return Row(
+      children: [
+        Container(
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppPalette.cardElevated(context),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _qtyButton(Icons.remove_rounded, () => _setQty(_qty - 1), iconColor),
+              SizedBox(
+                width: 26,
+                child: TextField(
+                  controller: _qtyController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  onChanged: _onQtyTyped,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                    color: textColor,
+                  ),
+                  decoration: const InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                  ),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(3),
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                ),
+              ),
+              _qtyButton(Icons.add_rounded, () => _setQty(_qty + 1), iconColor),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Consumer<CartProvider>(
+            builder: (context, cart, _) {
+              // Clear our flag once the provider finishes
+              if (_isAdding && !cart.isLoading) _isAdding = false;
+              final busy = _isAdding && cart.isLoading;
+
+              return SizedBox(
+                height: 32,
+                child: ElevatedButton(
+                  onPressed: busy ? null : () => _addToCart(cart),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    disabledBackgroundColor: primaryColor.withOpacity(0.7),
+                    padding: EdgeInsets.zero,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: busy
+                      ? const SizedBox(
+                    height: 14,
+                    width: 14,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Icon(
+                    Icons.add_shopping_cart_rounded,
+                    size: 17,
+                    color: Colors.white,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWhatsAppButton() {
+    return SizedBox(
+      height: 32,
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _launchWhatsApp,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1DA851),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.chat_bubble_outline_rounded,
+                  size: 14, color: Colors.white),
+              SizedBox(width: 5),
+              Text(
+                "Contact on WhatsApp",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _qtyButton(IconData icon, VoidCallback onTap, Color color) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 24,
+        height: 32,
+        child: Icon(icon, size: 16, color: color),
       ),
     );
   }
@@ -384,72 +454,84 @@ class DiscountTimer extends StatefulWidget {
 }
 
 class _DiscountTimerState extends State<DiscountTimer> {
-  late Timer _timer;
+  Timer? _timer;
   Duration _timeLeft = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _calculateTimeLeft();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _calculateTimeLeft());
+    _start();
   }
 
-  void _calculateTimeLeft() {
-    final end = DateTime.tryParse(widget.endDate);
-    if (end != null) {
-      final now = DateTime.now();
-      final diff = end.difference(now);
-      if (diff.isNegative) {
-        _timer.cancel();
-        setState(() => _timeLeft = Duration.zero);
-      } else {
-        setState(() => _timeLeft = diff);
-      }
+  @override
+  void didUpdateWidget(covariant DiscountTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.endDate != widget.endDate) {
+      _timer?.cancel();
+      _start();
     }
+  }
+
+  // Fixes a crash: the old version could call _timer.cancel() before
+  // _timer was assigned when the sale had already ended.
+  void _start() {
+    final end = DateTime.tryParse(widget.endDate);
+    if (end == null) {
+      _timeLeft = Duration.zero;
+      return;
+    }
+    _timeLeft = _remaining(end);
+    if (_timeLeft > Duration.zero) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final left = _remaining(end);
+        if (left <= Duration.zero) _timer?.cancel();
+        if (mounted) setState(() => _timeLeft = left);
+      });
+    }
+  }
+
+  Duration _remaining(DateTime end) {
+    final diff = end.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_timeLeft.inSeconds <= 0) return const SizedBox.shrink();
+    if (_timeLeft <= Duration.zero) return const SizedBox.shrink();
 
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    final days = _timeLeft.inDays;
-    final hours = _timeLeft.inHours.remainder(24);
-    final minutes = _timeLeft.inMinutes.remainder(60);
-    final seconds = _timeLeft.inSeconds.remainder(60);
-
-    String timerText;
-    if (days > 0) {
-      timerText = "${days}d ${twoDigits(hours)}h ${twoDigits(minutes)}m ${twoDigits(seconds)}s";
-    } else {
-      timerText = "${twoDigits(hours)}h ${twoDigits(minutes)}m ${twoDigits(seconds)}s";
-    }
+    String two(int n) => n.toString().padLeft(2, '0');
+    final d = _timeLeft.inDays;
+    final h = _timeLeft.inHours.remainder(24);
+    final m = _timeLeft.inMinutes.remainder(60);
+    final s = _timeLeft.inSeconds.remainder(60);
+    final text = d > 0
+        ? '${d}d ${two(h)}:${two(m)}:${two(s)}'
+        : '${two(h)}:${two(m)}:${two(s)}';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-          color: Colors.red.shade600,
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))]
+        color: blackColor.withOpacity(0.78),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time_filled, color: Colors.white, size: 10),
-          const SizedBox(width: 4),
+          const Icon(Icons.bolt_rounded, color: warningColor, size: 12),
+          const SizedBox(width: 3),
           Text(
-            timerText,
+            text,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),
         ],

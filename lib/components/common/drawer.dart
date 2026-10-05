@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:shop/constants.dart';
 import 'package:shop/models/category_model.dart';
 import 'package:shop/models/brand_model.dart';
 import 'package:shop/models/manufacturer_model.dart';
@@ -9,6 +10,8 @@ import 'package:shop/services/api_service.dart';
 
 import '../../route/route_constants.dart';
 import '../skleton/common/skeleton_circle.dart';
+
+import 'package:shop/screens/tools/kia_pin_calculator_screen.dart';
 
 // Cache globals
 List<CategoryModel>? _cachedCategories;
@@ -33,7 +36,6 @@ class CustomEndDrawer extends StatefulWidget {
 }
 
 class _CustomEndDrawerState extends State<CustomEndDrawer> {
-
   List<CategoryModel> categories = [];
   List<BrandModel> brands = [];
   List<ManufacturerModel> manufacturers = [];
@@ -57,152 +59,206 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
 
   Future<void> fetchCategories(String locale) async {
     if (_cachedCategories != null && _cachedLocale == locale) {
-      setState(() { categories = _cachedCategories!; isLoadingCategories = false; });
+      setState(() {
+        categories = _cachedCategories!;
+        isLoadingCategories = false;
+      });
       return;
     }
     setState(() => isLoadingCategories = true);
     try {
       final data = await ApiService.fetchCategories(locale);
-      setState(() { categories = data; isLoadingCategories = false; _cachedCategories = data; _cachedLocale = locale; });
-    } catch (e) { setState(() => isLoadingCategories = false); }
+      _cachedCategories = data;
+      _cachedLocale = locale;
+      if (!mounted) return;
+      setState(() {
+        categories = data;
+        isLoadingCategories = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => isLoadingCategories = false);
+    }
   }
 
   Future<void> fetchBrands(String locale) async {
     if (_cachedBrands != null && _cachedLocale == locale) {
-      setState(() { brands = _cachedBrands!; isLoadingBrands = false; });
+      setState(() {
+        brands = _cachedBrands!;
+        isLoadingBrands = false;
+      });
       return;
     }
     setState(() => isLoadingBrands = true);
     try {
       final data = await ApiService.fetchBrands(locale);
-      setState(() { brands = data; isLoadingBrands = false; _cachedBrands = data; _cachedLocale = locale; });
-    } catch (e) { setState(() => isLoadingBrands = false); }
+      _cachedBrands = data;
+      _cachedLocale = locale;
+      if (!mounted) return;
+      setState(() {
+        brands = data;
+        isLoadingBrands = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => isLoadingBrands = false);
+    }
   }
 
   Future<void> fetchManufacturers(String locale) async {
     if (_cachedManufacturers != null && _cachedLocale == locale) {
-      setState(() { manufacturers = _cachedManufacturers!; isLoadingManufacturers = false; });
+      setState(() {
+        manufacturers = _cachedManufacturers!;
+        isLoadingManufacturers = false;
+      });
       return;
     }
     setState(() => isLoadingManufacturers = true);
     try {
       final data = await ApiService.fetchManufacturers(locale);
-      setState(() { manufacturers = data; isLoadingManufacturers = false; _cachedManufacturers = data; _cachedLocale = locale; });
-    } catch (e) { setState(() => isLoadingManufacturers = false); }
+      _cachedManufacturers = data;
+      _cachedLocale = locale;
+      if (!mounted) return;
+      setState(() {
+        manufacturers = data;
+        isLoadingManufacturers = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => isLoadingManufacturers = false);
+    }
+  }
+
+  void _openFiltered(Map<String, dynamic> item) {
+    Navigator.pop(context);
+    final String type = item['type'] ?? 'brand';
+    Navigator.pushNamed(
+      context,
+      "sub_category_products_screen",
+      arguments: {
+        'categorySlug': '',
+        'initialBrandSlug': type == 'brand' ? item['slug'] : null,
+        'initialManufacturerSlug': type == 'manufacturer' ? item['slug'] : null,
+        'title': item['title'],
+        'currentIndex': 0,
+        'user': widget.user,
+        'onTabChanged': widget.onTabChanged,
+        'onLocaleChange': widget.onLocaleChange,
+      },
+    );
+  }
+
+  void _openTool(String route) {
+    Navigator.pop(context);
+    Navigator.pushNamed(context, route);
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color drawerBg = isDark ? const Color(0xFF101015) : Colors.white;
-    final Color dividerColor = isDark ? Colors.white10 : Colors.grey.shade100;
+    final l10n = AppLocalizations.of(context)!;
 
     return Drawer(
-      backgroundColor: drawerBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topRight: Radius.circular(0), bottomRight: Radius.circular(0)),
+        borderRadius: BorderRadiusDirectional.only(
+          topEnd: Radius.circular(28),
+          bottomEnd: Radius.circular(28),
+        ),
       ),
       child: SafeArea(
         child: Column(
           children: [
-            // 1. HEADER
-            Container(
-              height: 150,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: dividerColor)),
-              ),
-              child: isDark
-                  ? ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                  child: Image.asset('assets/logo/techno-lock-mobile-logo.webp', fit: BoxFit.contain, alignment: Alignment.centerLeft)
-              )
-                  : Image.asset('assets/logo/techno-lock-mobile-logo.webp', fit: BoxFit.contain, alignment: Alignment.centerLeft),
-            ),
-
-            // 2. MENU LIST
+            const _DrawerHeader(),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(top: 10, bottom: 20),
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                 children: [
-
-                  // --- BRANDS ACCORDION ---
-                  _buildMenuSection(
-                    context, isDark,
-                    icon: Icons.branding_watermark_outlined,
-                    title: localizations.brands,
-                    children: isLoadingBrands
-                        ? [_buildLoadingIndicator(isDark)]
-                        : [_buildGrid(isDark, brands.map((brand) => {
-                      'type': 'brand',
-                      'slug': brand.slug,
-                      'title': brand.title,
-                      'image': brand.image,
-                    }).toList())],
-                  ),
-
-                  _buildDivider(isDark),
-
-                  // --- MANUFACTURERS ACCORDION ---
-                  _buildMenuSection(
-                    context, isDark,
-                    icon: Icons.precision_manufacturing_outlined,
-                    title: localizations.manufacturers,
-                    children: isLoadingManufacturers
-                        ? [_buildLoadingIndicator(isDark)]
-                        : [_buildGrid(isDark, manufacturers.map((man) => {
-                      'type': 'manufacturer',
-                      'slug': man.slug,
-                      'title': man.title,
-                      'image': man.image,
-                    }).toList())],
-                  ),
-
-                  _buildDivider(isDark),
-
-                  // --- DYNAMIC CATEGORIES ACCORDIONS ---
-                  if (isLoadingCategories)
-                    _buildLoadingIndicator(isDark)
-                  else
-                    ...categories.map((cat) => Column(
-                      children: [
-                        CategoryExpansionTile(
-                          category: cat,
-                          isDark: isDark,
-                          user: widget.user,
-                          onTabChanged: widget.onTabChanged,
-                          onLocaleChange: widget.onLocaleChange,
+                  const _SectionLabel('Browse'),
+                  DrawerExpansionTile(
+                    icon: Icons.verified_outlined,
+                    title: l10n.brands,
+                    children: [
+                      if (isLoadingBrands)
+                        const DrawerGridSkeleton()
+                      else
+                        DrawerItemGrid(
+                          items: brands
+                              .map((b) => {
+                            'type': 'brand',
+                            'slug': b.slug,
+                            'title': b.title,
+                            'image': b.image,
+                          })
+                              .toList(),
+                          onTap: _openFiltered,
                         ),
-                        _buildDivider(isDark),
-                      ],
-                    )),
-
-                  // --- TOOLS (Moved to the Bottom) ---
-                  _buildSimpleToolOption(
-                      context, isDark,
-                      "Kia/Hyundai Part Lookup",
-                      Icons.directions_car_outlined,
-                          () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, kiaHyundaiScreenRoute);
-                      }
+                    ],
                   ),
-
-                  _buildDivider(isDark), // <hr> between them
-
-                  _buildSimpleToolOption(
-                      context, isDark,
-                      "Toyota Passcode",
-                      Icons.pin_outlined,
-                          () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, toyotaPasscodeScreenRoute);
-                      }
+                  DrawerExpansionTile(
+                    icon: Icons.precision_manufacturing_outlined,
+                    title: l10n.manufacturers,
+                    children: [
+                      if (isLoadingManufacturers)
+                        const DrawerGridSkeleton()
+                      else
+                        DrawerItemGrid(
+                          items: manufacturers
+                              .map((m) => {
+                            'type': 'manufacturer',
+                            'slug': m.slug,
+                            'title': m.title,
+                            'image': m.image,
+                          })
+                              .toList(),
+                          onTap: _openFiltered,
+                        ),
+                    ],
                   ),
-
+                  if (isLoadingCategories)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ...categories.map(
+                          (cat) => CategoryExpansionTile(
+                        category: cat,
+                        isDark: AppPalette.isDark(context),
+                        user: widget.user,
+                        onTabChanged: widget.onTabChanged,
+                        onLocaleChange: widget.onLocaleChange,
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  const _SectionLabel('Tools'),
+                  _DrawerLinkTile(
+                    icon: Icons.key_rounded,
+                    title: "Kia/Hyundai PIN Code",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const KiaPinCalculatorScreen()),
+                      );
+                    },
+                  ),
+                  _DrawerLinkTile(
+                    icon: Icons.pin_outlined,
+                    title: "Toyota Passcode",
+                    onTap: () => _openTool(toyotaPasscodeScreenRoute),
+                  ),
+                  _DrawerLinkTile(
+                    icon: Icons.directions_car_outlined,
+                    title: "Kia/Hyundai Remote Fob Part number Lookup",
+                    onTap: () => _openTool(kiaHyundaiScreenRoute),
+                  ),
                 ],
               ),
             ),
@@ -211,150 +267,333 @@ class _CustomEndDrawerState extends State<CustomEndDrawer> {
       ),
     );
   }
+}
 
-  Widget _buildMenuSection(BuildContext context, bool isDark,
-      {required IconData icon, required String title, required List<Widget> children}) {
+// =========================================================================
+// HEADER
+// =========================================================================
+class _DrawerHeader extends StatelessWidget {
+  const _DrawerHeader();
 
-    final Color iconColor = isDark ? Colors.white70 : Colors.grey.shade700;
-    final Color textColor = isDark ? Colors.white : Colors.black87;
-    final Color activeColor = isDark ? Colors.white : const Color(0xFF0C1E4E);
-    final Color tileBg = isDark ? const Color(0xFF101015) : Colors.white;
-
-    return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-      ),
-      child: ExpansionTile(
-        backgroundColor: tileBg,
-        collapsedBackgroundColor: tileBg,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        childrenPadding: const EdgeInsets.only(bottom: 16),
-        leading: Icon(icon, color: iconColor, size: 24),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textColor),
-        ),
-        iconColor: activeColor,
-        textColor: activeColor,
-        children: children,
-      ),
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    final logo = Image.asset(
+      'assets/logo/techno-lock-mobile-logo.webp',
+      fit: BoxFit.contain,
+      alignment: AlignmentDirectional.centerStart,
     );
-  }
 
-  Widget _buildGrid(bool isDark, List<Map<String, dynamic>> items) {
-    final double gridHeight = (items.length / 2).ceil() * 140.0;
-    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color borderColor = isDark ? Colors.transparent : Colors.grey.shade100;
-    final Color textColor = isDark ? Colors.white70 : Colors.black87;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: gridHeight),
-      child: Container(
-        color: Colors.transparent,
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          children: items.map((item) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-                final String type = item['type'] ?? 'brand';
-
-                Navigator.pushNamed(
-                    context,
-                    "sub_category_products_screen",
-                    arguments: {
-                      'categorySlug': '',
-                      'initialBrandSlug': type == 'brand' ? item['slug'] : null,
-                      'initialManufacturerSlug': type == 'manufacturer' ? item['slug'] : null,
-                      'title': item['title'],
-                      'currentIndex': 0,
-                      'user': widget.user,
-                      'onTabChanged': widget.onTabChanged,
-                      'onLocaleChange': widget.onLocaleChange,
-                    }
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderColor, width: 1.5),
-                  boxShadow: [
-                    if (!isDark)
-                      BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: CachedNetworkImage(
-                          imageUrl: item['image'] ?? '',
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => const SkeletonCircle(size: 50),
-                          errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-                      child: Text(
-                        item['title'] ?? '',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textColor),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 52,
+              child: isDark
+                  ? ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                    Colors.white, BlendMode.srcIn),
+                child: logo,
+              )
+                  : logo,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Material(
+            color: AppPalette.cardElevated(context),
+            shape: CircleBorder(
+              side: BorderSide(color: AppPalette.border(context)),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.pop(context),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: AppPalette.text(context),
+                  semanticLabel: 'Close menu',
                 ),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildDivider(bool isDark) {
-    return Divider(height: 1, color: isDark ? Colors.white10 : Colors.grey.shade100, indent: 24, endIndent: 24);
-  }
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+  final String label;
 
-  Widget _buildLoadingIndicator(bool isDark) {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(child: CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF0C1E4E))),
-    );
-  }
-
-  Widget _buildSimpleToolOption(BuildContext context, bool isDark, String label, IconData icon, VoidCallback onTap) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: Icon(icon, color: isDark ? Colors.white70 : Colors.grey.shade700, size: 24),
-      title: Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
-      onTap: onTap,
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 6),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: AppPalette.textMuted(context),
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
 
 // =========================================================================
-// CUSTOM TILE FOR CATEGORIES (Fetches subcategories when expanded)
+// ROWS
+// =========================================================================
+class _IconTile extends StatelessWidget {
+  const _IconTile({required this.icon, required this.active});
+  final IconData icon;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: active ? primaryColor : AppPalette.cardElevated(context),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Icon(
+        icon,
+        size: 19,
+        color: active ? Colors.white : AppPalette.text(context),
+      ),
+    );
+  }
+}
+
+/// Rounded accordion row used by Brands, Manufacturers and categories.
+class DrawerExpansionTile extends StatefulWidget {
+  const DrawerExpansionTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.children,
+    this.onExpansionChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final List<Widget> children;
+  final ValueChanged<bool>? onExpansionChanged;
+
+  @override
+  State<DrawerExpansionTile> createState() => _DrawerExpansionTileState();
+}
+
+class _DrawerExpansionTileState extends State<DrawerExpansionTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          shape: shape,
+          collapsedShape: shape,
+          clipBehavior: Clip.antiAlias,
+          backgroundColor: primaryColor.withOpacity(isDark ? 0.12 : 0.05),
+          collapsedBackgroundColor: Colors.transparent,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10),
+          childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+          leading: _IconTile(icon: widget.icon, active: _expanded),
+          title: Text(
+            widget.title,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: _expanded ? FontWeight.w700 : FontWeight.w600,
+              color: AppPalette.text(context),
+            ),
+          ),
+          iconColor: primaryColor,
+          collapsedIconColor: AppPalette.textMuted(context),
+          onExpansionChanged: (value) {
+            setState(() => _expanded = value);
+            widget.onExpansionChanged?.call(value);
+          },
+          children: widget.children,
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerLinkTile extends StatelessWidget {
+  const _DrawerLinkTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
+              children: [
+                _IconTile(icon: icon, active: false),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppPalette.text(context),
+                    ),
+                  ),
+                ),
+                Icon(
+                  isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                  color: AppPalette.textMuted(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =========================================================================
+// GRIDS
+// =========================================================================
+const _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+  crossAxisCount: 2,
+  mainAxisSpacing: 10,
+  crossAxisSpacing: 10,
+  childAspectRatio: 1.0,
+);
+
+class DrawerItemGrid extends StatelessWidget {
+  const DrawerItemGrid({super.key, required this.items, required this.onTap});
+
+  final List<Map<String, dynamic>> items;
+  final void Function(Map<String, dynamic> item) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 4),
+      gridDelegate: _gridDelegate,
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Material(
+          color: AppPalette.card(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: AppPalette.border(context)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => onTap(item),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // logos have white backgrounds
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: item['image'] ?? '',
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) =>
+                      const SkeletonCircle(size: 32),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.image_not_supported_outlined,
+                        color: blackColor20,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  child: Text(
+                    item['title'] ?? '',
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                      color: AppPalette.text(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class DrawerGridSkeleton extends StatelessWidget {
+  const DrawerGridSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final skeleton = AppPalette.isDark(context) ? Colors.white10 : blackColor5;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 4),
+      gridDelegate: _gridDelegate,
+      itemCount: 4,
+      itemBuilder: (_, __) => Container(
+        decoration: BoxDecoration(
+          color: skeleton,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+}
+
+// =========================================================================
+// CATEGORY TILE (fetches subcategories when expanded)
 // =========================================================================
 class CategoryExpansionTile extends StatefulWidget {
   final CategoryModel category;
-  final bool isDark;
+  final bool isDark; // kept for compatibility
   final Map<String, dynamic>? user;
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
@@ -384,217 +623,73 @@ class _CategoryExpansionTileState extends State<CategoryExpansionTile> {
     if (name.contains('accessor') || name.contains('tool')) return Icons.handyman_outlined;
     if (name.contains('software') || name.contains('token')) return Icons.integration_instructions_outlined;
     if (name.contains('pin')) return Icons.password_outlined;
-
-    return Icons.category_outlined; // Default fallback icon
+    return Icons.category_outlined;
   }
 
   Future<void> _fetchSubcategories() async {
-    if (_hasFetched) return; // Don't fetch again if already loaded
-
+    if (_hasFetched || _isLoading) return;
     setState(() => _isLoading = true);
     try {
       final data = await ApiService.fetchSubcategories(widget.category.id);
-      if (mounted) {
-        setState(() {
-          _subcategories = data.map<Map<String, dynamic>>((sub) {
-            return {
-              'id': sub['id'],
-              'title': sub['name'] ?? sub['title'] ?? '',
-              'image': sub['image'] ?? sub['icon'] ?? '',
-              'slug': sub['slug'] ?? '',
-            };
-          }).toList();
-          _hasFetched = true;
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _subcategories = data.map<Map<String, dynamic>>((sub) {
+          return {
+            'id': sub['id'],
+            'title': sub['name'] ?? sub['title'] ?? '',
+            'image': sub['image'] ?? sub['icon'] ?? '',
+            'slug': sub['slug'] ?? '',
+          };
+        }).toList();
+        _hasFetched = true;
+        _isLoading = false;
+      });
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _openSubcategory(Map<String, dynamic> item) {
+    Navigator.pop(context);
+    Navigator.pushNamed(
+      context,
+      "sub_category_products_screen",
+      arguments: {
+        'categorySlug': item['slug'] ?? '',
+        'title': item['title'],
+        'currentIndex': 0,
+        'user': widget.user,
+        'onTabChanged': widget.onTabChanged,
+        'onLocaleChange': widget.onLocaleChange,
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Color iconColor = widget.isDark ? Colors.white70 : Colors.grey.shade700;
-    final Color textColor = widget.isDark ? Colors.white : Colors.black87;
-    final Color activeColor = widget.isDark ? Colors.white : const Color(0xFF0C1E4E);
-    final Color tileBg = widget.isDark ? const Color(0xFF101015) : Colors.white;
-
-    return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-      ),
-      child: ExpansionTile(
-        backgroundColor: tileBg,
-        collapsedBackgroundColor: tileBg,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        childrenPadding: const EdgeInsets.only(bottom: 16),
-        leading: Icon(_getCategoryIcon(widget.category.name), color: iconColor, size: 24),
-        title: Text(
-          widget.category.name,
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textColor),
-        ),
-        iconColor: activeColor,
-        textColor: activeColor,
-        onExpansionChanged: (expanded) {
-          if (expanded) _fetchSubcategories();
-        },
-        children: [
-          if (_isLoading)
-            _buildSkeletonGrid() // NEW SKELETON LOADER
-          else if (_subcategories.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text("No subcategories found", style: TextStyle(color: textColor)),
-            )
-          else
-            _buildSubcategoryGrid(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkeletonGrid() {
-    final double gridHeight = 280.0; // Height for 2 rows (4 items total)
-    final Color cardBg = widget.isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color borderColor = widget.isDark ? Colors.transparent : Colors.grey.shade100;
-    final Color skeletonColor = widget.isDark ? Colors.white10 : Colors.grey.shade200;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: gridHeight),
-      child: Container(
-        color: Colors.transparent,
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          children: List.generate(4, (index) {
-            return Container(
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderColor, width: 1.5),
+    return DrawerExpansionTile(
+      icon: _getCategoryIcon(widget.category.name),
+      title: widget.category.name,
+      onExpansionChanged: (expanded) {
+        if (expanded) _fetchSubcategories();
+      },
+      children: [
+        if (_isLoading)
+          const DrawerGridSkeleton()
+        else if (_subcategories.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              "No subcategories yet",
+              style: TextStyle(
+                color: AppPalette.textMuted(context),
+                fontSize: 13,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: skeletonColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-                    child: Container(
-                      height: 10,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: skeletonColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  // Identical grid design specifically for Subcategories routing
-  Widget _buildSubcategoryGrid() {
-    final double gridHeight = (_subcategories.length / 2).ceil() * 140.0;
-    final Color cardBg = widget.isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color borderColor = widget.isDark ? Colors.transparent : Colors.grey.shade100;
-    final Color textColor = widget.isDark ? Colors.white70 : Colors.black87;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: gridHeight),
-      child: Container(
-        color: Colors.transparent,
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          children: _subcategories.map((item) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.pop(context); // Close Drawer
-                // Navigate directly to products passing the Subcategory Slug
-                Navigator.pushNamed(
-                    context,
-                    "sub_category_products_screen",
-                    arguments: {
-                      'categorySlug': item['slug'] ?? '',
-                      'title': item['title'],
-                      'currentIndex': 0,
-                      'user': widget.user,
-                      'onTabChanged': widget.onTabChanged,
-                      'onLocaleChange': widget.onLocaleChange,
-                    }
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderColor, width: 1.5),
-                  boxShadow: [
-                    if (!widget.isDark)
-                      BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: CachedNetworkImage(
-                          imageUrl: item['image'] ?? '',
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => const SkeletonCircle(size: 50),
-                          errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-                      child: Text(
-                        item['title'] ?? '',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textColor),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
+            ),
+          )
+        else
+          DrawerItemGrid(items: _subcategories, onTap: _openSubcategory),
+      ],
     );
   }
 }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shop/components/skleton/others/categories_skelton.dart';
-import '../../../../constants.dart';
-import '../../../../services/api_service.dart';
+import 'package:shop/constants.dart';
 import 'package:shop/models/category_model.dart';
-import 'package:shop/screens/category/sub_category_screen.dart'; // Import the screen
+import 'package:shop/screens/category/sub_category_screen.dart';
+import 'package:shop/services/api_service.dart';
 
 class Categories extends StatefulWidget {
-  // Add these fields so they can be passed to the SubCategoryScreen
   final int currentIndex;
   final Map<String, dynamic>? user;
   final Function(int) onTabChanged;
@@ -25,75 +24,80 @@ class Categories extends StatefulWidget {
 }
 
 class _CategoriesState extends State<Categories> {
-  List<CategoryModel> categories = [];
-  bool isLoading = true;
-  String? _currentLocale;
+  List<CategoryModel> _categories = [];
+  bool _isLoading = true;
+  String? _locale;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newLocale = Localizations.localeOf(context).languageCode;
-    if (_currentLocale != newLocale) {
-      _currentLocale = newLocale;
-      fetchCategories(newLocale);
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == _locale) return;
+    _locale = locale;
+    _isLoading = true;
+    _fetch(locale);
+  }
+
+  Future<void> _fetch(String locale) async {
+    try {
+      final data = await ApiService.fetchCategories(locale);
+      if (!mounted || locale != _locale) return;
+      setState(() {
+        _categories = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Categories failed: $e');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> fetchCategories(String locale) async {
-    setState(() => isLoading = true);
-    try {
-      final data = await ApiService.fetchCategories(locale);
-      setState(() {
-        categories = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-    }
+  void _open(CategoryModel category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SubCategoryScreen(
+          parentId: category.id,
+          title: category.name,
+          currentIndex: widget.currentIndex,
+          user: widget.user,
+          onTabChanged: widget.onTabChanged,
+          onLocaleChange: widget.onLocaleChange,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) return const Center(child: CategoriesSkelton());
-
-    if (categories.isEmpty) {
-      return const Center(child: Text("No category found"));
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 12),
+        child: Center(child: CategoriesSkelton()),
+      );
     }
+    // No categories → no empty "No category found" text on the home screen
+    if (_categories.isEmpty) return const SizedBox.shrink();
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        defaultPadding - 4,
+        14,
+        defaultPadding - 4,
+        4,
+      ),
       child: Row(
-        children: List.generate(
-          categories.length,
-              (index) => Padding(
-            padding: EdgeInsets.only(
-              top: 15.0,
-              right: index == categories.length - 1 ? defaultPadding : 0,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final category in _categories)
+            CategoryBtn(
+              category: category.name,
+              image: category.image,
+              press: () => _open(category),
             ),
-            child: CategoryBtn(
-              category: categories[index].name,
-              image: categories[index].image,
-              press: () {
-                // NAVIGATION LOGIC
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SubCategoryScreen(
-                      // Assuming your CategoryModel has an 'id' field
-                      parentId: categories[index].id,
-                      title: categories[index].name,
-                      // Pass the required parameters down
-                      currentIndex: widget.currentIndex,
-                      user: widget.user,
-                      onTabChanged: widget.onTabChanged,
-                      onLocaleChange: widget.onLocaleChange,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -113,51 +117,62 @@ class CategoryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 1. Detect if the app is currently in Dark Mode
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = AppPalette.isDark(context);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: press,
-        borderRadius: BorderRadius.circular(15),
-        child: Column(
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                  )
-                ],
-              ),
-              child: Image.network(image, fit: BoxFit.contain),
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              width: 130,
-              child: Text(
-                category,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  // ✅ 2. Use a lighter green (like Colors.green.shade400) for Dark Mode,
-                  // and your standard greenColor for Light Mode.
-                  color: isDark ? Colors.green.shade400 : greenColor,
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 84,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Column(
+              children: [
+                Container(
+                  width: 68,
+                  height: 68,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : blackColor10,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Image.network(
+                    image,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.category_outlined,
+                      color: blackColor40,
+                    ),
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  category,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                    color: AppPalette.text(context),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

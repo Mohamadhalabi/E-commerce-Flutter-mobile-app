@@ -1380,4 +1380,65 @@ class ApiService {
         return {'success': false, 'message': 'Network error: $e'};
       }
     }
+
+  // ==================================================
+  // KIA / HYUNDAI PIN CALCULATOR
+  // Paste inside the ApiService class (e.g. above "CALCULATORS / TOOLS").
+  // Both return {'status': <http code, 0 = network error>, 'data': <json map>}
+  // ==================================================
+
+  static Map<String, dynamic> _safeJson(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : {'data': decoded};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchPinBalances(String token, String locale) async {
+    await dotenv.load();
+    final String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final String apiKey = dotenv.env['API_KEY'] ?? '';
+    final String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    try {
+      final response = await http
+          .get(
+        Uri.parse('$apiBaseUrl/pin-code/balances'),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+      )
+          .timeout(const Duration(seconds: 20));
+
+      print("🔑 PIN BALANCES ${response.statusCode}: ${response.body}");
+      return {'status': response.statusCode, 'data': _safeJson(response.body)};
+    } catch (e) {
+      print("🔑 PIN BALANCES error: $e");
+      return {'status': 0, 'data': <String, dynamic>{}};
+    }
+  }
+
+  static Future<Map<String, dynamic>> calculatePinCode(String vin, String token, String locale) async {
+    await dotenv.load();
+    final String apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final String apiKey = dotenv.env['API_KEY'] ?? '';
+    final String secretKey = dotenv.env['SECRET_KEY'] ?? '';
+
+    try {
+      final response = await http
+          .post(
+        Uri.parse('$apiBaseUrl/pin-code/calculate'),
+        headers: _buildHeaders(locale, apiKey, secretKey, token: token),
+        body: jsonEncode({'vin': vin}),
+      )
+      // The server may retry the upstream provider, so allow a long wait.
+          .timeout(const Duration(seconds: 150));
+
+      print("🔑 PIN CALCULATE ${response.statusCode}: ${response.body}");
+      return {'status': response.statusCode, 'data': _safeJson(response.body)};
+    } catch (e) {
+      print("🔑 PIN CALCULATE error: $e");
+      return {'status': 0, 'data': <String, dynamic>{}};
+    }
+  }
 }

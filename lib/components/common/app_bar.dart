@@ -1,128 +1,205 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shop/components/tutorial_tooltip.dart';
+import 'package:shop/constants.dart';
 
+/// Compact header: [menu]  ( search pill )  [bell]
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey? menuKey;
   final VoidCallback? onSearchTap;
-
-  // ✅ ADDED: Parameters to handle navigation state
   final bool canGoBack;
   final VoidCallback? onBack;
+
+  // Kept so MainScaffold keeps compiling; not shown in this layout.
+  final Map<String, dynamic>? user;
+  final int notificationCount;
+  final VoidCallback? onNotificationTap;
 
   const CustomAppBar({
     super.key,
     this.menuKey,
     this.onSearchTap,
-    this.canGoBack = false, // ✅ Default to false
-    this.onBack,           // ✅ Default to null
+    this.canGoBack = false,
+    this.onBack,
+    this.user,
+    this.notificationCount = 0,
+    this.onNotificationTap,
   });
 
+  static const double _height = 64;
+
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
+  Size get preferredSize => const Size.fromHeight(_height);
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color backgroundColor = isDark ? const Color(0xFF101015) : Colors.white;
-    final Color iconColor = isDark ? Colors.white : const Color(0xFF0C1E4E);
-    final Color elementBgColor = isDark ? const Color(0xFF1C1C23) : const Color(0xFFF5F5F5);
-    final Color textColor = isDark ? Colors.white70 : Colors.grey[500]!;
+    final isDark = AppPalette.isDark(context);
 
-    return AppBar(
-      backgroundColor: backgroundColor,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      centerTitle: true,
-      automaticallyImplyLeading: false,
-      titleSpacing: 0,
-
-      // ✅ UPDATED: Leading logic to switch between Back and Menu
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 16),
-        child: CircleAvatar(
-          backgroundColor: elementBgColor,
-          radius: 20,
-          child: canGoBack
-              ? IconButton(
-            // iOS standard back icon
-            icon: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor, size: 18),
-            onPressed: onBack,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          )
-              : (menuKey != null
-              ? Showcase.withWidget(
-            key: menuKey!,
-            height: 200,
-            width: 280,
-            container: const TutorialTooltip(
-              title: "Menu",
-              description: "Open the side menu to access categories...",
-              currentStep: 1,
-              totalSteps: 6,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.menu_rounded, color: iconColor),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          )
-              : IconButton(
-            icon: Icon(Icons.menu_rounded, color: iconColor),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          )),
-        ),
+    Widget leading = canGoBack
+        ? _CircleButton(
+      icon: Icons.arrow_back_ios_new_rounded,
+      iconSize: 18,
+      semanticLabel: 'Back',
+      onTap: onBack,
+    )
+        : Builder(
+      builder: (ctx) => _CircleButton(
+        icon: Icons.menu_rounded,
+        semanticLabel: 'Menu',
+        onTap: () => Scaffold.of(ctx).openDrawer(),
       ),
-      leadingWidth: 60,
+    );
 
-      title: GestureDetector(
-        onTap: () {
-          if (onSearchTap != null) {
-            onSearchTap!();
-          }
-        },
-        child: Container(
-          height: 45,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: elementBgColor,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.search_rounded, color: textColor, size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Search...',
-                  style: TextStyle(color: textColor, fontSize: 14),
-                ),
+    if (!canGoBack && menuKey != null) {
+      leading = Showcase.withWidget(
+        key: menuKey!,
+        height: 200,
+        width: 280,
+        container: const TutorialTooltip(
+          title: "Menu",
+          description: "Open the side menu to access categories...",
+          currentStep: 1,
+          totalSteps: 6,
+        ),
+        child: leading,
+      );
+    }
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Material(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: _height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+              child: Row(
+                children: [
+                  leading,
+                  const SizedBox(width: 10),
+                  Expanded(child: _SearchPill(onTap: onSearchTap)),
+                  const SizedBox(width: 10),
+                  _CircleButton(
+                    icon: Icons.notifications_none_rounded,
+                    semanticLabel: 'Notifications',
+                    showDot: notificationCount > 0,
+                    onTap: onNotificationTap,
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
-
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: CircleAvatar(
-            backgroundColor: elementBgColor,
-            radius: 20,
-            child: IconButton(
-              icon: Icon(Icons.notifications_none_rounded, color: iconColor),
-              onPressed: () {},
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  const _CircleButton({
+    required this.icon,
+    required this.semanticLabel,
+    this.onTap,
+    this.iconSize = 22,
+    this.showDot = false,
+  });
+
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback? onTap;
+  final double iconSize;
+  final bool showDot;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = AppPalette.cardElevated(context);
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Material(
+        color: bg,
+        shape: CircleBorder(
+          side: BorderSide(color: AppPalette.border(context)),
+        ),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(icon, size: iconSize, color: AppPalette.text(context)),
+                if (showDot)
+                  Positioned(
+                    top: 10,
+                    right: 11,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: bg, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchPill extends StatelessWidget {
+  const _SearchPill({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = AppPalette.textMuted(context);
+    final shape = StadiumBorder(
+      side: BorderSide(color: AppPalette.border(context)),
+    );
+
+    return Semantics(
+      button: true,
+      label: 'Search products',
+      child: Material(
+        color: AppPalette.cardElevated(context),
+        shape: shape,
+        child: InkWell(
+          customBorder: shape,
+          onTap: onTap,
+          child: SizedBox(
+            height: 44,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.search_rounded, color: muted, size: 21),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Search products or SKU',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: muted, fontSize: 13.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

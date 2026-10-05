@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shop/constants.dart';
 
 class FilterModal extends StatefulWidget {
   final Map<String, dynamic> facets;
@@ -7,14 +8,14 @@ class FilterModal extends StatefulWidget {
   final List<String> selectedCategories;
   final Map<String, List<String>> selectedAttributes;
 
-  // ✅ NEW: Property to determine which section goes first
+  /// Which section goes first: 'categories', 'brands' or 'manufacturers'.
   final String? primaryFilterType;
 
   final Function(
       List<String> brands,
       List<String> manufs,
       List<String> cats,
-      Map<String, List<String>> attrs
+      Map<String, List<String>> attrs,
       ) onApply;
 
   const FilterModal({
@@ -24,7 +25,7 @@ class FilterModal extends StatefulWidget {
     required this.selectedManufacturers,
     required this.selectedCategories,
     required this.selectedAttributes,
-    this.primaryFilterType, // ✅ NEW: Added to constructor
+    this.primaryFilterType,
     required this.onApply,
   });
 
@@ -44,277 +45,347 @@ class _FilterModalState extends State<FilterModal> {
     _brands = List.from(widget.selectedBrands);
     _manufacturers = List.from(widget.selectedManufacturers);
     _categories = List.from(widget.selectedCategories);
-    _attributes = {};
-    widget.selectedAttributes.forEach((key, value) {
-      _attributes[key] = List.from(value);
+    _attributes = {
+      for (final e in widget.selectedAttributes.entries) e.key: List.from(e.value),
+    };
+  }
+
+  int get _selectedCount {
+    var n = _brands.length + _manufacturers.length + _categories.length;
+    _attributes.forEach((_, v) => n += v.length);
+    return n;
+  }
+
+  void _clearAll() {
+    setState(() {
+      _brands.clear();
+      _manufacturers.clear();
+      _categories.clear();
+      _attributes.clear();
     });
   }
 
-  // --- UI Helpers ---
-
-  Widget _buildSectionHeader(String title, bool isDark, {VoidCallback? onClear}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-              title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black,
-              )
-          ),
-          if (onClear != null)
-            TextButton(
-              onPressed: onClear,
-              child: Text(
-                  "Clear All",
-                  style: TextStyle(color: isDark ? Colors.red.shade400 : Colors.red)
-              ),
-            ),
-        ],
-      ),
-    );
+  void _toggle(List<String> list, String slug) {
+    setState(() {
+      if (list.contains(slug)) {
+        list.remove(slug);
+      } else {
+        list.add(slug);
+      }
+    });
   }
 
-  // Custom Expansion Tile with cleaner look
-  Widget _buildExpansionSection(String title, List<dynamic> items, List<String> selectedList, bool isDark) {
+  // ---------------------------------------------------------------------------
+  // SECTIONS
+  // ---------------------------------------------------------------------------
+  Widget _section({
+    required String title,
+    required List<dynamic> items,
+    required List<String> selected,
+  }) {
     if (items.isEmpty) return const SizedBox.shrink();
 
-    bool hasSelection = items.any((i) => selectedList.contains(i['slug'].toString()));
+    final selectedHere =
+        items.where((i) => selected.contains(i['slug'].toString())).length;
 
-    final highlightColor = isDark ? Colors.blue.shade300 : Colors.blue;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subTextColor = isDark ? Colors.white70 : Colors.black;
-    final countColor = isDark ? Colors.white38 : Colors.grey[500];
-
-    return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent, // Remove borders
-        unselectedWidgetColor: isDark ? Colors.white54 : Colors.black54, // Checkbox border color
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: hasSelection,
-        textColor: highlightColor,
-        iconColor: highlightColor,
-        collapsedIconColor: isDark ? Colors.white54 : Colors.grey,
-        title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: hasSelection ? highlightColor : textColor,
-            )
-        ),
-        children: items.map((item) {
-          final slug = item['slug'].toString();
-          final name = item['name'].toString();
-          final count = item['count'];
-          final isSelected = selectedList.contains(slug);
-
-          return CheckboxListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            title: Row(
-              children: [
-                Expanded(
-                    child: Text(
-                        name,
-                        style: TextStyle(fontSize: 14, color: subTextColor)
-                    )
-                ),
-                if (count != null)
-                  Text(
-                      "($count)",
-                      style: TextStyle(color: countColor, fontSize: 12)
-                  ),
-              ],
-            ),
-            value: isSelected,
-            activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF333333),
-            checkColor: Colors.white,
-            controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (val) {
-              setState(() {
-                if (val == true) {
-                  selectedList.add(slug);
-                } else {
-                  selectedList.remove(slug);
-                }
-              });
-            },
-          );
-        }).toList(),
-      ),
+    return _FilterSection(
+      title: title,
+      selectedCount: selectedHere,
+      children: [
+        for (final item in items)
+          _CheckRow(
+            label: item['name'].toString(),
+            count: item['count'],
+            selected: selected.contains(item['slug'].toString()),
+            onTap: () => _toggle(selected, item['slug'].toString()),
+          ),
+      ],
     );
   }
 
-  Widget _buildAttributeSections(List<dynamic> attributesData, bool isDark) {
-    if (attributesData.isEmpty) return const SizedBox.shrink();
-
-    final highlightColor = isDark ? Colors.blue.shade300 : Colors.blue;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subTextColor = isDark ? Colors.white70 : Colors.black;
-    final countColor = isDark ? Colors.white38 : Colors.grey[500];
+  Widget _attributeSections(List<dynamic> groups) {
+    if (groups.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      children: attributesData.map((attrGroup) {
-        final groupName = attrGroup['name'];
-        final groupSlug = attrGroup['slug'];
-        final items = attrGroup['items'] as List<dynamic>;
-
-        if (!_attributes.containsKey(groupSlug)) {
-          _attributes[groupSlug] = [];
-        }
-
-        bool hasSelection = items.any((i) => _attributes[groupSlug]!.contains(i['slug'].toString()));
-
-        return Theme(
-          data: Theme.of(context).copyWith(
-            dividerColor: Colors.transparent,
-            unselectedWidgetColor: isDark ? Colors.white54 : Colors.black54,
+      children: [
+        for (final group in groups)
+          _section(
+            title: group['name'].toString(),
+            items: group['items'] as List<dynamic>,
+            selected: _attributes.putIfAbsent(group['slug'].toString(), () => []),
           ),
-          child: ExpansionTile(
-            initiallyExpanded: hasSelection,
-            textColor: highlightColor,
-            iconColor: highlightColor,
-            collapsedIconColor: isDark ? Colors.white54 : Colors.grey,
-            title: Text(
-                groupName,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: hasSelection ? highlightColor : textColor,
-                )
-            ),
-            children: items.map((subItem) {
-              final subSlug = subItem['slug'].toString();
-              final subName = subItem['name'];
-              final count = subItem['count'];
-              final isSelected = _attributes[groupSlug]!.contains(subSlug);
-
-              return CheckboxListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-                dense: true,
-                visualDensity: VisualDensity.compact,
-                title: Row(
-                  children: [
-                    Expanded(
-                        child: Text(
-                            subName,
-                            style: TextStyle(fontSize: 14, color: subTextColor)
-                        )
-                    ),
-                    Text(
-                        "($count)",
-                        style: TextStyle(color: countColor, fontSize: 12)
-                    ),
-                  ],
-                ),
-                value: isSelected,
-                activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF333333),
-                checkColor: Colors.white,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (val) {
-                  setState(() {
-                    if (val == true) {
-                      _attributes[groupSlug]!.add(subSlug);
-                    } else {
-                      _attributes[groupSlug]!.remove(subSlug);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        );
-      }).toList(),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Detect theme brightness
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final dividerColor = isDark ? Colors.white12 : Colors.grey.shade300;
-    final buttonBgColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF333333);
-
     final brandsList = widget.facets['brands'] as List<dynamic>? ?? [];
     final manufList = widget.facets['manufacturers'] as List<dynamic>? ?? [];
     final catList = widget.facets['categories'] as List<dynamic>? ?? [];
     final attrList = widget.facets['attributes'] as List<dynamic>? ?? [];
 
-    // ✅ NEW: Pre-build the filter sections
-    final catSection = _buildExpansionSection("Categories", catList, _categories, isDark);
-    final manSection = _buildExpansionSection("Manufacturers", manufList, _manufacturers, isDark);
-    final brandSection = _buildExpansionSection("Brands", brandsList, _brands, isDark);
-    final attrSection = _buildAttributeSections(attrList, isDark);
+    final catSection = _section(title: "Categories", items: catList, selected: _categories);
+    final manSection =
+    _section(title: "Manufacturers", items: manufList, selected: _manufacturers);
+    final brandSection = _section(title: "Brands", items: brandsList, selected: _brands);
+    final attrSection = _attributeSections(attrList);
 
-    // ✅ NEW: Reorder them based on the 'primaryFilterType'
-    List<Widget> filterSections;
+    final List<Widget> sections;
     if (widget.primaryFilterType == 'brands') {
-      filterSections = [brandSection, catSection, manSection, attrSection];
+      sections = [brandSection, catSection, manSection, attrSection];
     } else if (widget.primaryFilterType == 'manufacturers') {
-      filterSections = [manSection, catSection, brandSection, attrSection];
+      sections = [manSection, catSection, brandSection, attrSection];
     } else {
-      // Default (Categories first)
-      filterSections = [catSection, manSection, brandSection, attrSection];
+      sections = [catSection, manSection, brandSection, attrSection];
     }
 
+    final count = _selectedCount;
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      padding: const EdgeInsets.only(top: 16),
+      height: MediaQuery.sizeOf(context).height * 0.85,
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: AppPalette.card(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          _buildSectionHeader("Filters", isDark, onClear: () {
-            setState(() {
-              _brands.clear();
-              _manufacturers.clear();
-              _categories.clear();
-              _attributes.clear();
-            });
-          }),
-          Divider(height: 1, color: dividerColor),
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 0),
-              // ✅ NEW: Feed the dynamically ordered list to the UI
-              children: filterSections,
+          const SizedBox(height: 10),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppPalette.border(context),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-
+          // Header
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonBgColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 8, 8),
+            child: Row(
+              children: [
+                Text(
+                  "Filters",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppPalette.text(context),
+                  ),
                 ),
-                onPressed: () {
-                  widget.onApply(_brands, _manufacturers, _categories, _attributes);
-                  Navigator.pop(context);
-                },
-                child: const Text("Apply Filters", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                if (count > 0) ...[
+                  const SizedBox(width: 8),
+                  _CountBadge(count: count),
+                ],
+                const Spacer(),
+                TextButton(
+                  onPressed: count > 0 ? _clearAll : null,
+                  style: TextButton.styleFrom(foregroundColor: primaryColor),
+                  child: const Text(
+                    "Clear all",
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: AppPalette.border(context)),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              children: sections,
+            ),
+          ),
+          // Apply
+          SafeArea(
+            top: false,
+            minimum: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    widget.onApply(_brands, _manufacturers, _categories, _attributes);
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    count > 0 ? "Apply filters ($count)" : "Apply filters",
+                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// PIECES
+// =============================================================================
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 22,
+      constraints: const BoxConstraints(minWidth: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: primaryColor,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Text(
+        "$count",
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+/// A collapsible group. Sections with selections start open and are tinted red.
+class _FilterSection extends StatelessWidget {
+  const _FilterSection({
+    required this.title,
+    required this.selectedCount,
+    required this.children,
+  });
+
+  final String title;
+  final int selectedCount;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSelection = selectedCount > 0;
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: hasSelection,
+          shape: shape,
+          collapsedShape: shape,
+          clipBehavior: Clip.antiAlias,
+          backgroundColor: AppPalette.cardElevated(context),
+          collapsedBackgroundColor: hasSelection
+              ? primaryColor.withOpacity(AppPalette.isDark(context) ? 0.14 : 0.05)
+              : Colors.transparent,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          childrenPadding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+          iconColor: primaryColor,
+          collapsedIconColor: AppPalette.textMuted(context),
+          title: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: hasSelection ? primaryColor : AppPalette.text(context),
+                  ),
+                ),
+              ),
+              if (hasSelection) ...[
+                const SizedBox(width: 8),
+                _CountBadge(count: selectedCount),
+              ],
+            ],
+          ),
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckRow extends StatelessWidget {
+  const _CheckRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.count,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final dynamic count;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    final muted = AppPalette.textMuted(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Material(
+        color: selected
+            ? primaryColor.withOpacity(isDark ? 0.18 : 0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: selected ? primaryColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: selected ? primaryColor : muted.withOpacity(0.6),
+                      width: 1.6,
+                    ),
+                  ),
+                  child: selected
+                      ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                      color: selected
+                          ? (isDark ? Colors.red.shade200 : primaryDarkColor)
+                          : AppPalette.text(context),
+                    ),
+                  ),
+                ),
+                if (count != null)
+                  Text("$count", style: TextStyle(color: muted, fontSize: 12.5)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

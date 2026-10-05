@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/common/CustomBottomNavigationBar.dart';
+import 'package:provider/provider.dart';
+import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/components/common/drawer.dart';
+import 'package:shop/components/common/glass_bottom_nav.dart';
 import 'app_bar.dart';
 
 class MainScaffold extends StatelessWidget {
@@ -16,7 +18,6 @@ class MainScaffold extends StatelessWidget {
   final GlobalKey? cartTabKey;
   final GlobalKey? profileTabKey;
 
-  // ✅ 1. Define the new parameters
   final bool canGoBack;
   final VoidCallback? onBack;
 
@@ -32,27 +33,25 @@ class MainScaffold extends StatelessWidget {
     this.shopTabKey,
     this.cartTabKey,
     this.profileTabKey,
-    // ✅ 2. Add them to the constructor
     this.canGoBack = false,
     this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
-    bool showAppBar = currentIndex != 1 && currentIndex != 2 && currentIndex != 3;
+    final showAppBar =
+        currentIndex != 1 && currentIndex != 2 && currentIndex != 3;
 
     return Scaffold(
+      // Lets page content scroll underneath the frosted nav
+      extendBody: true,
       appBar: showAppBar
           ? CustomAppBar(
         menuKey: appBarMenuKey,
-        // ✅ 3. Pass the back logic into your CustomAppBar
+        user: user,
         canGoBack: canGoBack,
         onBack: onBack,
-        onSearchTap: () {
-          if (onTabChanged != null) {
-            onTabChanged!(1);
-          }
-        },
+        onSearchTap: () => onTabChanged?.call(1),
       )
           : null,
       drawer: CustomEndDrawer(
@@ -61,9 +60,13 @@ class MainScaffold extends StatelessWidget {
         onTabChanged: onTabChanged!,
       ),
       body: child,
-      bottomNavigationBar: CustomBottomNavigationBar(
+      bottomNavigationBar: GlassBottomNav(
         currentIndex: currentIndex,
-        onTap: onTabChanged,
+        onTabChanged: (index) => onTabChanged?.call(index),
+        // Number of different products in the cart
+        cartCount: context.select<CartProvider, int>(
+              (cart) => cart.cartItems.length,
+        ),
         searchTabKey: searchTabKey,
         shopTabKey: shopTabKey,
         cartTabKey: cartTabKey,

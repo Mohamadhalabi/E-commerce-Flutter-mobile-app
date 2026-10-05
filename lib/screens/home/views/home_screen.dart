@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shop/components/product/product_section.dart';
+import 'package:shop/constants.dart';
+import 'package:shop/screens/discover/views/view_all_products_screen.dart';
+import 'package:shop/services/api_service.dart';
 import 'components/offer_carousel_and_categories.dart';
-import 'components/new_arrival_products.dart';
-// import 'components/slider_carousel.dart';
-import 'components/flash_sale.dart';
-import 'components/free_shipping_products.dart';
-import 'components/bundle_products.dart';
 
 class HomeScreen extends StatefulWidget {
   final int currentIndex;
   final Map<String, dynamic>? user;
   final Function(int) onTabChanged;
   final Function(String) onLocaleChange;
-
   final GlobalKey? categoryKey;
 
   const HomeScreen({
@@ -31,24 +30,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Key _refreshKey = UniqueKey();
 
   Future<void> _onRefresh() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
-    setState(() {
-      _refreshKey = UniqueKey();
-    });
+    // New key → every section rebuilds and refetches
+    setState(() => _refreshKey = UniqueKey());
+    await Future.delayed(const Duration(milliseconds: 700));
   }
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = AppPalette.isDark(context);
+
+    // With Scaffold.extendBody = true this includes the floating nav's height,
+    // so the last section can scroll fully above the glass bar.
+    final bottomSpacing = MediaQuery.paddingOf(context).bottom + defaultPadding;
 
     return SafeArea(
+      bottom: false, // let content slide under the translucent nav
       child: ColoredBox(
-        color: backgroundColor, // ✅ Changed from Colors.white
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: RefreshIndicator(
           onRefresh: _onRefresh,
-          color: const Color(0xFF7B61FF),
-          backgroundColor: isDark ? const Color(0xFF1C1C23) : Colors.white, // ✅ Dynamic loading bg
+          color: primaryColor,
+          backgroundColor: isDark ? darkCardColor : Colors.white,
           child: CustomScrollView(
             key: _refreshKey,
             slivers: [
@@ -58,16 +61,49 @@ class _HomeScreenState extends State<HomeScreen> {
                   user: widget.user,
                   onTabChanged: widget.onTabChanged,
                   onLocaleChange: widget.onLocaleChange,
-                  // ✅ ADDED: Pass the key down to the next widget
                   categoryKey: widget.categoryKey,
                 ),
               ),
-              const SliverToBoxAdapter(child: NewArrivalProducts()),
-              // const SliverToBoxAdapter(child: SliderCarousel()),
-              const SliverToBoxAdapter(child: FlashSaleProducts()),
-              const SliverToBoxAdapter(child: FreeShippingProducts()),
-              // const SliverToBoxAdapter(child: BannerFetcher()),
-              const SliverToBoxAdapter(child: BundleProducts()),
+              SliverToBoxAdapter(
+                child: ProductSection(
+                  sectionId: 'new-arrival',
+                  title: l10n.newArrival,
+                  icon: Icons.auto_awesome_rounded,
+                  listType: ProductListType.newArrival,
+                  fetcher: ApiService.fetchLatestProducts,
+                  style: ProductSectionStyle.highlighted,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: ProductSection(
+                  sectionId: 'flash-sale',
+                  title: l10n.specialOffer,
+                  icon: Icons.local_fire_department_rounded,
+                  listType: ProductListType.flashSale,
+                  fetcher: ApiService.fetchFlashSaleProducts,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: ProductSection(
+                  sectionId: 'free-shipping',
+                  title: l10n.freeShipping,
+                  icon: Icons.local_shipping_rounded,
+                  listType: ProductListType.freeShipping,
+                  fetcher: ApiService.fetchFreeShippingProducts,
+                  lazy: true,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: ProductSection(
+                  sectionId: 'bundle',
+                  title: l10n.bundleProducts,
+                  icon: Icons.inventory_2_rounded,
+                  listType: ProductListType.bundle,
+                  fetcher: ApiService.fetchBundleProducts,
+                  lazy: true,
+                ),
+              ),
+              SliverToBoxAdapter(child: SizedBox(height: bottomSpacing)),
             ],
           ),
         ),

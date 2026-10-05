@@ -6,9 +6,10 @@ import 'package:shop/providers/cart_provider.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import '../../../../components/common/CustomBottomNavigationBar.dart';
-import '../../../../components/common/drawer.dart';
-import '../../../../components/common/app_bar.dart';
+import 'package:shop/components/auth/auth_widgets.dart';
+import 'package:shop/components/common/CustomBottomNavigationBar.dart';
+import 'package:shop/components/common/drawer.dart';
+import 'package:shop/components/common/app_bar.dart';
 import 'package:shop/controllers/locale_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -50,154 +51,100 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {});
   }
 
-  void _showCustomNotification(BuildContext context, String message, bool isSuccess) {
+  // --------------------------------------------------------------------------
+  // FORGOT PASSWORD (bottom sheet)
+  // --------------------------------------------------------------------------
+  void _showForgotPasswordSheet() {
     final tr = AppLocalizations.of(context)!;
-    final topMargin = MediaQuery.of(context).size.height - 230;
+    final emailController = TextEditingController(text: _emailController.text.trim());
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bgColor = isDark ? const Color(0xFF2A2A35) : Colors.white;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border(
-              left: BorderSide(color: isSuccess ? Colors.green : Colors.red, width: 6),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isSuccess ? Icons.check_circle_outline : Icons.error_outline,
-                color: isSuccess ? Colors.green : Colors.red,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isSuccess ? tr.success : tr.error,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isSuccess ? Colors.green : Colors.red,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      message,
-                      style: TextStyle(fontSize: 13, color: subTextColor),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(bottom: topMargin, left: 20, right: 20),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  // ✅ NEW: Forgot Password Dialog Logic
-  void _showForgotPasswordDialog() {
-    final tr = AppLocalizations.of(context)!;
-    final emailController = TextEditingController();
-
-    // Pre-fill if user already typed in login box
-    if (_emailController.text.isNotEmpty) {
-      emailController.text = _emailController.text;
-    }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color dialogBg = isDark ? const Color(0xFF2A2A35) : Colors.white;
-    final Color textColor = isDark ? Colors.white : Colors.black;
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: dialogBg,
-        // Make sure you add "forgotPassword" to your arb file, or use a hardcoded string fallback
-        title: Text(tr.forgotPassword ?? "Forgot Password", style: TextStyle(color: textColor)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Enter your email address and we will send you a link to reset your password.",
-              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: tr.email,
-                labelStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey)
-                ),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: primaryColor)
-                ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: AppPalette.card(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          MediaQuery.viewInsetsOf(sheetContext).bottom + 20,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(tr.cancel, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppPalette.border(context),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                tr.forgotPassword,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: AppPalette.text(context),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Enter your email and we'll send you a link to reset your password.",
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.4,
+                  color: AppPalette.textMuted(context),
+                ),
+              ),
+              const SizedBox(height: 18),
+              AuthTextField(
+                controller: emailController,
+                label: tr.email,
+                hint: tr.enterEmail,
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                autofocus: emailController.text.isEmpty,
+              ),
+              const SizedBox(height: 18),
+              AuthPrimaryButton(
+                label: "Send reset link",
+                onPressed: () async {
+                  final email = emailController.text.trim();
+                  if (email.isEmpty || !email.contains('@')) return;
+                  Navigator.pop(sheetContext);
+
+                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                  final ok = await auth.resetPassword(email);
+                  if (!mounted) return;
+                  showAuthMessage(
+                    context,
+                    ok
+                        ? "Reset link sent. Check your inbox."
+                        : "Couldn't send the link. Check the email address.",
+                    success: ok,
+                  );
+                },
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              if (emailController.text.isEmpty) return;
-              Navigator.pop(ctx); // Close dialog
-
-              final auth = Provider.of<AuthProvider>(context, listen: false);
-
-              // Call the reset password API
-              bool success = await auth.resetPassword(emailController.text.trim());
-
-              if (!mounted) return;
-
-              if (success) {
-                _showCustomNotification(context, "Reset link sent to your email", true);
-              } else {
-                _showCustomNotification(context, "Failed to send reset link. Please check your email.", false);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-            child: const Text("Send", style: TextStyle(color: Colors.white)),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  // --------------------------------------------------------------------------
+  // AUTH
+  // --------------------------------------------------------------------------
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
@@ -205,9 +152,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final tr = AppLocalizations.of(context)!;
 
-    bool success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text
+    final success = await authProvider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
     );
 
     if (!mounted) return;
@@ -216,9 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleGoogleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool success = await authProvider.signInWithGoogle();
+    final success = await authProvider.signInWithGoogle();
     if (!mounted) return;
-    _handleAuthResult(success, "Google Login Successful", "Google Login Failed");
+    _handleAuthResult(success, "Signed in with Google", "Google sign-in failed");
   }
 
   Future<void> _handleAppleLogin() async {
@@ -229,19 +176,15 @@ class _LoginScreenState extends State<LoginScreen> {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-
-      // ignore: use_build_context_synchronously
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      bool success = await authProvider.signInWithApple(credential);
-
       if (!mounted) return;
-      _handleAuthResult(success, "Apple Login Successful", "Apple Login Failed");
-
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.signInWithApple(credential);
+      if (!mounted) return;
+      _handleAuthResult(success, "Signed in with Apple", "Apple sign-in failed");
     } catch (e) {
-      print("Apple Sign In Error: $e");
-      if (e.toString().contains('Canceled')) return;
-      _showCustomNotification(context, "Apple Sign In Failed", false);
+      debugPrint("Apple Sign In Error: $e");
+      if (e.toString().contains('Canceled') || !mounted) return;
+      showAuthMessage(context, "Apple sign-in failed", success: false);
     }
   }
 
@@ -254,28 +197,25 @@ class _LoginScreenState extends State<LoginScreen> {
         cartProvider.setAuthToken(authProvider.token);
         await cartProvider.mergeLocalCartToAccount(authProvider.token!);
       }
-      _showCustomNotification(context, successMsg, true);
+      if (!mounted) return;
+      showAuthMessage(context, successMsg, success: true);
       Navigator.pushNamedAndRemoveUntil(context, entryPointScreenRoute, (route) => false);
     } else {
-      _showCustomNotification(context, failMsg, false);
+      showAuthMessage(context, failMsg, success: false);
     }
   }
 
+  // --------------------------------------------------------------------------
+  // BUILD
+  // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final tr = AppLocalizations.of(context)!;
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
-    final Color textColor = isDark ? Colors.white : Colors.black;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.grey;
-
-    final Color inputFill = isDark ? const Color(0xFF2A2A35) : Colors.grey[100]!;
-    final Color inputIconColor = isDark ? Colors.white54 : Colors.black54;
-
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBody: true,
       appBar: const CustomAppBar(),
       drawer: CustomEndDrawer(
         onLocaleChange: _onLocaleChange,
@@ -290,157 +230,97 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       ),
       bottomNavigationBar: CustomBottomNavigationBar(currentIndex: 4, onTap: _onBottomNavTap),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(defaultPadding),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  tr.welcome,
-                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+      body: Builder(
+        // Builder: context inside the body, so the padding includes the nav
+        builder: (bodyContext) => SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            12,
+            20,
+            MediaQuery.paddingOf(bodyContext).bottom + 24,
+          ),
+          child: AutofillGroup(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AuthHeader(
+                    icon: Icons.lock_outline_rounded,
+                    title: tr.welcome,
+                    subtitle: tr.signInPrompt,
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(tr.signInPrompt, style: TextStyle(color: subTextColor)),
-                const SizedBox(height: 40),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: textColor),
-                  validator: (value) => (value == null || value.isEmpty) ? tr.validEmail : null,
-                  decoration: InputDecoration(
-                    labelText: tr.email,
-                    labelStyle: TextStyle(color: subTextColor),
-                    hintText: tr.enterEmail,
-                    hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
-                    floatingLabelBehavior: FloatingLabelBehavior.always,
-                    filled: true,
-                    fillColor: inputFill,
-                    suffixIcon: Padding(padding: const EdgeInsets.fromLTRB(0, 12, 12, 12), child: Icon(Icons.email_outlined, color: inputIconColor)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  const SizedBox(height: 28),
+                  AuthTextField(
+                    controller: _emailController,
+                    label: tr.email,
+                    hint: tr.enterEmail,
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    validator: (value) =>
+                    (value == null || value.trim().isEmpty) ? tr.validEmail : null,
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscureText,
-                  style: TextStyle(color: textColor),
-                  validator: (value) => (value == null || value.isEmpty) ? tr.minPassword : null,
-                  decoration: InputDecoration(
-                    labelText: tr.password,
-                    labelStyle: TextStyle(color: subTextColor),
-                    hintText: tr.enterPassword,
-                    hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey),
-                    floatingLabelBehavior: FloatingLabelBehavior.always,
-                    filled: true,
-                    fillColor: inputFill,
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: inputIconColor),
+                  const SizedBox(height: 16),
+                  AuthTextField(
+                    controller: _passwordController,
+                    label: tr.password,
+                    hint: tr.enterPassword,
+                    icon: Icons.lock_outline_rounded,
+                    obscureText: _obscureText,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
+                    onSubmitted: (_) => _submit(),
+                    validator: (value) =>
+                    (value == null || value.isEmpty) ? tr.minPassword : null,
+                    suffix: IconButton(
+                      tooltip: _obscureText ? 'Show password' : 'Hide password',
+                      icon: Icon(
+                        _obscureText
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: AppPalette.textMuted(context),
+                        size: 20,
+                      ),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
-                ),
-
-                // ✅ ADDED: Forgot Password Button
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _showForgotPasswordDialog,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      tr.forgotPassword ?? "Forgot Password?",
-                      style: TextStyle(color: subTextColor, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(tr.login, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(tr.orContinueWith ?? "Or continue with", style: TextStyle(color: subTextColor)),
-                    ),
-                    Expanded(child: Divider(color: subTextColor.withOpacity(0.3))),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Social Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Google Button
-                    InkWell(
-                      onTap: isLoading ? null : _handleGoogleLogin,
-                      borderRadius: BorderRadius.circular(50),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: isDark ? const Color(0xFF353545) : Colors.grey[200],
-                        child: const Icon(Icons.g_mobiledata, size: 35, color: Colors.red),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordSheet,
+                      style: TextButton.styleFrom(foregroundColor: primaryColor),
+                      child: Text(
+                        tr.forgotPassword,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-
-                    const SizedBox(width: 20), // Spacing between buttons
-
-                    // Apple Button
-                    InkWell(
-                      onTap: isLoading ? null : _handleAppleLogin,
-                      borderRadius: BorderRadius.circular(50),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: isDark ? Colors.white : Colors.black,
-                        child: Icon(
-                            Icons.apple,
-                            size: 28,
-                            color: isDark ? Colors.black : Colors.white
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(tr.noAccount, style: TextStyle(color: subTextColor)),
-                    GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, signUpScreenRoute),
-                      child: Text(tr.signUp, style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+                  AuthPrimaryButton(
+                    label: tr.login,
+                    isLoading: isLoading,
+                    onPressed: _submit,
+                  ),
+                  const SizedBox(height: 28),
+                  AuthDivider(tr.orContinueWith),
+                  const SizedBox(height: 16),
+                  SocialAuthButtons(
+                    enabled: !isLoading,
+                    onGoogle: _handleGoogleLogin,
+                    onApple: _handleAppleLogin,
+                  ),
+                  const SizedBox(height: 24),
+                  AuthFooterLink(
+                    prompt: tr.noAccount,
+                    action: tr.signUp,
+                    onTap: () => Navigator.pushNamed(context, signUpScreenRoute),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -16,27 +16,25 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // ✅ Color Preserved (Navy)
-  final Color brandingColor = const Color(0xFF0C1E4E);
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
+      if (mounted) {
+        Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
+      }
     });
   }
 
-  void _logout(BuildContext context) async {
+  Future<void> _logout(BuildContext context) async {
     await Provider.of<AuthProvider>(context, listen: false).logout();
-    if (context.mounted) {
-      Provider.of<CartProvider>(context, listen: false).clearLocalCart();
-    }
-    setState(() {});
+    if (!context.mounted) return;
+    Provider.of<CartProvider>(context, listen: false).clearLocalCart();
+    if (mounted) setState(() {});
   }
 
   // --------------------------------------------------------------------------
-  // ✅ NEW: Delete Account Logic & Alert
+  // DELETE ACCOUNT
   // --------------------------------------------------------------------------
   void _confirmDeleteAccount(BuildContext context) {
     final tr = AppLocalizations.of(context);
@@ -44,42 +42,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(tr?.deleteAccount ?? "Delete Account"),
-        // Warning user it is permanent (even though backend is soft delete)
-        content: const Text(
-            "Are you sure you want to delete your account?\n\nThis action is permanent and cannot be undone. All your data and order history will be lost."),
+        backgroundColor: AppPalette.card(context),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          tr?.deleteAccount ?? "Delete Account",
+          style: TextStyle(
+            color: AppPalette.text(context),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to delete your account?\n\nThis action is permanent and cannot be undone. All your data and order history will be lost.",
+          style: TextStyle(color: AppPalette.textMuted(context), fontSize: 14, height: 1.4),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
+            style: TextButton.styleFrom(foregroundColor: AppPalette.text(context)),
             child: Text(tr?.cancel ?? "Cancel"),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(ctx).pop(); // Close dialog
-
+              Navigator.of(ctx).pop();
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final success = await authProvider.deleteAccount();
 
-              // Call provider delete method
-              bool success = await authProvider.deleteAccount();
-
-              if (success && context.mounted) {
-                // Clear cart and go to login
+              if (!context.mounted) return;
+              if (success) {
                 Provider.of<CartProvider>(context, listen: false).clearLocalCart();
-
-                // Navigate to Login and remove all previous routes
                 Navigator.pushNamedAndRemoveUntil(context, logInScreenRoute, (route) => false);
-
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Account deleted successfully.")),
+                  const SnackBar(content: Text("Account deleted.")),
                 );
-              } else if (context.mounted) {
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Failed to delete account. Please try again.")),
+                  const SnackBar(content: Text("Couldn't delete the account. Try again.")),
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(tr?.delete ?? "Delete"),
+            style: TextButton.styleFrom(foregroundColor: primaryColor),
+            child: Text(
+              tr?.delete ?? "Delete",
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
@@ -87,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // Theme Selection Logic (Bottom Sheet)
+  // THEME SHEET
   // --------------------------------------------------------------------------
   void _showThemeSelection(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -95,466 +102,569 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AppPalette.card(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 16),
-              Text(
-                tr?.darkMode ?? "Select Theme",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              // Options
-              _buildThemeOption(context, themeProvider, "System Default", ThemeMode.system),
-              _buildThemeOption(context, themeProvider, "Light Mode", ThemeMode.light),
-              _buildThemeOption(context, themeProvider, "Dark Mode", ThemeMode.dark),
-              const SizedBox(height: 16),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppPalette.border(context),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  tr?.darkMode ?? "Theme",
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppPalette.text(context),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _themeOption(sheetContext, themeProvider, "System default", ThemeMode.system),
+                _themeOption(sheetContext, themeProvider, "Light", ThemeMode.light),
+                _themeOption(sheetContext, themeProvider, "Dark", ThemeMode.dark),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildThemeOption(
+  Widget _themeOption(
       BuildContext context, ThemeProvider provider, String title, ThemeMode mode) {
     final isSelected = provider.themeMode == mode;
-    final color = isSelected ? brandingColor : Colors.grey;
-
     IconData icon;
-    if (mode == ThemeMode.light) icon = Icons.wb_sunny_rounded;
-    else if (mode == ThemeMode.dark) icon = Icons.dark_mode_rounded;
-    else icon = Icons.settings_brightness_rounded;
+    if (mode == ThemeMode.light) {
+      icon = Icons.wb_sunny_rounded;
+    } else if (mode == ThemeMode.dark) {
+      icon = Icons.dark_mode_rounded;
+    } else {
+      icon = Icons.settings_brightness_rounded;
+    }
 
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? brandingColor : null,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Material(
+        color: isSelected
+            ? primaryColor.withOpacity(AppPalette.isDark(context) ? 0.16 : 0.06)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            provider.setTheme(mode);
+            Navigator.pop(context);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                _IconTile(icon: icon, active: isSelected),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? primaryColor : AppPalette.text(context),
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  const Icon(Icons.check_circle_rounded, color: primaryColor, size: 22),
+              ],
+            ),
+          ),
         ),
       ),
-      trailing: isSelected ? Icon(Icons.check, color: brandingColor) : null,
-      onTap: () {
-        provider.setTheme(mode);
-        Navigator.pop(context);
-      },
     );
   }
 
-  String _getThemeName(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light: return "Light";
-      case ThemeMode.dark: return "Dark";
-      case ThemeMode.system: return "System";
-    }
+  String _themeName(ThemeMode mode) {
+    if (mode == ThemeMode.light) return "Light";
+    if (mode == ThemeMode.dark) return "Dark";
+    return "System";
   }
 
   // --------------------------------------------------------------------------
-  // MAIN BUILD
+  // BUILD
   // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-
     final isAuthenticated = authProvider.isAuthenticated;
     final user = authProvider.user;
 
-    // Check actual brightness
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final tr = AppLocalizations.of(context);
-    // If localization is not ready, show loader
-    if (tr == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (tr == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: primaryColor)),
+      );
+    }
 
-    // Define Dynamic Colors
-    final Color scaffoldBg = isDark ? const Color(0xFF101015) : const Color(0xFFF4F5F7);
-    final Color cardBg = isDark ? const Color(0xFF1C1C23) : Colors.white;
-    final Color textColor = isDark ? Colors.white : Colors.black87;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.grey.shade600;
-    final Color iconCircleBg = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
-    final Color iconColor = isDark ? Colors.white : brandingColor;
+    // Includes the floating nav height (MainScaffold uses extendBody)
+    final bottomPad = MediaQuery.paddingOf(context).bottom + 24;
 
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: EdgeInsets.fromLTRB(defaultPadding, 8, defaultPadding, bottomPad),
         children: [
-          // ------------------------------------------
-          // 1. HEADER SECTION
-          // ------------------------------------------
-          InkWell(
-            onTap: () {
-              if (isAuthenticated) {
-                Navigator.pushNamed(context, userInfoScreenRoute);
-              } else {
-                Navigator.pushNamed(context, logInScreenRoute);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade200, width: 2),
-                      image: DecorationImage(
-                        fit: BoxFit.cover,
-                        image: NetworkImage(
-                          isAuthenticated
-                              ? (user?['avatar'] ?? "https://cdn-icons-png.flaticon.com/512/847/847969.png")
-                              : "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isAuthenticated ? (user?['name'] ?? "User") : "Guest User",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isAuthenticated
-                              ? (user?['email'] ?? "")
-                              : "Welcome to our shop",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: subTextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isAuthenticated)
-                    Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
-                ],
-              ),
+          // 1. PROFILE CARD
+          _ProfileHeader(
+            isAuthenticated: isAuthenticated,
+            name: isAuthenticated ? (user?['name'] ?? "User").toString() : "Guest",
+            subtitle: isAuthenticated
+                ? (user?['email'] ?? "").toString()
+                : "Sign in to track orders and save addresses",
+            avatarUrl: isAuthenticated ? (user?['avatar'])?.toString() : null,
+            actionLabel: isAuthenticated ? null : tr.loginRegister,
+            onTap: () => Navigator.pushNamed(
+              context,
+              isAuthenticated ? userInfoScreenRoute : logInScreenRoute,
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // ------------------------------------------
           // 2. MY ACCOUNT
-          // ------------------------------------------
           if (isAuthenticated) ...[
-            _buildSectionHeader(context, tr.myAccount, isDark),
-            _buildMenuCard(cardBg, [
-              _buildMenuItem(
-                context,
+            _SectionLabel(tr.myAccount),
+            _MenuCard(children: [
+              _MenuItem(
                 title: tr.myOrders,
                 iconSrc: "assets/icons/Order.svg",
                 onTap: () => Navigator.pushNamed(context, ordersScreenRoute),
-                circleBg: iconCircleBg,
-                iconColor: iconColor,
-                textColor: textColor,
               ),
-              _buildDivider(isDark),
-              _buildMenuItem(
-                context,
+              _MenuItem(
                 title: tr.myAddresses,
                 iconSrc: "assets/icons/Location.svg",
                 onTap: () => Navigator.pushNamed(context, addressesScreenRoute),
-                circleBg: iconCircleBg,
-                iconColor: iconColor,
-                textColor: textColor,
-              ),
-              _buildDivider(isDark),
-              _buildMenuItem(
-                context,
-                title: tr.myWallet,
-                iconSrc: "assets/icons/Wallet.svg",
-                onTap: () => Navigator.pushNamed(context, walletScreenRoute),
-                circleBg: iconCircleBg,
-                iconColor: iconColor,
-                textColor: textColor,
               ),
             ]),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
           ],
 
-          // ------------------------------------------
           // 3. INFORMATION
-          // ------------------------------------------
-          _buildSectionHeader(context, tr.information, isDark),
-          _buildMenuCard(cardBg, [
-            _buildMenuItem(
-              context,
+          _SectionLabel(tr.information),
+          _MenuCard(children: [
+            _MenuItem(
               title: tr.aboutUs,
               icon: Icons.info_outline_rounded,
               onTap: () => Navigator.pushNamed(context, aboutUsScreenRoute),
-              circleBg: iconCircleBg,
-              iconColor: iconColor,
-              textColor: textColor,
             ),
-            _buildDivider(isDark),
-            _buildMenuItem(
-              context,
+            _MenuItem(
               title: tr.deliveryInfo,
               iconSrc: "assets/icons/Delivery.svg",
               onTap: () => Navigator.pushNamed(context, deliveryInfoScreenRoute),
-              circleBg: iconCircleBg,
-              iconColor: iconColor,
-              textColor: textColor,
             ),
-            _buildDivider(isDark),
-            _buildMenuItem(
-              context,
+            _MenuItem(
               title: tr.termsConditions,
               icon: Icons.description_outlined,
               onTap: () => Navigator.pushNamed(context, termsConditionScreenRoute),
-              circleBg: iconCircleBg,
-              iconColor: iconColor,
-              textColor: textColor,
             ),
-            _buildDivider(isDark),
-            _buildMenuItem(
-              context,
+            _MenuItem(
               title: tr.contactUs,
               icon: Icons.headset_mic_outlined,
               onTap: () => Navigator.pushNamed(context, contactUsScreenRoute),
-              circleBg: iconCircleBg,
-              iconColor: iconColor,
-              textColor: textColor,
             ),
           ]),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // ------------------------------------------
           // 4. SETTINGS
-          // ------------------------------------------
-          _buildSectionHeader(context, tr.settings, isDark),
-          _buildMenuCard(cardBg, [
-            _buildMenuItem(
-              context,
-              title: tr.changeLanguage,
-              iconSrc: "assets/icons/Language.svg",
-              onTap: () => Navigator.pushNamed(context, selectLanguageScreenRoute),
-              circleBg: iconCircleBg,
-              iconColor: iconColor,
-              textColor: textColor,
-            ),
-            _buildDivider(isDark),
-
-            // Theme Selection
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconCircleBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.dark_mode_outlined, color: iconColor, size: 20),
-              ),
-              title: Text(
-                tr.darkMode,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _getThemeName(themeProvider.themeMode),
-                    style: TextStyle(color: subTextColor, fontSize: 13),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                ],
-              ),
+          _SectionLabel(tr.settings),
+          _MenuCard(children: [
+            // _MenuItem(
+            //   title: tr.changeLanguage,
+            //   iconSrc: "assets/icons/Language.svg",
+            //   onTap: () => Navigator.pushNamed(context, selectLanguageScreenRoute),
+            // ),
+            _MenuItem(
+              title: tr.darkMode,
+              icon: Icons.dark_mode_outlined,
+              value: _themeName(themeProvider.themeMode),
               onTap: () => _showThemeSelection(context),
             ),
           ]),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
 
-          // ------------------------------------------
-          // 5. LOGIN / LOGOUT
-          // ------------------------------------------
+          // 5. LOGOUT / DELETE
           if (isAuthenticated) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-              child: TextButton(
+            SizedBox(
+              height: 52,
+              child: TextButton.icon(
                 onPressed: () => _logout(context),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFFFFF0F0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  foregroundColor: primaryColor,
+                  backgroundColor:
+                  primaryColor.withOpacity(AppPalette.isDark(context) ? 0.16 : 0.07),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.logout, color: errorColor, size: 20),
-                    const SizedBox(width: 10),
-                    Text(
-                      tr.logout,
-                      style: const TextStyle(
-                        color: errorColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                icon: const Icon(Icons.logout_rounded, size: 20),
+                label: Text(
+                  tr.logout,
+                  style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800),
                 ),
               ),
             ),
-
-            // ✅ DELETE ACCOUNT BUTTON (Added below Logout)
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-              child: TextButton(
-                onPressed: () => _confirmDeleteAccount(context),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.delete_forever, color: Colors.grey.shade400, size: 20),
-                    const SizedBox(width: 10),
-                    Text(
-                      "Delete Account",
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => _confirmDeleteAccount(context),
+              style: TextButton.styleFrom(
+                foregroundColor: AppPalette.textMuted(context),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.delete_outline_rounded, size: 19),
+              label: const Text(
+                "Delete account",
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
               ),
             ),
-
-          ] else
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
-              child: ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, logInScreenRoute),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: brandingColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: Text(
-                  tr.loginRegister,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-          const SizedBox(height: 20),
+          ],
         ],
       ),
     );
   }
+}
 
-  // --- WIDGET BUILDERS ---
+// =============================================================================
+// PIECES
+// =============================================================================
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.isAuthenticated,
+    required this.name,
+    required this.subtitle,
+    required this.onTap,
+    this.avatarUrl,
+    this.actionLabel,
+  });
 
-  Widget _buildSectionHeader(BuildContext context, String title, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: isDark ? Colors.white70 : Colors.grey.shade600,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
+  final bool isAuthenticated;
+  final String name;
+  final String subtitle;
+  final String? avatarUrl;
+  final String? actionLabel;
+  final VoidCallback onTap;
+
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return "?";
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  Widget _buildMenuCard(Color bgColor, List<Widget> children) {
+  @override
+  Widget build(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: defaultPadding),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primaryColor, primaryDeepColor],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: primaryColor.withOpacity(0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildMenuItem(
-      BuildContext context, {
-        required String title,
-        String? iconSrc,
-        IconData? icon,
-        required VoidCallback onTap,
-        required Color circleBg,
-        required Color iconColor,
-        required Color textColor,
-      }) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: circleBg,
-          shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            children: [
+              // Soft decorative circles, same language as the New Arrival band
+              PositionedDirectional(
+                top: -40,
+                end: -30,
+                child: _circle(140, 0.08),
+              ),
+              PositionedDirectional(
+                bottom: -50,
+                start: 60,
+                child: _circle(110, 0.05),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            foregroundImage: hasAvatar ? NetworkImage(avatarUrl!) : null,
+                            child: isAuthenticated
+                                ? Text(
+                              _initials,
+                              style: const TextStyle(
+                                color: primaryColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            )
+                                : const Icon(Icons.person_rounded,
+                                color: primaryColor, size: 30),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withOpacity(0.8),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isAuthenticated)
+                          Icon(
+                            isRtl
+                                ? Icons.chevron_left_rounded
+                                : Icons.chevron_right_rounded,
+                            color: Colors.white,
+                          ),
+                      ],
+                    ),
+                    if (actionLabel != null) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: primaryColor,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Text(
+                            actionLabel!,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: iconSrc != null
-            ? SvgPicture.asset(
-          iconSrc,
-          width: 20,
-          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        )
-            : Icon(icon, size: 20, color: iconColor),
       ),
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
-      ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
     );
   }
 
-  Widget _buildDivider(bool isDark) {
-    return Divider(
-        height: 1,
-        thickness: 1,
-        color: isDark ? Colors.white10 : Colors.grey.shade100,
-        indent: 60,
-        endIndent: 20
+  static Widget _circle(double size, double opacity) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(opacity),
+    ),
+  );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(6, 0, 6, 8),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: AppPalette.textMuted(context),
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuCard extends StatelessWidget {
+  const _MenuCard({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppPalette.isDark(context);
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      rows.add(children[i]);
+      if (i < children.length - 1) {
+        rows.add(Divider(
+          height: 1,
+          thickness: 1,
+          indent: 64,
+          endIndent: 16,
+          color: AppPalette.border(context),
+        ));
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppPalette.card(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppPalette.border(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: rows),
+      ),
+    );
+  }
+}
+
+class _IconTile extends StatelessWidget {
+  const _IconTile({this.icon, this.iconSrc, this.active = false});
+  final IconData? icon;
+  final String? iconSrc;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? Colors.white : AppPalette.text(context);
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: active ? primaryColor : AppPalette.cardElevated(context),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: iconSrc != null
+          ? SvgPicture.asset(
+        iconSrc!,
+        width: 19,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      )
+          : Icon(icon, size: 19, color: color),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  const _MenuItem({
+    required this.title,
+    required this.onTap,
+    this.icon,
+    this.iconSrc,
+    this.value,
+  });
+
+  final String title;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final String? iconSrc;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = AppPalette.textMuted(context);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            _IconTile(icon: icon, iconSrc: iconSrc),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppPalette.text(context),
+                ),
+              ),
+            ),
+            if (value != null) ...[
+              Text(value!, style: TextStyle(color: muted, fontSize: 13)),
+              const SizedBox(width: 4),
+            ],
+            Icon(
+              isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+              color: muted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
